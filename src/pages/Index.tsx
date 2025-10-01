@@ -16,8 +16,7 @@ export default function Index() {
           Track Local Government Like Never Before
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl text-balance">
-          A lean, local-first tracker for Austin, Travis County, and Texas legislation, meetings, and elections. 
-          The affordable Quorum alternative.
+          Hyper-local. AI-smart. Costs dozens, not thousands.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Button size="lg" asChild className="touch-target">

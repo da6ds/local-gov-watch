@@ -1,1 +1,10 @@
 project_id = "dizlzsmsfdtfubopnolf"
+
+[auth]
+auto_confirm_email = true
+
+[functions.analyze-topics]
+verify_jwt = false
+
+[functions.digest-weekly]
+verify_jwt = false

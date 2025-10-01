@@ -16,6 +16,7 @@ import ElectionDetail from "./pages/details/ElectionDetail";
 import Calendar from "./pages/Calendar";
 import Watchlists from "./pages/Watchlists";
 import NotFound from "./pages/NotFound";
+import Trends from "./pages/browse/Trends";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/browse/legislation" element={<BrowseLegislation />} />
             <Route path="/browse/meetings" element={<BrowseMeetings />} />
             <Route path="/browse/elections" element={<BrowseElections />} />
+            <Route path="/browse/trends" element={<Trends />} />
             <Route path="/legislation/:id" element={<LegislationDetail />} />
             <Route path="/meeting/:id" element={<MeetingDetail />} />
             <Route path="/election/:id" element={<ElectionDetail />} />

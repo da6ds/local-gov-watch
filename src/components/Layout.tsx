@@ -19,6 +19,7 @@ export function Layout({ children }: LayoutProps) {
     { href: "/", label: "Home", icon: Scale },
     { href: "/dashboard", label: "Dashboard", icon: BookOpen },
     { href: "/browse/legislation", label: "Legislation", icon: Scale },
+    { href: "/browse/trends", label: "Trends", icon: Star },
     { href: "/calendar", label: "Calendar", icon: Calendar },
     ...(user ? [{ href: "/watchlists", label: "Watchlists", icon: Star }] : []),
   ];
@@ -120,7 +121,7 @@ export function Layout({ children }: LayoutProps) {
       <footer className="border-t py-6 md:py-8">
         <div className="container text-center text-sm text-muted-foreground">
           <p>Local Gov Watch • Austin, Travis County, Texas</p>
-          <p className="mt-2">An open, affordable alternative to enterprise civic tracking.</p>
+          <p className="mt-2">Hyper-local. AI-smart. Costs dozens, not thousands.</p>
         </div>
       </footer>
     </div>

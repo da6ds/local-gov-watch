@@ -144,6 +144,7 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          parent_jurisdiction_id: string | null
           slug: string
           type: string
           updated_at: string | null
@@ -152,6 +153,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name: string
+          parent_jurisdiction_id?: string | null
           slug: string
           type: string
           updated_at?: string | null
@@ -160,11 +162,20 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string
+          parent_jurisdiction_id?: string | null
           slug?: string
           type?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "jurisdiction_parent_jurisdiction_id_fkey"
+            columns: ["parent_jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdiction"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       legislation: {
         Row: {
@@ -328,6 +339,8 @@ export type Database = {
       profile: {
         Row: {
           created_at: string | null
+          default_jurisdiction_id: string | null
+          default_scope: string | null
           email: string
           id: string
           is_admin: boolean | null
@@ -336,6 +349,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          default_jurisdiction_id?: string | null
+          default_scope?: string | null
           email: string
           id: string
           is_admin?: boolean | null
@@ -344,13 +359,23 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          default_jurisdiction_id?: string | null
+          default_scope?: string | null
           email?: string
           id?: string
           is_admin?: boolean | null
           name?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profile_default_jurisdiction_id_fkey"
+            columns: ["default_jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdiction"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       source: {
         Row: {
@@ -404,6 +429,8 @@ export type Database = {
           id: string
           last_sent_at: string | null
           query_json: Json
+          scope: string | null
+          topics: string[] | null
           user_id: string | null
         }
         Insert: {
@@ -413,6 +440,8 @@ export type Database = {
           id?: string
           last_sent_at?: string | null
           query_json: Json
+          scope?: string | null
+          topics?: string[] | null
           user_id?: string | null
         }
         Update: {
@@ -422,6 +451,8 @@ export type Database = {
           id?: string
           last_sent_at?: string | null
           query_json?: Json
+          scope?: string | null
+          topics?: string[] | null
           user_id?: string | null
         }
         Relationships: [
@@ -454,6 +485,53 @@ export type Database = {
           slug?: string
         }
         Relationships: []
+      }
+      topic_trend: {
+        Row: {
+          ai_summary: string | null
+          cities: string[]
+          cluster_label: string | null
+          county_id: string | null
+          created_at: string | null
+          id: string
+          item_count: number
+          item_ids: string[]
+          tag: string
+          week_start: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          cities: string[]
+          cluster_label?: string | null
+          county_id?: string | null
+          created_at?: string | null
+          id?: string
+          item_count: number
+          item_ids: string[]
+          tag: string
+          week_start: string
+        }
+        Update: {
+          ai_summary?: string | null
+          cities?: string[]
+          cluster_label?: string | null
+          county_id?: string | null
+          created_at?: string | null
+          id?: string
+          item_count?: number
+          item_ids?: string[]
+          tag?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topic_trend_county_id_fkey"
+            columns: ["county_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdiction"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       watchlist: {
         Row: {
