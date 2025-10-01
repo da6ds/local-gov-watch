@@ -101,6 +101,50 @@ export type Database = {
           },
         ]
       }
+      guest_profile: {
+        Row: {
+          created_at: string | null
+          default_scope: string | null
+          expires_at: string | null
+          id: string
+          last_active_at: string | null
+          selected_jurisdiction_id: string | null
+          session_id: string
+          topics: string[] | null
+          user_role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_scope?: string | null
+          expires_at?: string | null
+          id?: string
+          last_active_at?: string | null
+          selected_jurisdiction_id?: string | null
+          session_id: string
+          topics?: string[] | null
+          user_role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_scope?: string | null
+          expires_at?: string | null
+          id?: string
+          last_active_at?: string | null
+          selected_jurisdiction_id?: string | null
+          session_id?: string
+          topics?: string[] | null
+          user_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_profile_selected_jurisdiction_id_fkey"
+            columns: ["selected_jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdiction"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingest_run: {
         Row: {
           finished_at: string | null
@@ -618,6 +662,10 @@ export type Database = {
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
+      }
+      cleanup_expired_guest_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       halfvec_avg: {
         Args: { "": number[] }

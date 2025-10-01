@@ -3,7 +3,7 @@ export const ROLE_TOPICS = {
   activist: {
     label: 'Activist',
     description: 'Community organizer focused on local change',
-    defaultTopics: ['housing', 'environment', 'zoning', 'police', 'transportation'],
+    defaultTopics: ['housing', 'environment', 'transportation', 'zoning', 'police'],
     icon: '✊'
   },
   government: {
@@ -15,7 +15,7 @@ export const ROLE_TOPICS = {
   nonprofit: {
     label: 'Non-profit',
     description: 'Organization serving community needs',
-    defaultTopics: ['housing', 'parks', 'water', 'environment', 'budget'],
+    defaultTopics: ['public health', 'education', 'housing', 'parks', 'environment'],
     icon: '🤝'
   }
 } as const;

@@ -1,10 +1,19 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Scale, Calendar, Star, TrendingUp, DollarSign, Zap } from "lucide-react";
 import { Layout } from "@/components/Layout";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Index() {
+  const { startGuestSession } = useAuth();
+  const navigate = useNavigate();
+
+  const handleTryNow = async () => {
+    await startGuestSession();
+    navigate("/onboarding/guest-role");
+  };
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -19,7 +28,10 @@ export default function Index() {
           Hyper-local. AI-smart. Costs dozens, not thousands.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
-          <Button size="lg" asChild className="touch-target">
+          <Button size="lg" onClick={handleTryNow} className="touch-target">
+            Try it now (no signup)
+          </Button>
+          <Button size="lg" variant="outline" asChild className="touch-target">
             <Link to="/browse/legislation">Browse Legislation</Link>
           </Button>
           <Button size="lg" variant="outline" asChild className="touch-target">

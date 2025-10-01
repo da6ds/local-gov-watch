@@ -9,6 +9,9 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import RoleSelection from "./pages/onboarding/RoleSelection";
 import LocationSelection from "./pages/onboarding/LocationSelection";
+import GuestRole from "./pages/onboarding/GuestRole";
+import GuestLocation from "./pages/onboarding/GuestLocation";
+import DigestPreview from "./pages/DigestPreview";
 import Settings from "./pages/Settings";
 import BrowseLegislation from "./pages/browse/Legislation";
 import BrowseMeetings from "./pages/browse/Meetings";
@@ -32,11 +35,14 @@ function App() {
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/onboarding/role" element={<RoleSelection />} />
-              <Route path="/onboarding/location" element={<LocationSelection />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding/role" element={<RoleSelection />} />
+            <Route path="/onboarding/location" element={<LocationSelection />} />
+            <Route path="/onboarding/guest-role" element={<GuestRole />} />
+            <Route path="/onboarding/guest-location" element={<GuestLocation />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/digest-preview" element={<DigestPreview />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/browse/legislation" element={<BrowseLegislation />} />
               <Route path="/browse/meetings" element={<BrowseMeetings />} />

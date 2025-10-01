@@ -8,11 +8,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, addDays } from "date-fns";
+import { GuestBanner } from "@/components/GuestBanner";
+import { TrendsPlaceholder } from "@/components/TrendsPlaceholder";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, isGuest, guestSession } = useAuth();
 
-  // Fetch user profile for scope
+  // Fetch user profile for scope (or use guest session)
   const { data: profile } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
@@ -24,77 +26,82 @@ export default function Dashboard() {
         .single();
       return data;
     },
-    enabled: !!user
+    enabled: !!user && !isGuest
   });
+
+  // Use guest jurisdiction if in guest mode
+  const effectiveJurisdictionId = isGuest 
+    ? guestSession?.selectedJurisdictionId 
+    : profile?.selected_jurisdiction_id;
 
   // Fetch jurisdiction separately
   const { data: jurisdiction } = useQuery({
-    queryKey: ['jurisdiction', profile?.selected_jurisdiction_id],
+    queryKey: ['jurisdiction', effectiveJurisdictionId],
     queryFn: async () => {
-      if (!profile?.selected_jurisdiction_id) return null;
+      if (!effectiveJurisdictionId) return null;
       const { data } = await supabase
         .from('jurisdiction')
         .select('*')
-        .eq('id', profile.selected_jurisdiction_id)
+        .eq('id', effectiveJurisdictionId)
         .single();
       return data;
     },
-    enabled: !!profile?.selected_jurisdiction_id
+    enabled: !!effectiveJurisdictionId
   });
 
   // Fetch recent legislation (last 7 days)
   const { data: recentLegislation } = useQuery({
-    queryKey: ['recent-legislation', profile?.selected_jurisdiction_id],
+    queryKey: ['recent-legislation', effectiveJurisdictionId],
     queryFn: async () => {
       const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
       const { data } = await supabase
         .from('legislation')
         .select('*')
-        .eq('jurisdiction_id', profile?.selected_jurisdiction_id)
+        .eq('jurisdiction_id', effectiveJurisdictionId)
         .gte('created_at', sevenDaysAgo)
         .order('created_at', { ascending: false })
         .limit(5);
       return data || [];
     },
-    enabled: !!profile?.selected_jurisdiction_id
+    enabled: !!effectiveJurisdictionId
   });
 
   // Fetch upcoming meetings (next 14 days)
   const { data: upcomingMeetings } = useQuery({
-    queryKey: ['upcoming-meetings', profile?.selected_jurisdiction_id],
+    queryKey: ['upcoming-meetings', effectiveJurisdictionId],
     queryFn: async () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       const twoWeeksLater = format(addDays(new Date(), 14), 'yyyy-MM-dd');
       const { data } = await supabase
         .from('meeting')
         .select('*')
-        .eq('jurisdiction_id', profile?.selected_jurisdiction_id)
+        .eq('jurisdiction_id', effectiveJurisdictionId)
         .gte('starts_at', today)
         .lte('starts_at', twoWeeksLater)
         .order('starts_at', { ascending: true })
         .limit(5);
       return data || [];
     },
-    enabled: !!profile?.selected_jurisdiction_id
+    enabled: !!effectiveJurisdictionId
   });
 
   // Fetch upcoming elections (next 90 days)
   const { data: upcomingElections } = useQuery({
-    queryKey: ['upcoming-elections', profile?.selected_jurisdiction_id],
+    queryKey: ['upcoming-elections', effectiveJurisdictionId],
     queryFn: async () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       const ninetyDaysLater = format(addDays(new Date(), 90), 'yyyy-MM-dd');
       const { data } = await supabase
         .from('election')
         .select('*')
-        .eq('jurisdiction_id', profile?.selected_jurisdiction_id)
+        .eq('jurisdiction_id', effectiveJurisdictionId)
         .gte('date', today)
         .lte('date', ninetyDaysLater)
         .order('date', { ascending: true })
         .limit(3);
       return data || [];
     },
-    enabled: !!profile?.selected_jurisdiction_id
+    enabled: !!effectiveJurisdictionId
   });
 
   // Fetch user's subscription for topics
@@ -112,9 +119,16 @@ export default function Dashboard() {
     enabled: !!user
   });
 
+  // Get topics from guest session or subscription
+  const userTopics = isGuest 
+    ? guestSession?.topics || []
+    : subscription?.topics || [];
+
   return (
-    <Layout>
-      <div className="space-y-6">
+    <>
+      {isGuest && <GuestBanner />}
+      <Layout>
+        <div className="space-y-6">
         {/* Header with jurisdiction */}
         <div className="flex items-center justify-between">
           <div>
@@ -232,7 +246,7 @@ export default function Dashboard() {
         </div>
 
         {/* Topics Card */}
-        {subscription && subscription.topics && subscription.topics.length > 0 && (
+        {userTopics.length > 0 && (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -240,60 +254,90 @@ export default function Dashboard() {
                   <CardTitle>Your Topics</CardTitle>
                   <CardDescription>Recent activity in areas you're following</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/settings">Customize</Link>
-                </Button>
+                {!isGuest && (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/settings">Customize</Link>
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2 mb-4">
-                {subscription.topics.map(topic => (
+                {userTopics.map(topic => (
                   <Badge key={topic} variant="secondary" className="text-sm capitalize">
                     {topic.replace(/-/g, ' ')}
                   </Badge>
                 ))}
               </div>
               <div className="space-y-2">
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/browse/legislation">
-                    <Bookmark className="h-4 w-4 mr-2" />
-                    Save to Watchlist
-                  </Link>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start" 
+                  asChild={!isGuest}
+                  disabled={isGuest}
+                >
+                  {isGuest ? (
+                    <div className="w-full">
+                      <Bookmark className="h-4 w-4 mr-2" />
+                      Save to Watchlist (Create account)
+                    </div>
+                  ) : (
+                    <Link to="/browse/legislation">
+                      <Bookmark className="h-4 w-4 mr-2" />
+                      Save to Watchlist
+                    </Link>
+                  )}
                 </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/settings">
-                    <Bell className="h-4 w-4 mr-2" />
-                    Update Digest Preferences
-                  </Link>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start" 
+                  asChild={!isGuest}
+                >
+                  {isGuest ? (
+                    <Link to="/digest-preview">
+                      <Bell className="h-4 w-4 mr-2" />
+                      Preview Digest
+                    </Link>
+                  ) : (
+                    <Link to="/settings">
+                      <Bell className="h-4 w-4 mr-2" />
+                      Update Digest Preferences
+                    </Link>
+                  )}
                 </Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Emerging Trends - Coming Soon */}
-        <Card className="border-dashed">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-8 w-8 text-accent" />
-              <div className="flex-1">
-                <CardTitle>Emerging Trends</CardTitle>
-                <CardDescription>AI-powered insights across multiple jurisdictions</CardDescription>
+        {/* Trends - Show placeholder for guest mode */}
+        {isGuest ? (
+          <TrendsPlaceholder />
+        ) : (
+          <Card className="border-dashed">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-8 w-8 text-accent" />
+                <div className="flex-1">
+                  <CardTitle>Emerging Trends</CardTitle>
+                  <CardDescription>AI-powered insights across multiple jurisdictions</CardDescription>
+                </div>
+                <Badge variant="secondary">Coming Soon</Badge>
               </div>
-              <Badge variant="secondary">Coming Soon</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Soon you'll see patterns like "Multiple cities in your area are considering tax changes" 
-              with aggregated insights and cross-jurisdictional analysis.
-            </p>
-            <Button variant="outline" asChild>
-              <Link to="/browse/trends">Preview Trends →</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </Layout>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Soon you'll see patterns like "Multiple cities in your area are considering tax changes" 
+                with aggregated insights and cross-jurisdictional analysis.
+              </p>
+              <Button variant="outline" asChild>
+                <Link to="/browse/trends">Preview Trends →</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+        </div>
+      </Layout>
+    </>
   );
 }
