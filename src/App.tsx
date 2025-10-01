@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -30,36 +31,38 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding/role" element={<RoleSelection />} />
-            <Route path="/onboarding/location" element={<LocationSelection />} />
-            <Route path="/onboarding/guest-role" element={<GuestRole />} />
-            <Route path="/onboarding/guest-location" element={<GuestLocation />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/digest-preview" element={<DigestPreview />} />
-            <Route path="/admin/connectors" element={<Connectors />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/browse/legislation" element={<BrowseLegislation />} />
-              <Route path="/browse/meetings" element={<BrowseMeetings />} />
-              <Route path="/browse/elections" element={<BrowseElections />} />
-              <Route path="/browse/trends" element={<Trends />} />
-              <Route path="/legislation/:id" element={<LegislationDetail />} />
-              <Route path="/meeting/:id" element={<MeetingDetail />} />
-              <Route path="/election/:id" element={<ElectionDetail />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/watchlists" element={<Watchlists />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/onboarding/role" element={<RoleSelection />} />
+                <Route path="/onboarding/location" element={<LocationSelection />} />
+                <Route path="/onboarding/guest-role" element={<GuestRole />} />
+                <Route path="/onboarding/guest-location" element={<GuestLocation />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/digest-preview" element={<DigestPreview />} />
+                <Route path="/admin/connectors" element={<Connectors />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/browse/legislation" element={<BrowseLegislation />} />
+                <Route path="/browse/meetings" element={<BrowseMeetings />} />
+                <Route path="/browse/elections" element={<BrowseElections />} />
+                <Route path="/browse/trends" element={<Trends />} />
+                <Route path="/legislation/:id" element={<LegislationDetail />} />
+                <Route path="/meeting/:id" element={<MeetingDetail />} />
+                <Route path="/election/:id" element={<ElectionDetail />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/watchlists" element={<Watchlists />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
