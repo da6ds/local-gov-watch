@@ -41,5 +41,5 @@ export const KEYWORD_TAG_MAP: Record<string, string[]> = {
   'taxes': ['tax', 'property tax', 'rate', 'levy'],
 };
 
-// Alias for digest settings
+// Export alias for digest settings page
 export const TOPIC_KEYWORDS = KEYWORD_TAG_MAP;
