@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { TrendingUp, Calendar, FileText } from "lucide-react";
+import { TrendsWidget } from "@/components/TrendsWidget";
 
 export default function Dashboard() {
   return (
@@ -59,6 +60,8 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        <TrendsWidget />
 
         <div className="bg-muted/30 p-6 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">Get Started</h2>

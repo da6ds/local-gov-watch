@@ -17,6 +17,7 @@ import Calendar from "./pages/Calendar";
 import Watchlists from "./pages/Watchlists";
 import NotFound from "./pages/NotFound";
 import Trends from "./pages/browse/Trends";
+import DigestSettings from "./pages/settings/DigestSettings";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/election/:id" element={<ElectionDetail />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/watchlists" element={<Watchlists />} />
+            <Route path="/settings/digest" element={<DigestSettings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

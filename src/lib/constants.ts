@@ -38,4 +38,8 @@ export const KEYWORD_TAG_MAP: Record<string, string[]> = {
   'parks': ['park', 'recreation', 'trail', 'greenspace'],
   'police': ['police', 'public safety', 'crime', 'enforcement'],
   'fire': ['fire', 'emergency', 'EMS'],
+  'taxes': ['tax', 'property tax', 'rate', 'levy'],
 };
+
+// Alias for digest settings
+export const TOPIC_KEYWORDS = KEYWORD_TAG_MAP;
