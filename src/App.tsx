@@ -23,35 +23,37 @@ import Trends from "./pages/browse/Trends";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding/role" element={<RoleSelection />} />
-            <Route path="/onboarding/location" element={<LocationSelection />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/browse/legislation" element={<BrowseLegislation />} />
-            <Route path="/browse/meetings" element={<BrowseMeetings />} />
-            <Route path="/browse/elections" element={<BrowseElections />} />
-            <Route path="/browse/trends" element={<Trends />} />
-            <Route path="/legislation/:id" element={<LegislationDetail />} />
-            <Route path="/meeting/:id" element={<MeetingDetail />} />
-            <Route path="/election/:id" element={<ElectionDetail />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/watchlists" element={<Watchlists />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/onboarding/role" element={<RoleSelection />} />
+              <Route path="/onboarding/location" element={<LocationSelection />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/browse/legislation" element={<BrowseLegislation />} />
+              <Route path="/browse/meetings" element={<BrowseMeetings />} />
+              <Route path="/browse/elections" element={<BrowseElections />} />
+              <Route path="/browse/trends" element={<Trends />} />
+              <Route path="/legislation/:id" element={<LegislationDetail />} />
+              <Route path="/meeting/:id" element={<MeetingDetail />} />
+              <Route path="/election/:id" element={<ElectionDetail />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/watchlists" element={<Watchlists />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
