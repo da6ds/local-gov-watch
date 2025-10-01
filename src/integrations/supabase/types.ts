@@ -345,7 +345,10 @@ export type Database = {
           id: string
           is_admin: boolean | null
           name: string | null
+          onboarding_completed: boolean | null
+          selected_jurisdiction_id: string | null
           updated_at: string | null
+          user_role: Database["public"]["Enums"]["user_role"] | null
         }
         Insert: {
           created_at?: string | null
@@ -355,7 +358,10 @@ export type Database = {
           id: string
           is_admin?: boolean | null
           name?: string | null
+          onboarding_completed?: boolean | null
+          selected_jurisdiction_id?: string | null
           updated_at?: string | null
+          user_role?: Database["public"]["Enums"]["user_role"] | null
         }
         Update: {
           created_at?: string | null
@@ -365,12 +371,22 @@ export type Database = {
           id?: string
           is_admin?: boolean | null
           name?: string | null
+          onboarding_completed?: boolean | null
+          selected_jurisdiction_id?: string | null
           updated_at?: string | null
+          user_role?: Database["public"]["Enums"]["user_role"] | null
         }
         Relationships: [
           {
             foreignKeyName: "profile_default_jurisdiction_id_fkey"
             columns: ["default_jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdiction"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_selected_jurisdiction_id_fkey"
+            columns: ["selected_jurisdiction_id"]
             isOneToOne: false
             referencedRelation: "jurisdiction"
             referencedColumns: ["id"]
@@ -707,7 +723,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "activist" | "government" | "nonprofit"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -834,6 +850,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["activist", "government", "nonprofit"],
+    },
   },
 } as const

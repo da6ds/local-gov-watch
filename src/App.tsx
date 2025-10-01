@@ -7,6 +7,9 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import RoleSelection from "./pages/onboarding/RoleSelection";
+import LocationSelection from "./pages/onboarding/LocationSelection";
+import Settings from "./pages/Settings";
 import BrowseLegislation from "./pages/browse/Legislation";
 import BrowseMeetings from "./pages/browse/Meetings";
 import BrowseElections from "./pages/browse/Elections";
@@ -17,7 +20,6 @@ import Calendar from "./pages/Calendar";
 import Watchlists from "./pages/Watchlists";
 import NotFound from "./pages/NotFound";
 import Trends from "./pages/browse/Trends";
-import DigestSettings from "./pages/settings/DigestSettings";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +33,10 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding/role" element={<RoleSelection />} />
+            <Route path="/onboarding/location" element={<LocationSelection />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/browse/legislation" element={<BrowseLegislation />} />
             <Route path="/browse/meetings" element={<BrowseMeetings />} />
             <Route path="/browse/elections" element={<BrowseElections />} />
@@ -41,7 +46,6 @@ const App = () => (
             <Route path="/election/:id" element={<ElectionDetail />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/watchlists" element={<Watchlists />} />
-            <Route path="/settings/digest" element={<DigestSettings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

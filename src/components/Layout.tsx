@@ -1,9 +1,16 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, Scale, Calendar, BookOpen, Star, Settings } from "lucide-react";
+import { Menu, Scale, Calendar, BookOpen, Star, Settings as SettingsIcon } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,12 +23,13 @@ export function Layout({ children }: LayoutProps) {
   const location = useLocation();
 
   const navItems = [
-    { href: "/", label: "Home", icon: Scale },
     { href: "/dashboard", label: "Dashboard", icon: BookOpen },
     { href: "/browse/legislation", label: "Legislation", icon: Scale },
+    { href: "/browse/meetings", label: "Meetings", icon: Calendar },
+    { href: "/browse/elections", label: "Elections", icon: Star },
     { href: "/browse/trends", label: "Trends", icon: Star },
-    { href: "/calendar", label: "Calendar", icon: Calendar },
     ...(user ? [{ href: "/watchlists", label: "Watchlists", icon: Star }] : []),
+    ...(user ? [{ href: "/settings", label: "Settings", icon: SettingsIcon }] : []),
   ];
 
   const handleSignOut = async () => {
@@ -88,15 +96,38 @@ export function Layout({ children }: LayoutProps) {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-6 ml-8">
-            {navItems.map((item) => (
-              <Button
-                key={item.href}
-                variant={location.pathname === item.href ? "default" : "ghost"}
-                asChild
-              >
-                <Link to={item.href}>{item.label}</Link>
-              </Button>
-            ))}
+            <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+              Dashboard
+            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1">
+                Browse <ChevronDown className="h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <Link to="/browse/legislation">Legislation</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/browse/meetings">Meetings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/browse/elections">Elections</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/browse/trends">Trends</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {user && (
+              <>
+                <Link to="/watchlists" className="text-sm font-medium hover:text-primary transition-colors">
+                  Watchlists
+                </Link>
+                <Link to="/settings" className="text-sm font-medium hover:text-primary transition-colors">
+                  Settings
+                </Link>
+              </>
+            )}
           </nav>
 
           <div className="ml-auto flex items-center gap-2">

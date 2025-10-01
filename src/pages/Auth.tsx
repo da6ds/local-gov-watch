@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Scale } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -17,9 +18,24 @@ export default function Auth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      navigate("/dashboard");
-    }
+    // Check if user needs onboarding
+    const checkOnboarding = async () => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profile')
+          .select('onboarding_completed')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.onboarding_completed) {
+          navigate('/dashboard');
+        } else {
+          navigate('/onboarding/role');
+        }
+      }
+    };
+    
+    checkOnboarding();
   }, [user, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
