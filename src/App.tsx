@@ -12,6 +12,7 @@ import LocationSelection from "./pages/onboarding/LocationSelection";
 import GuestRole from "./pages/onboarding/GuestRole";
 import GuestLocation from "./pages/onboarding/GuestLocation";
 import DigestPreview from "./pages/DigestPreview";
+import Connectors from "./pages/admin/Connectors";
 import Settings from "./pages/Settings";
 import BrowseLegislation from "./pages/browse/Legislation";
 import BrowseMeetings from "./pages/browse/Meetings";
@@ -43,6 +44,7 @@ function App() {
             <Route path="/onboarding/guest-location" element={<GuestLocation />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/digest-preview" element={<DigestPreview />} />
+            <Route path="/admin/connectors" element={<Connectors />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/browse/legislation" element={<BrowseLegislation />} />
               <Route path="/browse/meetings" element={<BrowseMeetings />} />

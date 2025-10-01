@@ -44,6 +44,54 @@ export type Database = {
         }
         Relationships: []
       }
+      connector: {
+        Row: {
+          created_at: string
+          enabled: boolean | null
+          id: string
+          jurisdiction_slug: string
+          key: string
+          kind: string
+          last_run_at: string | null
+          last_status: string | null
+          notes: string | null
+          parser_key: string
+          schedule: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          jurisdiction_slug: string
+          key: string
+          kind: string
+          last_run_at?: string | null
+          last_status?: string | null
+          notes?: string | null
+          parser_key: string
+          schedule?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          jurisdiction_slug?: string
+          key?: string
+          kind?: string
+          last_run_at?: string | null
+          last_status?: string | null
+          notes?: string | null
+          parser_key?: string
+          schedule?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       election: {
         Row: {
           created_at: string | null
@@ -439,6 +487,7 @@ export type Database = {
       }
       source: {
         Row: {
+          connector_id: string | null
           created_at: string | null
           enabled: boolean | null
           id: string
@@ -450,6 +499,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          connector_id?: string | null
           created_at?: string | null
           enabled?: boolean | null
           id?: string
@@ -461,6 +511,7 @@ export type Database = {
           url: string
         }
         Update: {
+          connector_id?: string | null
           created_at?: string | null
           enabled?: boolean | null
           id?: string
@@ -472,6 +523,13 @@ export type Database = {
           url?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "source_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "connector"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "source_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]

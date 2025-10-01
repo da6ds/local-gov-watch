@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.digest-weekly]
 verify_jwt = false
+
+[functions.run-connector]
+verify_jwt = false
+
+[functions.cron-connectors]
+verify_jwt = false

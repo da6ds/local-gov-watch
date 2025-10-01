@@ -3,11 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { TrendingUp, Calendar, FileText, Bookmark, Bell, Sparkles } from "lucide-react";
+import { TrendingUp, Calendar, FileText, Bookmark, Bell, Sparkles, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, subDays, addDays } from "date-fns";
+import { format, subDays, addDays, formatDistanceToNow } from "date-fns";
 import { GuestBanner } from "@/components/GuestBanner";
 import { TrendsPlaceholder } from "@/components/TrendsPlaceholder";
 
@@ -102,6 +102,28 @@ export default function Dashboard() {
       return data || [];
     },
     enabled: !!effectiveJurisdictionId
+  });
+
+  // Fetch latest connector run for this jurisdiction
+  const { data: latestConnectorRun } = useQuery({
+    queryKey: ['latest-connector-run', jurisdiction?.slug],
+    queryFn: async () => {
+      if (!jurisdiction?.slug) return null;
+      
+      const jurisdictionSlug = `${jurisdiction.type}:${jurisdiction.slug}`;
+      
+      const { data } = await supabase
+        .from('connector')
+        .select('last_run_at, last_status')
+        .eq('jurisdiction_slug', jurisdictionSlug)
+        .eq('enabled', true)
+        .order('last_run_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      return data;
+    },
+    enabled: !!jurisdiction?.slug
   });
 
   // Fetch user's subscription for topics
@@ -244,6 +266,24 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Live Data Status */}
+        {latestConnectorRun?.last_run_at && (
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <span>
+              Live data as of {formatDistanceToNow(new Date(latestConnectorRun.last_run_at), { addSuffix: true })}
+            </span>
+            {profile?.is_admin && (
+              <>
+                <span>•</span>
+                <Link to="/admin/connectors" className="text-primary hover:underline flex items-center gap-1">
+                  <RefreshCw className="h-3 w-3" />
+                  Manage connectors
+                </Link>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Topics Card */}
         {userTopics.length > 0 && (
