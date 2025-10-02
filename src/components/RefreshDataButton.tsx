@@ -46,7 +46,7 @@ export function RefreshDataButton({ scope, variant = "outline", size = "default"
           queryClient.invalidateQueries({ queryKey: ['elections'] });
           queryClient.invalidateQueries({ queryKey: ['data-status'] });
           
-          toast.success("Data updated successfully!");
+          toast.success("Updated just now");
         }
       }
     }, 5000); // Poll every 5 seconds

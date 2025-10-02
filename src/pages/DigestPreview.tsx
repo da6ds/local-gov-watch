@@ -2,7 +2,6 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { GuestBanner } from "@/components/GuestBanner";
 import { Link } from "react-router-dom";
 import { Mail, Calendar, FileText } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -68,11 +67,9 @@ export default function DigestPreview() {
   const weekStart = format(subDays(new Date(), new Date().getDay()), 'MMMM d, yyyy');
 
   return (
-    <>
-      <GuestBanner />
-      <Layout>
-        <div className="container max-w-3xl mx-auto py-12 px-4">
-          <div className="space-y-6">
+    <Layout>
+      <div className="container max-w-3xl mx-auto py-12 px-4">
+        <div className="space-y-6">
             <div className="text-center space-y-2">
               <h1 className="text-3xl font-bold">Preview Your Weekly Digest</h1>
               <p className="text-muted-foreground">
@@ -169,6 +166,5 @@ export default function DigestPreview() {
           </div>
         </div>
       </Layout>
-    </>
-  );
+    );
 }

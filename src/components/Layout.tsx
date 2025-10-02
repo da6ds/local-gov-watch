@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Menu, Scale, Calendar, BookOpen, Star, Settings as SettingsIcon } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { DemoBanner } from "@/components/DemoBanner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,9 +30,6 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Demo Banner - Always Visible */}
-      <DemoBanner />
-      
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">

@@ -9,7 +9,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, formatDistanceToNow } from "date-fns";
-import { GuestBanner } from "@/components/GuestBanner";
 import { TrendsPlaceholder } from "@/components/TrendsPlaceholder";
 import { useDataStatus } from "@/hooks/useDataStatus";
 import { resolveScope } from "@/lib/scopeResolver";
@@ -172,88 +171,44 @@ export default function Dashboard() {
 
   return (
     <TooltipProvider>
-      <>
-        {isGuest && <GuestBanner />}
-        <Layout>
-          <div className="space-y-6">
-            {/* Header with jurisdiction */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
+      <Layout>
+        <div className="space-y-6">
+          {/* Header with jurisdiction and status line */}
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold">Dashboard</h1>
+              {/* Subtle status line under title */}
+              <div className="text-sm text-muted-foreground mt-1" aria-live="polite">
+                {isAutoRefreshing ? (
+                  <span>Updating... ~{Math.round((autoRefreshEta || 120000) / 1000 / 60)}m remaining</span>
+                ) : dataStatus?.mode === 'live' && dataStatus.lastRunAt ? (
+                  <span>Live as of {formatDistanceToNow(new Date(dataStatus.lastRunAt), { addSuffix: true })}</span>
+                ) : dataStatus?.mode === 'seed' && dataStatus.reason === 'no-successful-runs' && 
+                   (dataStatus.tableCounts.meetings + dataStatus.tableCounts.legislation + dataStatus.tableCounts.elections === 0) ? (
+                  <span>No recent local updates yet</span>
+                ) : null}
+              </div>
+              <div className="mt-4">
                 <LocationSelector 
                   value={selectedJurisdictions}
                   onChange={handleJurisdictionChange}
                   maxSelections={3}
                 />
               </div>
-              <div className="flex gap-2">
-                <RefreshDataButton 
-                  scope={scopeString}
-                  sessionId={(guestSession as any)?.session_id || (typeof guestSession === 'string' ? guestSession : undefined)}
-                />
-                <Button asChild variant="outline">
-                  <Link to="/settings">
-                    <Bell className="h-4 w-4 mr-2" />
-                    Settings
-                  </Link>
-                </Button>
-              </div>
             </div>
-
-            {/* Data Status Banner */}
-            {!isDataStatusLoading && dataStatus && (isAutoRefreshing || dataStatus.mode === 'seed') && (
-              <Card className={`mb-6 ${
-                dataStatus.mode === 'live'
-                  ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900" 
-                  : "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900"
-              }`}>
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        {isAutoRefreshing ? (
-                          <>
-                            <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse" />
-                            <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-                              Updating local data...
-                            </h3>
-                          </>
-                        ) : dataStatus.mode === 'live' ? (
-                          <>
-                            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                            <h3 className="font-semibold text-green-900 dark:text-green-100">
-                              Live Data
-                            </h3>
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle className="h-4 w-4 text-yellow-600" />
-                            <h3 className="font-semibold text-yellow-900 dark:text-yellow-100">
-                              Demo Data (Seeded)
-                            </h3>
-                          </>
-                        )}
-                      </div>
-                      {isAutoRefreshing ? (
-                        <p className="text-sm text-muted-foreground">
-                          ~{Math.round((autoRefreshEta || 120000) / 1000 / 60)}m remaining
-                        </p>
-                      ) : dataStatus.mode === 'live' ? (
-                        <p className="text-sm text-muted-foreground">
-                          Live as of {dataStatus.lastRunAt ? formatDistanceToNow(new Date(dataStatus.lastRunAt), { addSuffix: true }) : 'recently'}
-                        </p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          {dataStatus.reason === 'no-successful-runs' && 'No recent local updates yet. Data will appear as soon as your city posts it.'}
-                          {dataStatus.reason === 'tables-empty' && 'Data sources are working but no records found in the selected timeframe.'}
-                          {dataStatus.reason === 'success-but-empty-window' && 'Recent updates completed but no new records in the visible window.'}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <div className="flex gap-2">
+              <RefreshDataButton 
+                scope={scopeString}
+                sessionId={(guestSession as any)?.session_id || (typeof guestSession === 'string' ? guestSession : undefined)}
+              />
+              <Button asChild variant="outline">
+                <Link to="/settings">
+                  <Bell className="h-4 w-4 mr-2" />
+                  Settings
+                </Link>
+              </Button>
+            </div>
+          </div>
 
             {/* Topic Filter Indicator */}
             {selectedTopics.length > 0 && (
@@ -422,7 +377,6 @@ export default function Dashboard() {
             <MiniCalendar scope={scopeString || 'austin-tx,travis-county-tx,texas'} />
           </div>
         </Layout>
-      </>
-    </TooltipProvider>
-  );
+      </TooltipProvider>
+    );
 }

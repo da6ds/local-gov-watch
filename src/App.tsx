@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
+import { GlobalBanner } from "@/components/GlobalBanner";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import DigestPreview from "./pages/DigestPreview";
@@ -32,6 +33,7 @@ function App() {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <GlobalBanner />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/dashboard" element={<Dashboard />} />
