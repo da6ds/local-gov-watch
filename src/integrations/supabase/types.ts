@@ -103,8 +103,39 @@ export type Database = {
           },
         ]
       }
+      data_status: {
+        Row: {
+          counts: Json | null
+          created_at: string | null
+          job_id: string | null
+          last_run_at: string | null
+          last_success_at: string | null
+          scope_key: string
+          updated_at: string | null
+        }
+        Insert: {
+          counts?: Json | null
+          created_at?: string | null
+          job_id?: string | null
+          last_run_at?: string | null
+          last_success_at?: string | null
+          scope_key: string
+          updated_at?: string | null
+        }
+        Update: {
+          counts?: Json | null
+          created_at?: string | null
+          job_id?: string | null
+          last_run_at?: string | null
+          last_success_at?: string | null
+          scope_key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       election: {
         Row: {
+          content_hash: string | null
           created_at: string | null
           date: string
           id: string
@@ -115,9 +146,11 @@ export type Database = {
           registration_deadline: string | null
           results_json: Json | null
           source_id: string | null
+          source_url: string | null
           updated_at: string | null
         }
         Insert: {
+          content_hash?: string | null
           created_at?: string | null
           date: string
           id?: string
@@ -128,9 +161,11 @@ export type Database = {
           registration_deadline?: string | null
           results_json?: Json | null
           source_id?: string | null
+          source_url?: string | null
           updated_at?: string | null
         }
         Update: {
+          content_hash?: string | null
           created_at?: string | null
           date?: string
           id?: string
@@ -141,6 +176,7 @@ export type Database = {
           registration_deadline?: string | null
           results_json?: Json | null
           source_id?: string | null
+          source_url?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -286,6 +322,7 @@ export type Database = {
           doc_hash: string | null
           id: string
           item_id: string
+          item_kind: string | null
           item_type: string
           jurisdiction_id: string | null
           occurred_at: string
@@ -298,6 +335,7 @@ export type Database = {
           doc_hash?: string | null
           id?: string
           item_id: string
+          item_kind?: string | null
           item_type: string
           jurisdiction_id?: string | null
           occurred_at: string
@@ -310,6 +348,7 @@ export type Database = {
           doc_hash?: string | null
           id?: string
           item_id?: string
+          item_kind?: string | null
           item_type?: string
           jurisdiction_id?: string | null
           occurred_at?: string
@@ -328,8 +367,11 @@ export type Database = {
       jurisdiction: {
         Row: {
           created_at: string | null
+          fips: string | null
+          geo: Json | null
           id: string
           name: string
+          ocd_id: string | null
           parent_jurisdiction_id: string | null
           slug: string
           type: string
@@ -337,8 +379,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          fips?: string | null
+          geo?: Json | null
           id?: string
           name: string
+          ocd_id?: string | null
           parent_jurisdiction_id?: string | null
           slug: string
           type: string
@@ -346,8 +391,11 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          fips?: string | null
+          geo?: Json | null
           id?: string
           name?: string
+          ocd_id?: string | null
           parent_jurisdiction_id?: string | null
           slug?: string
           type?: string
@@ -366,6 +414,7 @@ export type Database = {
       legislation: {
         Row: {
           ai_summary: string | null
+          content_hash: string | null
           created_at: string | null
           districts: string[] | null
           doc_url: string | null
@@ -376,10 +425,12 @@ export type Database = {
           id: string
           introduced_at: string | null
           jurisdiction_id: string | null
+          occurred_at: string | null
           passed_at: string | null
           pdf_url: string | null
           people: Json | null
           source_id: string | null
+          source_url: string | null
           status: string | null
           summary: string | null
           tags: string[] | null
@@ -388,6 +439,7 @@ export type Database = {
         }
         Insert: {
           ai_summary?: string | null
+          content_hash?: string | null
           created_at?: string | null
           districts?: string[] | null
           doc_url?: string | null
@@ -398,10 +450,12 @@ export type Database = {
           id?: string
           introduced_at?: string | null
           jurisdiction_id?: string | null
+          occurred_at?: string | null
           passed_at?: string | null
           pdf_url?: string | null
           people?: Json | null
           source_id?: string | null
+          source_url?: string | null
           status?: string | null
           summary?: string | null
           tags?: string[] | null
@@ -410,6 +464,7 @@ export type Database = {
         }
         Update: {
           ai_summary?: string | null
+          content_hash?: string | null
           created_at?: string | null
           districts?: string[] | null
           doc_url?: string | null
@@ -420,10 +475,12 @@ export type Database = {
           id?: string
           introduced_at?: string | null
           jurisdiction_id?: string | null
+          occurred_at?: string | null
           passed_at?: string | null
           pdf_url?: string | null
           people?: Json | null
           source_id?: string | null
+          source_url?: string | null
           status?: string | null
           summary?: string | null
           tags?: string[] | null
@@ -453,6 +510,7 @@ export type Database = {
           ai_summary: string | null
           attachments: Json | null
           body_name: string | null
+          content_hash: string | null
           created_at: string | null
           embedding: string | null
           ends_at: string | null
@@ -462,7 +520,9 @@ export type Database = {
           jurisdiction_id: string | null
           location: string | null
           minutes_url: string | null
+          occurred_at: string | null
           source_id: string | null
+          source_url: string | null
           starts_at: string | null
           title: string | null
           updated_at: string | null
@@ -472,6 +532,7 @@ export type Database = {
           ai_summary?: string | null
           attachments?: Json | null
           body_name?: string | null
+          content_hash?: string | null
           created_at?: string | null
           embedding?: string | null
           ends_at?: string | null
@@ -481,7 +542,9 @@ export type Database = {
           jurisdiction_id?: string | null
           location?: string | null
           minutes_url?: string | null
+          occurred_at?: string | null
           source_id?: string | null
+          source_url?: string | null
           starts_at?: string | null
           title?: string | null
           updated_at?: string | null
@@ -491,6 +554,7 @@ export type Database = {
           ai_summary?: string | null
           attachments?: Json | null
           body_name?: string | null
+          content_hash?: string | null
           created_at?: string | null
           embedding?: string | null
           ends_at?: string | null
@@ -500,7 +564,9 @@ export type Database = {
           jurisdiction_id?: string | null
           location?: string | null
           minutes_url?: string | null
+          occurred_at?: string | null
           source_id?: string | null
+          source_url?: string | null
           starts_at?: string | null
           title?: string | null
           updated_at?: string | null
@@ -805,6 +871,39 @@ export type Database = {
           },
         ]
       }
+      trend_aggregate: {
+        Row: {
+          by_kind: Json | null
+          count: number
+          last_computed_at: string | null
+          sample_item_ids: string[] | null
+          scope_key: string
+          score: number
+          time_window: string
+          topic: string
+        }
+        Insert: {
+          by_kind?: Json | null
+          count?: number
+          last_computed_at?: string | null
+          sample_item_ids?: string[] | null
+          scope_key: string
+          score?: number
+          time_window: string
+          topic: string
+        }
+        Update: {
+          by_kind?: Json | null
+          count?: number
+          last_computed_at?: string | null
+          sample_item_ids?: string[] | null
+          scope_key?: string
+          score?: number
+          time_window?: string
+          topic?: string
+        }
+        Relationships: []
+      }
       watchlist: {
         Row: {
           created_at: string | null
@@ -879,6 +978,33 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_window_bounds: {
+        Args: { window_name: string }
+        Returns: {
+          end_time: string
+          start_time: string
+        }[]
+      }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
       halfvec_avg: {
         Args: { "": number[] }
         Returns: unknown
@@ -931,6 +1057,10 @@ export type Database = {
         Args: { "": string } | { "": unknown } | { "": unknown }
         Returns: unknown
       }
+      normalize_scope_key: {
+        Args: { scope_text: string }
+        Returns: string
+      }
       semantic_search: {
         Args: {
           match_count?: number
@@ -944,6 +1074,18 @@ export type Database = {
           summary: string
           title: string
         }[]
+      }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
       }
       sparsevec_out: {
         Args: { "": unknown }
