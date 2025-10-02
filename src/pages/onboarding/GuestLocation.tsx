@@ -65,13 +65,27 @@ export default function GuestLocation() {
         ? [...(ROLE_TOPICS[guestProfile.userRole as keyof typeof ROLE_TOPICS]?.defaultTopics || [])]
         : [];
 
+      // Find the selected jurisdiction to get parent jurisdictions
+      const selectedJuris = jurisdictions?.find(j => j.id === selectedJurisdiction);
+      
+      // For Austin, also get Travis County and Texas
+      let countyId = null;
+      let stateId = null;
+      
+      if (selectedJuris?.type === 'city') {
+        const county = jurisdictions?.find(j => j.type === 'county' && j.slug === 'travis-county-tx');
+        const state = jurisdictions?.find(j => j.type === 'state' && j.slug === 'texas');
+        countyId = county?.id;
+        stateId = state?.id;
+      }
+
       await updateGuestProfile(sessionId, {
         selectedJurisdictionId: selectedJurisdiction,
         defaultScope: selectedScope,
         topics: suggestedTopics
       });
 
-      toast.success("Setup complete! Exploring Austin data...");
+      toast.success("Setup complete! Loading live data...");
       navigate("/dashboard");
     } catch (error) {
       toast.error("Failed to save location");

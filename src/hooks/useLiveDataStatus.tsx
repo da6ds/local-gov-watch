@@ -1,37 +1,99 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export function useLiveDataStatus(jurisdictionSlug?: string) {
+interface LiveDataStatus {
+  hasLiveData: boolean;
+  lastRunAt: string | null;
+  reason?: string;
+  dataSource: 'live' | 'seed';
+}
+
+export function useLiveDataStatus(jurisdictionSlugs: string[]): {
+  data?: LiveDataStatus;
+  isLoading: boolean;
+} {
   return useQuery({
-    queryKey: ['live-data-status', jurisdictionSlug],
-    queryFn: async () => {
-      if (!jurisdictionSlug) return { hasLiveData: false, lastRunAt: null };
+    queryKey: ['live-data-status', ...jurisdictionSlugs],
+    queryFn: async (): Promise<LiveDataStatus> => {
+      if (jurisdictionSlugs.length === 0) {
+        return { 
+          hasLiveData: false, 
+          lastRunAt: null, 
+          reason: 'No jurisdiction specified',
+          dataSource: 'seed'
+        };
+      }
       
+      // Check connectors for all jurisdiction levels (city, county, state)
       const { data: connectors } = await supabase
         .from('connector')
-        .select('last_run_at, last_status')
-        .eq('jurisdiction_slug', jurisdictionSlug)
+        .select('last_run_at, last_status, jurisdiction_slug, kind')
+        .in('jurisdiction_slug', jurisdictionSlugs)
         .eq('enabled', true)
-        .order('last_run_at', { ascending: false })
-        .limit(1);
+        .eq('last_status', 'success')
+        .order('last_run_at', { ascending: false });
       
       if (!connectors || connectors.length === 0) {
-        return { hasLiveData: false, lastRunAt: null };
+        return { 
+          hasLiveData: false, 
+          lastRunAt: null, 
+          reason: 'No successful connector runs found',
+          dataSource: 'seed'
+        };
       }
       
-      const lastRun = connectors[0];
-      if (!lastRun.last_run_at) {
-        return { hasLiveData: false, lastRunAt: null };
-      }
-      
-      // Check if within 72 hours
-      const lastRunDate = new Date(lastRun.last_run_at);
+      // Check if any connector ran within 72 hours
       const now = new Date();
-      const hoursSinceRun = (now.getTime() - lastRunDate.getTime()) / (1000 * 60 * 60);
-      const hasLiveData = hoursSinceRun <= 72 && lastRun.last_status === 'success';
+      const recentConnectors = connectors.filter(c => {
+        if (!c.last_run_at) return false;
+        const lastRunDate = new Date(c.last_run_at);
+        const hoursSinceRun = (now.getTime() - lastRunDate.getTime()) / (1000 * 60 * 60);
+        return hoursSinceRun <= 72;
+      });
       
-      return { hasLiveData, lastRunAt: lastRun.last_run_at };
+      if (recentConnectors.length === 0) {
+        return {
+          hasLiveData: false,
+          lastRunAt: connectors[0]?.last_run_at || null,
+          reason: 'Last connector run was more than 72 hours ago',
+          dataSource: 'seed'
+        };
+      }
+      
+      // Check if we actually have data in the tables
+      const [legislationCount, meetingCount, electionCount] = await Promise.all([
+        supabase
+          .from('legislation')
+          .select('id', { count: 'exact', head: true })
+          .limit(1),
+        supabase
+          .from('meeting')
+          .select('id', { count: 'exact', head: true })
+          .limit(1),
+        supabase
+          .from('election')
+          .select('id', { count: 'exact', head: true })
+          .limit(1)
+      ]);
+      
+      const totalRows = (legislationCount.count || 0) + (meetingCount.count || 0) + (electionCount.count || 0);
+      
+      if (totalRows === 0) {
+        return {
+          hasLiveData: false,
+          lastRunAt: recentConnectors[0].last_run_at,
+          reason: 'Connectors ran successfully but no data in tables',
+          dataSource: 'seed'
+        };
+      }
+      
+      return { 
+        hasLiveData: true, 
+        lastRunAt: recentConnectors[0].last_run_at,
+        dataSource: 'live'
+      };
     },
-    enabled: !!jurisdictionSlug
+    enabled: jurisdictionSlugs.length > 0,
+    refetchInterval: 60000 // Refetch every minute
   });
 }

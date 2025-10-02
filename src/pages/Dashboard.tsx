@@ -12,6 +12,7 @@ import { format, subDays, addDays, formatDistanceToNow } from "date-fns";
 import { GuestBanner } from "@/components/GuestBanner";
 import { TrendsPlaceholder } from "@/components/TrendsPlaceholder";
 import { useLiveDataStatus } from "@/hooks/useLiveDataStatus";
+import { DataHealthDrawer } from "@/components/DataHealthDrawer";
 
 export default function Dashboard() {
   const { user, isGuest, guestSession } = useAuth();
@@ -51,9 +52,17 @@ export default function Dashboard() {
     enabled: !!effectiveJurisdictionId
   });
 
-  // Check if we have live data
-  const jurisdictionSlug = jurisdiction ? `${jurisdiction.type}:${jurisdiction.slug}` : undefined;
-  const { data: liveDataStatus } = useLiveDataStatus(jurisdictionSlug);
+  // Check if we have live data - pass hierarchical jurisdiction slugs
+  const jurisdictionSlugs: string[] = [];
+  if (jurisdiction) {
+    jurisdictionSlugs.push(jurisdiction.slug);
+    
+    // For Austin, also check Travis County and Texas
+    if (jurisdiction.slug === 'austin-tx') {
+      jurisdictionSlugs.push('travis-county-tx', 'texas');
+    }
+  }
+  const { data: liveDataStatus } = useLiveDataStatus(jurisdictionSlugs);
 
   // Fetch recent legislation (last 7 days)
   const { data: recentLegislation } = useQuery({
@@ -165,18 +174,23 @@ export default function Dashboard() {
               {jurisdiction?.name || 'Select a jurisdiction in settings'}
             </p>
           </div>
-          <Button asChild variant="outline">
-            <Link to="/settings">
-              <Bell className="h-4 w-4 mr-2" />
-              Settings
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            {profile?.is_admin && (
+              <DataHealthDrawer jurisdictionSlugs={jurisdictionSlugs} />
+            )}
+            <Button asChild variant="outline">
+              <Link to="/settings">
+                <Bell className="h-4 w-4 mr-2" />
+                Settings
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Live/Seed Data Status Banner */}
         {liveDataStatus && (
           <div className="flex items-center justify-center gap-2 text-sm bg-muted/50 rounded-lg px-4 py-3">
-            {liveDataStatus.hasLiveData ? (
+            {liveDataStatus.dataSource === 'live' ? (
               <>
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
@@ -197,7 +211,10 @@ export default function Dashboard() {
             ) : (
               <>
                 <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Demo data (seeded)</span>
+                <span className="text-muted-foreground">
+                  Demo data (seeded)
+                  {liveDataStatus.reason && ` - ${liveDataStatus.reason}`}
+                </span>
                 {profile?.is_admin && (
                   <>
                     <span className="text-muted-foreground">•</span>
