@@ -283,7 +283,7 @@ export default function Dashboard() {
                 </Link>
               </CardHeader>
               <CardContent>
-                <MiniCalendar scope={scopeString || 'austin-tx,travis-county-tx,texas'} />
+                <MiniCalendar scope={scopeString || 'austin-tx,travis-county-tx,texas'} showSidePanel={true} />
               </CardContent>
             </Card>
 

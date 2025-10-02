@@ -26,22 +26,7 @@ export function TrendsPlaceholder() {
   ];
 
   return (
-    <Card className="border-dashed">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              This Week's Trends
-            </CardTitle>
-            <CardDescription>
-              Popular topics in Austin civic governance
-            </CardDescription>
-          </div>
-          <Badge variant="secondary">Sample Data</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-4">
         {sampleTrends.map((trend) => (
           <div key={trend.tag} className="pb-4 border-b last:border-0 last:pb-0">
             <div className="flex items-start justify-between mb-2">
@@ -58,10 +43,9 @@ export function TrendsPlaceholder() {
             <p className="text-sm text-muted-foreground">{trend.summary}</p>
           </div>
         ))}
-        <p className="text-xs text-muted-foreground text-center pt-2">
-          Create an account to see real-time trends and get personalized insights
-        </p>
-      </CardContent>
-    </Card>
+      <p className="text-xs text-muted-foreground text-center pt-2">
+        Create an account to see real-time trends and get personalized insights
+      </p>
+    </div>
   );
 }
