@@ -53,8 +53,8 @@ function App() {
                 <Route path="/browse/elections" element={<BrowseElections />} />
                 <Route path="/browse/trends" element={<Trends />} />
                 <Route path="/legislation/:id" element={<LegislationDetail />} />
-                <Route path="/meeting/:id" element={<MeetingDetail />} />
-                <Route path="/election/:id" element={<ElectionDetail />} />
+                <Route path="/meetings/:id" element={<MeetingDetail />} />
+                <Route path="/elections/:id" element={<ElectionDetail />} />
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/watchlists" element={<Watchlists />} />
                 <Route path="*" element={<NotFound />} />

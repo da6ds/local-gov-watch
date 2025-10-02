@@ -61,7 +61,7 @@ export default function BrowseMeetings() {
   });
 
   const MeetingCard = ({ meeting }: { meeting: any }) => (
-    <Link to={`/meeting/${meeting.id}`}>
+    <Link to={`/meetings/${meeting.id}`}>
       <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer">
         <div className="flex items-start justify-between gap-4 mb-3">
           <div className="flex-1">

@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { format, isPast, differenceInDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 
 export default function BrowseElections() {
   const { user } = useAuth();
@@ -102,7 +103,8 @@ export default function BrowseElections() {
         ) : elections && elections.length > 0 ? (
           <div className="space-y-4">
             {elections.map((election) => (
-              <Card key={election.id} className="p-6">
+              <Link key={election.id} to={`/elections/${election.id}`}>
+                <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer">
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -137,6 +139,7 @@ export default function BrowseElections() {
                   )}
                 </div>
               </Card>
+              </Link>
             ))}
           </div>
         ) : (
