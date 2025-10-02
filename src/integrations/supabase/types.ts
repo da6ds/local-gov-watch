@@ -57,6 +57,7 @@ export type Database = {
           notes: string | null
           parser_key: string
           schedule: string | null
+          source_id: string | null
           updated_at: string
           url: string
         }
@@ -72,6 +73,7 @@ export type Database = {
           notes?: string | null
           parser_key: string
           schedule?: string | null
+          source_id?: string | null
           updated_at?: string
           url: string
         }
@@ -87,10 +89,19 @@ export type Database = {
           notes?: string | null
           parser_key?: string
           schedule?: string | null
+          source_id?: string | null
           updated_at?: string
           url?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "connector_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "source"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       election: {
         Row: {
