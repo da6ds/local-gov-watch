@@ -10,6 +10,8 @@ interface ConnectorStats {
   newCount: number;
   updatedCount: number;
   errorCount: number;
+  errors?: string[];
+  firstError?: string;
 }
 
 serve(async (req) => {
@@ -82,7 +84,7 @@ serve(async (req) => {
 
     if (runError) throw runError;
 
-    let stats: ConnectorStats = { newCount: 0, updatedCount: 0, errorCount: 0 };
+    let stats: ConnectorStats = { newCount: 0, updatedCount: 0, errorCount: 0, errors: [] };
     let status = "success";
     let log = "";
 
@@ -91,12 +93,28 @@ serve(async (req) => {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       stats = await runParser(connector, supabaseUrl, supabaseKey, sourceId, jurisdictionId);
-      log = `Completed: ${stats.newCount} new, ${stats.updatedCount} updated, ${stats.errorCount} errors`;
+      
+      // Enhanced logging with first error
+      const errorSummary = stats.errorCount > 0 && stats.errors && stats.errors.length > 0 
+        ? ` | First error: ${stats.errors[0]}` 
+        : '';
+      log = `Completed: ${stats.newCount} new, ${stats.updatedCount} updated, ${stats.errorCount} errors${errorSummary}`;
+      
+      if (stats.errorCount > 0 && stats.errors && stats.errors.length > 0) {
+        stats.firstError = stats.errors[0];
+      }
     } catch (error) {
       status = "error";
       const errorMessage = error instanceof Error ? error.message : String(error);
+      const stackTrace = error instanceof Error ? error.stack : '';
       log = `Error: ${errorMessage}`;
       console.error("Parser error:", error);
+      console.error("Stack trace:", stackTrace);
+      
+      if (stats.errors) {
+        stats.firstError = errorMessage;
+        stats.errors.push(errorMessage);
+      }
     }
 
     // Update connector status
@@ -180,6 +198,11 @@ async function runParser(
       await parseTravisElections(supabaseUrl, supabaseKey, sourceId, jurisdictionId, stats);
       break;
     }
+    case 'texas.bills': {
+      const { parseTexasBills } = await import('../_shared/parsers/texasBills.ts');
+      await parseTexasBills(supabaseUrl, supabaseKey, sourceId, jurisdictionId, stats);
+      break;
+    }
     default:
       throw new Error(`Unknown parser: ${connector.parser_key}`);
   }
@@ -188,5 +211,7 @@ async function runParser(
     newCount: stats.newCount,
     updatedCount: stats.updatedCount,
     errorCount: stats.errorCount,
+    errors: stats.errors,
+    firstError: stats.firstError,
   };
 }

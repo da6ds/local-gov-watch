@@ -107,6 +107,10 @@ export function createExternalId(parts: (string | number | Date | null | undefin
 }
 
 export interface IngestStats {
+  status?: string;
+  fetched?: number;
+  parsed?: number;
+  created?: number;
   newCount: number;
   updatedCount: number;
   skippedCount: number;
@@ -114,6 +118,9 @@ export interface IngestStats {
   pdfsProcessed: number;
   aiTokensUsed: number;
   errors: string[];
+  firstError?: string;
+  httpStatus?: number;
+  selectors?: string[];
 }
 
 export function createIngestStats(): IngestStats {
