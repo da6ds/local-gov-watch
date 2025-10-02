@@ -133,6 +133,45 @@ export type Database = {
         }
         Relationships: []
       }
+      digest_subscription: {
+        Row: {
+          active: boolean | null
+          cadence: string
+          confirmation_token: string | null
+          created_at: string | null
+          email: string
+          id: string
+          last_sent_at: string | null
+          locations: Json
+          name: string
+          topics: string[] | null
+        }
+        Insert: {
+          active?: boolean | null
+          cadence: string
+          confirmation_token?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          last_sent_at?: string | null
+          locations: Json
+          name: string
+          topics?: string[] | null
+        }
+        Update: {
+          active?: boolean | null
+          cadence?: string
+          confirmation_token?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          last_sent_at?: string | null
+          locations?: Json
+          name?: string
+          topics?: string[] | null
+        }
+        Relationships: []
+      }
       election: {
         Row: {
           content_hash: string | null

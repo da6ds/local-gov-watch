@@ -47,6 +47,7 @@ export function Layout({ children }: LayoutProps) {
     { href: "/browse/elections", label: "Elections" },
     { href: "/browse/trends", label: "Trends" },
     { href: "/calendar", label: "Calendar" },
+    { href: "/digest", label: "Digest" },
   ];
 
   const mobileNavItems = [...tabItems];
