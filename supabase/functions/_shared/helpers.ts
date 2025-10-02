@@ -18,6 +18,7 @@ export async function politeFetch(url: string, options: PoliteRequestOptions = {
   
   const headers = {
     'User-Agent': USER_AGENT,
+    'Accept-Language': 'en-US,en;q=0.9',
     ...options.headers,
   };
 
@@ -36,6 +37,16 @@ export async function politeFetch(url: string, options: PoliteRequestOptions = {
 
       if (response.ok) {
         return response;
+      }
+
+      // Honor Retry-After header
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After');
+        if (retryAfter && attempt < retries - 1) {
+          const delayMs = parseInt(retryAfter) * 1000 || RETRY_DELAYS[attempt];
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue;
+        }
       }
 
       if (response.status === 429 || response.status >= 500) {
@@ -120,7 +131,15 @@ export interface IngestStats {
   errors: string[];
   firstError?: string;
   httpStatus?: number;
+  finalUrl?: string;
+  method?: string;
+  retryCount?: number;
+  elapsedMs?: number;
+  responseSnippet?: string;
+  robotsChecked?: boolean;
+  robotsAllowed?: boolean;
   selectors?: string[];
+  parsedSamples?: string[];
 }
 
 export function createIngestStats(): IngestStats {
