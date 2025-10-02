@@ -93,16 +93,21 @@ export function CalendarView({ events, onExportICS, isLoading }: CalendarViewPro
         {sortedEvents.length === 0 ? (
           <Card className="p-12 text-center">
             <div className="max-w-md mx-auto space-y-4">
-              <p className="text-muted-foreground">No events match your current filters</p>
+              <p className="text-muted-foreground">No events in this time range</p>
               <div className="flex gap-2 justify-center flex-wrap">
                 <Button variant="outline" size="sm" onClick={handleNextMonth}>
-                  Next Month
+                  Next 30 Days
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => {
+                  setCurrentDate(addMonths(currentDate, 3));
+                }}>
+                  Next 90 Days
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleViewChange('month')}>
                   Month View
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">Try expanding your filters or date range</p>
+              <p className="text-sm text-muted-foreground">Try expanding your date range or adjusting filters</p>
             </div>
           </Card>
         ) : (
@@ -239,13 +244,18 @@ export function CalendarView({ events, onExportICS, isLoading }: CalendarViewPro
             <p className="text-muted-foreground">No events in this time range</p>
             <div className="flex gap-2 justify-center flex-wrap">
               <Button variant="outline" size="sm" onClick={handleNextMonth}>
-                Next Month
+                Next 30 Days
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                setCurrentDate(addMonths(currentDate, 3));
+              }}>
+                Next 90 Days
               </Button>
               <Button variant="outline" size="sm" onClick={() => handleViewChange('agenda')}>
                 Agenda View
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground">Try expanding your filters or selecting a different date range</p>
+            <p className="text-sm text-muted-foreground">Try expanding your date range or adjusting filters</p>
           </div>
         </Card>
       )}

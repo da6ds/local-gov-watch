@@ -82,12 +82,27 @@ Deno.serve(async (req) => {
       return parts[1] || parts[0];
     }).filter(Boolean);
 
+    // Get jurisdiction IDs from slugs
+    const { data: jurisdictions } = await supabase
+      .from('jurisdiction')
+      .select('id')
+      .in('slug', jurisdictionSlugs.length > 0 ? jurisdictionSlugs : ['austin-tx']);
+    
+    const jurisdictionIds = jurisdictions?.map(j => j.id) || [];
+    
+    if (jurisdictionIds.length === 0) {
+      return new Response(
+        JSON.stringify([]),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const includeKinds = kinds.split(',');
     const events: CalendarEvent[] = [];
 
     // Fetch meetings if requested
     if (includeKinds.includes('meetings')) {
-      let meetingQuery = supabase
+      const { data: meetings, error: meetingError } = await supabase
         .from('meeting')
         .select(`
           id,
@@ -98,24 +113,11 @@ Deno.serve(async (req) => {
           location,
           jurisdiction:jurisdiction_id(slug)
         `)
+        .in('jurisdiction_id', jurisdictionIds)
         .gte('starts_at', start)
         .lt('starts_at', end)
         .order('starts_at', { ascending: true })
         .limit(500);
-
-      if (jurisdictionSlugs.length > 0) {
-        const { data: jurisdictions } = await supabase
-          .from('jurisdiction')
-          .select('id')
-          .in('slug', jurisdictionSlugs);
-        
-        if (jurisdictions && jurisdictions.length > 0) {
-          const jurisdictionIds = jurisdictions.map(j => j.id);
-          meetingQuery = meetingQuery.in('jurisdiction_id', jurisdictionIds);
-        }
-      }
-
-      const { data: meetings, error: meetingError } = await meetingQuery;
 
       if (meetingError) {
         console.error('Error fetching meetings:', meetingError);
@@ -143,7 +145,7 @@ Deno.serve(async (req) => {
 
     // Fetch elections if requested
     if (includeKinds.includes('elections')) {
-      let electionQuery = supabase
+      const { data: elections, error: electionError } = await supabase
         .from('election')
         .select(`
           id,
@@ -152,24 +154,11 @@ Deno.serve(async (req) => {
           kind,
           jurisdiction:jurisdiction_id(slug)
         `)
+        .in('jurisdiction_id', jurisdictionIds)
         .gte('date', start.split('T')[0])
         .lt('date', end.split('T')[0])
         .order('date', { ascending: true })
         .limit(500);
-
-      if (jurisdictionSlugs.length > 0) {
-        const { data: jurisdictions } = await supabase
-          .from('jurisdiction')
-          .select('id')
-          .in('slug', jurisdictionSlugs);
-        
-        if (jurisdictions && jurisdictions.length > 0) {
-          const jurisdictionIds = jurisdictions.map(j => j.id);
-          electionQuery = electionQuery.in('jurisdiction_id', jurisdictionIds);
-        }
-      }
-
-      const { data: elections, error: electionError } = await electionQuery;
 
       if (electionError) {
         console.error('Error fetching elections:', electionError);
