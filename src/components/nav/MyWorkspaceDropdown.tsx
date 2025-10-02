@@ -15,7 +15,7 @@ import {
 
 const workspaceItems = [
   { label: "My Stances", icon: Heart, href: "/stances" },
-  { label: "My Lists", icon: List, href: "/watchlists", disabled: true },
+  { label: "My Lists", icon: List, href: "/watchlists" },
   { label: "Saved Searches", icon: Search, href: "#", disabled: true },
   { label: "Notifications", icon: Bell, href: "#", disabled: true },
   { label: "Settings", icon: Settings, href: "/settings", disabled: true },

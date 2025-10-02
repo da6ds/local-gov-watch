@@ -955,19 +955,28 @@ export type Database = {
       watchlist: {
         Row: {
           created_at: string | null
+          description: string | null
+          display_order: number | null
           id: string
+          is_default: boolean | null
           name: string
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
+          display_order?: number | null
           id?: string
+          is_default?: boolean | null
           name: string
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
+          description?: string | null
+          display_order?: number | null
           id?: string
+          is_default?: boolean | null
           name?: string
           user_id?: string | null
         }
@@ -984,23 +993,29 @@ export type Database = {
       watchlist_item: {
         Row: {
           created_at: string | null
+          display_order: number | null
           entity_id: string
           entity_type: string
           id: string
+          notes: string | null
           watchlist_id: string | null
         }
         Insert: {
           created_at?: string | null
+          display_order?: number | null
           entity_id: string
           entity_type: string
           id?: string
+          notes?: string | null
           watchlist_id?: string | null
         }
         Update: {
           created_at?: string | null
+          display_order?: number | null
           entity_id?: string
           entity_type?: string
           id?: string
+          notes?: string | null
           watchlist_id?: string | null
         }
         Relationships: [
