@@ -21,12 +21,10 @@ export function Layout({ children }: LayoutProps) {
     { href: "/browse/meetings", label: "Meetings" },
     { href: "/browse/elections", label: "Elections" },
     { href: "/browse/trends", label: "Trends" },
-  ];
-
-  const mobileNavItems = [
-    ...tabItems,
     { href: "/calendar", label: "Calendar" },
   ];
+
+  const mobileNavItems = [...tabItems];
 
   return (
     <div className="min-h-screen bg-background">
@@ -69,6 +67,11 @@ export function Layout({ children }: LayoutProps) {
             <span className="font-semibold hidden sm:inline-block">Local Gov Watch</span>
           </Link>
 
+          {/* Mobile Topics Pill - visible on mobile only, before Refresh */}
+          <div className="flex md:hidden items-center gap-2 ml-auto">
+            <TopicsPopover />
+          </div>
+
           {/* Desktop Nav - Tabs */}
           <nav className="hidden md:flex items-center gap-1 ml-8">
             {tabItems.map((item) => (
@@ -87,8 +90,8 @@ export function Layout({ children }: LayoutProps) {
             ))}
           </nav>
 
-          {/* Right Actions */}
-          <div className="hidden md:flex items-center gap-3 ml-auto">
+          {/* Right Actions - Desktop */}
+          <div className="hidden md:flex items-center gap-3 ml-auto h-10">
             <TopicsPopover />
             <RefreshControl />
           </div>

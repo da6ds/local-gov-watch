@@ -165,11 +165,11 @@ export default function Dashboard() {
             {/* Recent Legislation */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <Link to="/browse/legislation" className="group">
-                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors">
+                <Link to="/browse/legislation" className="group" aria-label="View all recent legislation updates">
+                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
                     <Scale className="h-5 w-5 text-primary" />
                     Recent Updates
-                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
                 <CardDescription>New bills and ordinances</CardDescription>
@@ -200,11 +200,11 @@ export default function Dashboard() {
             {/* Upcoming Meetings */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <Link to="/browse/meetings" className="group">
-                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors">
+                <Link to="/browse/meetings" className="group" aria-label="View all upcoming meetings">
+                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
                     <Calendar className="h-5 w-5 text-primary" />
                     Upcoming Meetings
-                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
                 <CardDescription>City & county sessions</CardDescription>
@@ -240,11 +240,11 @@ export default function Dashboard() {
             {/* Upcoming Elections */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <Link to="/browse/elections" className="group">
-                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors">
+                <Link to="/browse/elections" className="group" aria-label="View all upcoming elections">
+                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
                     <Vote className="h-5 w-5 text-primary" />
                     Upcoming Elections
-                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
                 <CardDescription>Register and vote</CardDescription>
@@ -283,11 +283,11 @@ export default function Dashboard() {
             {/* Calendar Card */}
             <Card>
               <CardHeader>
-                <Link to="/calendar" className="group">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors">
+                <Link to="/calendar" className="group" aria-label="View full calendar">
+                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
                     <Calendar className="h-5 w-5" />
                     Calendar
-                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
                 <CardDescription>Upcoming meetings and elections</CardDescription>
@@ -300,11 +300,11 @@ export default function Dashboard() {
             {/* Trends Card */}
             <Card>
               <CardHeader>
-                <Link to="/browse/trends" className="group">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors">
+                <Link to="/browse/trends" className="group" aria-label="View all trends">
+                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
                     <TrendingUp className="h-5 w-5" />
                     Trends
-                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
                 <CardDescription>What's happening now</CardDescription>

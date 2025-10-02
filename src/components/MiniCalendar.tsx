@@ -74,24 +74,11 @@ export function MiniCalendar({ scope }: MiniCalendarProps) {
   };
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Calendar</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[320px] w-full" />
-        </CardContent>
-      </Card>
-    );
+    return <Skeleton className="h-[320px] w-full" />;
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Calendar</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-4">
         <Calendar
           mode="single"
           selected={selectedDate}
@@ -132,7 +119,6 @@ export function MiniCalendar({ scope }: MiniCalendarProps) {
             No events on this day
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
   );
 }

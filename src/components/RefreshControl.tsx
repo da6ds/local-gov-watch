@@ -86,10 +86,10 @@ export function RefreshControl({ scope: propScope }: RefreshControlProps) {
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 h-10">
       {!isRefreshing && getTimestamp() && (
         <span
-          className="text-xs text-muted-foreground"
+          className="text-xs text-muted-foreground hidden lg:inline"
           aria-live="polite"
         >
           {getTimestamp()}
@@ -101,10 +101,11 @@ export function RefreshControl({ scope: propScope }: RefreshControlProps) {
         size="sm"
         onClick={handleRefresh}
         disabled={isRefreshing}
-        className="gap-2"
+        className="gap-2 h-10"
       >
         <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        {isRefreshing ? "Refreshing…" : "Refresh"}
+        <span className="hidden sm:inline">{isRefreshing ? "Refreshing…" : "Refresh"}</span>
+        {isRefreshing && <span className="sm:hidden">…</span>}
       </Button>
     </div>
   );

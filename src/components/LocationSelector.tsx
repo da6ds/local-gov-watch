@@ -60,22 +60,23 @@ export function LocationSelector({
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 w-full md:max-w-[420px]">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="justify-between min-h-[40px] h-auto"
+            className="justify-between h-10"
           >
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 overflow-hidden">
               <MapPin className="h-4 w-4 shrink-0" />
               {selectedJurisdictions.length === 0 ? (
-                <span className="text-muted-foreground">{placeholder}</span>
+                <span className="text-muted-foreground text-sm">{placeholder}</span>
               ) : (
-                <span className="text-sm">
-                  {selectedJurisdictions.map(j => j.name).join(', ')}
+                <span className="text-sm truncate">
+                  {selectedJurisdictions.slice(0, 2).map(j => j.name).join(', ')}
+                  {selectedJurisdictions.length > 2 && ` +${selectedJurisdictions.length - 2}`}
                 </span>
               )}
             </div>

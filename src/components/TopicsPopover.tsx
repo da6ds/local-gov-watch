@@ -89,13 +89,13 @@ export function TopicsPopover() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2"
+                className="gap-2 h-10"
                 aria-expanded={open}
                 aria-controls="topics-popover"
               >
                 <Filter className="h-4 w-4" />
-                Topics
-                <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+                <span className="hidden sm:inline">Topics</span>
+                <Badge variant="secondary" className="px-1.5 py-0 text-xs">
                   {getBadgeText()}
                 </Badge>
               </Button>
@@ -108,6 +108,15 @@ export function TopicsPopover() {
             id="topics-popover"
             className="w-80 p-4"
             align="end"
+            onOpenAutoFocus={(e) => {
+              // Prevent default auto-focus and focus search input instead
+              e.preventDefault();
+              const container = e.target as HTMLElement;
+              const searchInput = container.querySelector('input[type="text"]');
+              if (searchInput instanceof HTMLInputElement) {
+                setTimeout(() => searchInput.focus(), 0);
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
                 setOpen(false);
