@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 import Trends from "./pages/browse/Trends";
 import Digest from "./pages/Digest";
 import Unsubscribe from "./pages/Unsubscribe";
+import Search from "./pages/Search";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ function App() {
                 <Route path="/elections/:id" element={<ElectionDetail />} />
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/digest" element={<Digest />} />
+                <Route path="/search" element={<Search />} />
                 <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
                 <Route path="/unsubscribe" element={<Unsubscribe />} />
                 <Route path="/watchlists" element={<Watchlists />} />

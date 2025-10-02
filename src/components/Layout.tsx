@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { TopicsPopover } from "@/components/TopicsPopover";
 import { RefreshControl } from "@/components/RefreshControl";
 import { LocationSelector } from "@/components/LocationSelector";
+import { GlobalSearchBar } from "@/components/GlobalSearchBar";
 import { getGuestScope, setGuestScope } from "@/lib/guestSessionStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -111,8 +112,11 @@ export function Layout({ children }: LayoutProps) {
             ))}
           </nav>
 
-          {/* Global Filters - Desktop & Mobile */}
+          {/* Global Search & Filters - Desktop & Mobile */}
           <div className="flex items-center gap-2 ml-auto">
+            <div className="hidden sm:block">
+              <GlobalSearchBar />
+            </div>
             <LocationSelector 
               value={selectedJurisdictions}
               onChange={handleJurisdictionChange}

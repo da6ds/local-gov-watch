@@ -471,6 +471,7 @@ export type Database = {
           passed_at: string | null
           pdf_url: string | null
           people: Json | null
+          search_vector: unknown | null
           source_id: string | null
           source_url: string | null
           status: string | null
@@ -496,6 +497,7 @@ export type Database = {
           passed_at?: string | null
           pdf_url?: string | null
           people?: Json | null
+          search_vector?: unknown | null
           source_id?: string | null
           source_url?: string | null
           status?: string | null
@@ -521,6 +523,7 @@ export type Database = {
           passed_at?: string | null
           pdf_url?: string | null
           people?: Json | null
+          search_vector?: unknown | null
           source_id?: string | null
           source_url?: string | null
           status?: string | null
@@ -563,6 +566,7 @@ export type Database = {
           location: string | null
           minutes_url: string | null
           occurred_at: string | null
+          search_vector: unknown | null
           source_id: string | null
           source_url: string | null
           starts_at: string | null
@@ -585,6 +589,7 @@ export type Database = {
           location?: string | null
           minutes_url?: string | null
           occurred_at?: string | null
+          search_vector?: unknown | null
           source_id?: string | null
           source_url?: string | null
           starts_at?: string | null
@@ -607,6 +612,7 @@ export type Database = {
           location?: string | null
           minutes_url?: string | null
           occurred_at?: string | null
+          search_vector?: unknown | null
           source_id?: string | null
           source_url?: string | null
           starts_at?: string | null
