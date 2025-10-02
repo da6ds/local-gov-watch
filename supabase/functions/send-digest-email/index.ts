@@ -16,22 +16,79 @@ serve(async (req) => {
   try {
     const { email, name, locations, topics, cadence, test } = await req.json();
 
+    // Log incoming request
+    console.log('[send-digest-email] Received request:', {
+      email: email ? `${email.substring(0, 3)}***` : 'missing',
+      name: name ? 'provided' : 'missing',
+      locationsCount: locations?.length || 0,
+      topicsCount: topics?.length || 0,
+      cadence,
+      isTest: test,
+      timestamp: new Date().toISOString()
+    });
+
     // Validate inputs
     if (!email || !name || !locations || locations.length === 0) {
+      console.error('[send-digest-email] Validation failed: missing required fields');
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ 
+          error: 'Missing required fields',
+          code: 'VALIDATION_ERROR'
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // Environment check
+    const resendKey = Deno.env.get('RESEND_API_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    console.log('[send-digest-email] Environment check:', {
+      resendKeyExists: !!resendKey,
+      resendKeyLength: resendKey?.length || 0,
+      supabaseUrlExists: !!supabaseUrl,
+      supabaseKeyExists: !!supabaseKey
+    });
+
+    if (!resendKey) {
+      console.error('[send-digest-email] CRITICAL: RESEND_API_KEY not found in environment');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Email service not configured',
+          code: 'MISSING_API_KEY'
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Fetch digest data
-    const data = await fetchDigestData(locations, topics);
+    console.log('[send-digest-email] Fetching digest data...');
+    let data;
+    try {
+      data = await fetchDigestData(locations, topics);
+      console.log('[send-digest-email] Data fetched successfully:', {
+        legislationCount: data.legislation.length,
+        meetingsCount: data.meetings.length,
+        trendsCount: data.trends.length
+      });
+    } catch (dataError) {
+      console.error('[send-digest-email] Data fetch failed:', {
+        error: dataError instanceof Error ? dataError.message : String(dataError),
+        stack: dataError instanceof Error ? dataError.stack : undefined
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to fetch digest data',
+          code: 'DATA_FETCH_ERROR',
+          details: dataError instanceof Error ? dataError.message : undefined
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Get location names for display
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
+    const supabase = createClient(supabaseUrl!, supabaseKey!);
     const { data: jurisdictions } = await supabase
       .from('jurisdiction')
       .select('name')
@@ -40,37 +97,116 @@ serve(async (req) => {
     const locationNames = jurisdictions?.map((j) => j.name).join(', ') || locations.join(', ');
 
     // Generate HTML email
+    console.log('[send-digest-email] Generating email HTML...');
     const html = generateEmailHTML(name, locationNames, topics, cadence, data);
+    console.log('[send-digest-email] HTML generated:', {
+      htmlLength: html.length,
+      containsData: html.includes('item-title')
+    });
 
     // Send email via Resend
-    const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+    console.log('[send-digest-email] Sending via Resend...');
+    const resend = new Resend(resendKey);
     const cadenceLabel = cadence === 'daily' ? 'Daily' : cadence === 'weekly' ? 'Weekly' : 'Bi-weekly';
     
-    const { error: emailError } = await resend.emails.send({
-      from: 'Local Gov Watch <digest@localgovwatch.com>',
+    const emailPayload = {
+      from: 'Local Gov Watch <onboarding@resend.dev>',
       to: [email],
       subject: test 
         ? `Test: Your ${cadenceLabel} Local Gov Digest - ${locationNames}`
         : `Your ${cadenceLabel} Local Gov Digest - ${locationNames}`,
       html,
+    };
+
+    console.log('[send-digest-email] Email payload:', {
+      from: emailPayload.from,
+      to: emailPayload.to,
+      subject: emailPayload.subject,
+      htmlLength: emailPayload.html.length
     });
 
-    if (emailError) {
-      console.error('Email send error:', emailError);
+    try {
+      const { data: emailData, error: emailError } = await resend.emails.send(emailPayload);
+      
+      if (emailError) {
+        console.error('[send-digest-email] Resend API error:', {
+          error: emailError,
+          statusCode: (emailError as any).statusCode,
+          message: (emailError as any).message,
+          name: (emailError as any).name
+        });
+        
+        // Determine specific error type
+        const errorMessage = (emailError as any).message || String(emailError);
+        let userMessage = 'Failed to send email';
+        let errorCode = 'EMAIL_SEND_ERROR';
+        
+        if (errorMessage.includes('Invalid') || errorMessage.includes('validation')) {
+          userMessage = 'Invalid email configuration';
+          errorCode = 'INVALID_EMAIL_CONFIG';
+        } else if (errorMessage.includes('API key') || errorMessage.includes('authentication')) {
+          userMessage = 'Email service authentication failed';
+          errorCode = 'AUTH_ERROR';
+        } else if (errorMessage.includes('rate limit')) {
+          userMessage = 'Email rate limit exceeded. Please try again later.';
+          errorCode = 'RATE_LIMIT';
+        } else if (errorMessage.includes('domain')) {
+          userMessage = 'Email domain not verified';
+          errorCode = 'DOMAIN_NOT_VERIFIED';
+        }
+        
+        return new Response(
+          JSON.stringify({ 
+            error: userMessage,
+            code: errorCode,
+            details: errorMessage
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log('[send-digest-email] Email sent successfully:', {
+        id: emailData?.id,
+        timestamp: new Date().toISOString()
+      });
+      
       return new Response(
-        JSON.stringify({ error: 'Failed to send email' }),
+        JSON.stringify({ 
+          success: true,
+          emailId: emailData?.id 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (sendError) {
+      console.error('[send-digest-email] Unexpected error during send:', {
+        error: sendError instanceof Error ? sendError.message : String(sendError),
+        stack: sendError instanceof Error ? sendError.stack : undefined,
+        type: typeof sendError
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Unable to reach email service',
+          code: 'NETWORK_ERROR',
+          details: sendError instanceof Error ? sendError.message : undefined
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
-    console.error('Error in send-digest-email:', error);
+    console.error('[send-digest-email] Unhandled error:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      type: typeof error,
+      timestamp: new Date().toISOString()
+    });
+    
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

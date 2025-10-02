@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { LocationSelector } from "@/components/LocationSelector";
 import { InteractiveTopicChips } from "@/components/InteractiveTopicChips";
 import { DigestEmailPreview } from "@/components/DigestEmailPreview";
+import { EmailPreviewDialog } from "@/components/EmailPreviewDialog";
 import { useTopics } from "@/hooks/useTopics";
 import { useState } from "react";
 import { z } from "zod";
@@ -26,6 +27,45 @@ const digestFormSchema = z.object({
 });
 
 type DigestFormValues = z.infer<typeof digestFormSchema>;
+
+const ERROR_MESSAGES: Record<string, { title: string; description: string }> = {
+  MISSING_API_KEY: {
+    title: 'Email service not configured',
+    description: 'Please contact support to enable email functionality.'
+  },
+  DATA_FETCH_ERROR: {
+    title: 'Unable to load digest data',
+    description: 'There was an issue fetching your digest content. Please try again.'
+  },
+  INVALID_EMAIL_CONFIG: {
+    title: 'Invalid email configuration',
+    description: 'Please check your email address format and try again.'
+  },
+  AUTH_ERROR: {
+    title: 'Email service authentication failed',
+    description: 'Please contact support. Error code: AUTH_ERROR'
+  },
+  RATE_LIMIT: {
+    title: 'Too many requests',
+    description: 'Please wait a few minutes before trying again.'
+  },
+  DOMAIN_NOT_VERIFIED: {
+    title: 'Email domain not verified',
+    description: 'Please contact support to verify the sending domain.'
+  },
+  EMAIL_SEND_ERROR: {
+    title: 'Failed to send email',
+    description: 'Please try again or contact support if the issue persists.'
+  },
+  NETWORK_ERROR: {
+    title: 'Unable to reach email service',
+    description: 'Please check your connection and try again.'
+  },
+  INTERNAL_ERROR: {
+    title: 'Something went wrong',
+    description: 'Please try again or contact support if the issue persists.'
+  }
+};
 
 export default function Digest() {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
@@ -81,13 +121,31 @@ export default function Digest() {
     const locations = selectedLocations;
 
     if (!email || !name || locations.length === 0) {
-      toast.error("Please fill in email, name, and select at least one location");
+      toast.error("Please fill in all required fields", {
+        description: "Email, name, and at least one location are required."
+      });
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Invalid email address", {
+        description: "Please enter a valid email address."
+      });
       return;
     }
 
     setIsSendingTest(true);
+    console.log('[Digest] Sending test email:', {
+      email: `${email.substring(0, 3)}***`,
+      locationsCount: locations.length,
+      topicsCount: selectedTopics.length,
+      cadence: watchedCadence
+    });
+
     try {
-      const { error } = await supabase.functions.invoke('send-digest-email', {
+      const { data, error } = await supabase.functions.invoke('send-digest-email', {
         body: {
           email: email.trim(),
           name: name.trim(),
@@ -98,15 +156,50 @@ export default function Digest() {
         },
       });
 
-      if (error) throw error;
+      console.log('[Digest] Response:', { data, error });
 
+      if (error) {
+        console.error('[Digest] Supabase function error:', error);
+        throw error;
+      }
+
+      // Check if response contains an error from the edge function
+      if (data && typeof data === 'object' && 'error' in data) {
+        const errorCode = (data as any).code || 'UNKNOWN_ERROR';
+        const errorDetails = (data as any).details;
+        
+        console.error('[Digest] Edge function returned error:', {
+          code: errorCode,
+          error: data.error,
+          details: errorDetails
+        });
+
+        const errorMessage = ERROR_MESSAGES[errorCode] || ERROR_MESSAGES.INTERNAL_ERROR;
+        
+        toast.error(errorMessage.title, {
+          description: errorMessage.description
+        });
+        return;
+      }
+
+      console.log('[Digest] Test email sent successfully');
       toast.success(`Test email sent to ${email}!`, {
         description: "Check your inbox. It may take a minute to arrive."
       });
     } catch (error) {
-      console.error('Test email error:', error);
+      console.error('[Digest] Caught error:', error);
+      
+      // Handle network errors
+      if (error instanceof Error && error.message.includes('Failed to fetch')) {
+        toast.error("Network error", {
+          description: "Please check your internet connection and try again."
+        });
+        return;
+      }
+
+      // Default error
       toast.error("Failed to send test email", {
-        description: "Please try again or contact support."
+        description: "Please try again or contact support if the issue persists."
       });
     } finally {
       setIsSendingTest(false);
@@ -114,6 +207,13 @@ export default function Digest() {
   };
 
   const onSubmit = async (data: DigestFormValues) => {
+    console.log('[Digest] Submitting subscription:', {
+      email: `${data.email.substring(0, 3)}***`,
+      locationsCount: data.locations.length,
+      topicsCount: data.topics?.length || 0,
+      cadence: data.cadence
+    });
+
     try {
       const { error } = await supabase
         .from('digest_subscription')
@@ -127,9 +227,20 @@ export default function Digest() {
         });
 
       if (error) {
+        console.error('[Digest] Subscription insert error:', error);
+        
+        // Check for duplicate email
+        if (error.code === '23505') {
+          toast.error("Already subscribed", {
+            description: "This email is already subscribed. Check your inbox for confirmation."
+          });
+          return;
+        }
+        
         throw error;
       }
 
+      console.log('[Digest] Subscription created successfully');
       toast.success("You're subscribed!", {
         description: "Check your email for confirmation. Your first digest will arrive on the next scheduled day."
       });
@@ -139,9 +250,9 @@ export default function Digest() {
       setSelectedLocations([]);
       setSelectedTopics([]);
     } catch (error) {
-      console.error('Subscription error:', error);
+      console.error('[Digest] Subscription error:', error);
       toast.error("Failed to subscribe", {
-        description: "Please try again or contact support."
+        description: "Please try again or contact support if the issue persists."
       });
     }
   };
@@ -261,37 +372,53 @@ export default function Digest() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSendTest}
-                  disabled={!watchedEmail || !watchedName || selectedLocations.length === 0 || isSendingTest}
-                  className="flex-1"
-                >
-                  {isSendingTest ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    "Send Test Now"
-                  )}
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!isValid || isSubmitting || selectedLocations.length === 0}
-                  className="flex-1"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Subscribing...
-                    </>
-                  ) : (
-                    "Subscribe to Digest"
-                  )}
-                </Button>
+              <div className="space-y-3">
+                {/* Preview Button */}
+                <EmailPreviewDialog
+                  name={watchedName}
+                  locations={selectedLocations}
+                  topics={selectedTopics}
+                  cadence={watchedCadence}
+                  disabled={selectedLocations.length === 0}
+                />
+                
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSendTest}
+                    disabled={!watchedEmail || !watchedName || selectedLocations.length === 0 || isSendingTest}
+                    className="flex-1"
+                  >
+                    {isSendingTest ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      "Send Test Now"
+                    )}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={!isValid || isSubmitting || selectedLocations.length === 0}
+                    className="flex-1"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Subscribing...
+                      </>
+                    ) : (
+                      "Subscribe to Digest"
+                    )}
+                  </Button>
+                </div>
+                
+                <p className="text-xs text-muted-foreground text-center">
+                  Preview lets you see the email without sending. Test sends to your inbox.
+                </p>
               </div>
             </CardContent>
           </Card>
