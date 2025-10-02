@@ -142,20 +142,75 @@ export function Calendar({ variant = 'full' }: CalendarProps) {
     );
   }
 
-  // Tablet: Two-pane split
+  // Tablet: Two-pane split (full variant only)
   if (window.innerWidth >= 768 && window.innerWidth < 1024) {
+    if (variant === 'full') {
+      return (
+        <Card className={containerHeight} data-testid="calendar-card">
+          <CardContent className="p-0 h-full flex flex-col">
+            <div className="grid md:grid-cols-2 flex-1 min-h-0">
+              <div className="p-4 md:p-6 overflow-auto">
+                <CalendarGrid
+                  currentMonth={currentMonth}
+                  selectedDate={selectedDate}
+                  counts={counts}
+                  onDateSelect={handleDateSelect}
+                  onMonthChange={setCurrentMonth}
+                  variant="tablet"
+                />
+              </div>
+              <div className="border-l overflow-auto">
+                <DayPanel
+                  date={selectedDate}
+                  events={events}
+                  isLoading={eventsLoading}
+                  scope={scope}
+                  topics={topics}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+    // Dashboard variant: full-width grid
+    return (
+      <Card className={containerHeight} data-testid="calendar-card">
+        <CardContent className="p-4 md:p-6 h-full overflow-auto">
+          <CalendarGrid
+            currentMonth={currentMonth}
+            selectedDate={selectedDate}
+            counts={counts}
+            onDateSelect={handleDateSelect}
+            onMonthChange={setCurrentMonth}
+            variant="tablet"
+            enableHoverPopover
+            scope={scope}
+            topics={topics}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Desktop: Different layout based on variant
+  if (variant === 'full') {
+    // Full page: Grid with hover popover + right panel on click
     return (
       <Card className={containerHeight} data-testid="calendar-card">
         <CardContent className="p-0 h-full flex flex-col">
-          <div className="grid md:grid-cols-2 flex-1 min-h-0">
-            <div className="p-4 md:p-6 overflow-auto">
+          <div className="grid lg:grid-cols-2 flex-1 min-h-0">
+            <div className="p-4 lg:p-6 overflow-auto">
               <CalendarGrid
                 currentMonth={currentMonth}
                 selectedDate={selectedDate}
                 counts={counts}
                 onDateSelect={handleDateSelect}
                 onMonthChange={setCurrentMonth}
-                variant="tablet"
+                variant="desktop"
+                enableHoverPopover
+                scope={scope}
+                topics={topics}
               />
             </div>
             <div className="border-l overflow-auto">
@@ -173,34 +228,21 @@ export function Calendar({ variant = 'full' }: CalendarProps) {
     );
   }
 
-  // Desktop: Grid with hover popover + right panel on click
+  // Dashboard variant: full-width grid only
   return (
     <Card className={containerHeight} data-testid="calendar-card">
-      <CardContent className="p-0 h-full flex flex-col">
-        <div className="grid lg:grid-cols-2 flex-1 min-h-0">
-          <div className="p-4 lg:p-6 overflow-auto">
-            <CalendarGrid
-              currentMonth={currentMonth}
-              selectedDate={selectedDate}
-              counts={counts}
-              onDateSelect={handleDateSelect}
-              onMonthChange={setCurrentMonth}
-              variant="desktop"
-              enableHoverPopover
-              scope={scope}
-              topics={topics}
-            />
-          </div>
-          <div className="border-l overflow-auto">
-            <DayPanel
-              date={selectedDate}
-              events={events}
-              isLoading={eventsLoading}
-              scope={scope}
-              topics={topics}
-            />
-          </div>
-        </div>
+      <CardContent className="p-4 lg:p-6 h-full overflow-auto">
+        <CalendarGrid
+          currentMonth={currentMonth}
+          selectedDate={selectedDate}
+          counts={counts}
+          onDateSelect={handleDateSelect}
+          onMonthChange={setCurrentMonth}
+          variant="desktop"
+          enableHoverPopover
+          scope={scope}
+          topics={topics}
+        />
       </CardContent>
     </Card>
   );
