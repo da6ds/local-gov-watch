@@ -10,6 +10,7 @@ import { DigestEmailPreview } from "@/components/DigestEmailPreview";
 import { useTopics } from "@/hooks/useTopics";
 import { useState } from "react";
 import { z } from "zod";
+import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -72,6 +73,46 @@ export default function Digest() {
     setValue('topics', []);
   };
 
+  const [isSendingTest, setIsSendingTest] = useState(false);
+
+  const handleSendTest = async () => {
+    const email = watchedEmail;
+    const name = watchedName;
+    const locations = selectedLocations;
+
+    if (!email || !name || locations.length === 0) {
+      toast.error("Please fill in email, name, and select at least one location");
+      return;
+    }
+
+    setIsSendingTest(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-digest-email', {
+        body: {
+          email: email.trim(),
+          name: name.trim(),
+          locations,
+          topics: selectedTopics.length > 0 ? selectedTopics : null,
+          cadence: watchedCadence,
+          test: true,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Test email sent to ${email}!`, {
+        description: "Check your inbox. It may take a minute to arrive."
+      });
+    } catch (error) {
+      console.error('Test email error:', error);
+      toast.error("Failed to send test email", {
+        description: "Please try again or contact support."
+      });
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
+
   const onSubmit = async (data: DigestFormValues) => {
     try {
       const { error } = await supabase
@@ -86,14 +127,7 @@ export default function Digest() {
         });
 
       if (error) {
-        if (error.code === '23505') {
-          toast.error("This email is already subscribed", {
-            description: "Use a different email or contact support to update your subscription."
-          });
-        } else {
-          throw error;
-        }
-        return;
+        throw error;
       }
 
       toast.success("You're subscribed!", {
@@ -226,14 +260,39 @@ export default function Digest() {
                 </RadioGroup>
               </div>
 
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={!isValid || isSubmitting || selectedLocations.length === 0}
-              >
-                {isSubmitting ? "Subscribing..." : "Subscribe to Digest"}
-              </Button>
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSendTest}
+                  disabled={!watchedEmail || !watchedName || selectedLocations.length === 0 || isSendingTest}
+                  className="flex-1"
+                >
+                  {isSendingTest ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send Test Now"
+                  )}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!isValid || isSubmitting || selectedLocations.length === 0}
+                  className="flex-1"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Subscribing...
+                    </>
+                  ) : (
+                    "Subscribe to Digest"
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </form>

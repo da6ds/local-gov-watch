@@ -1,6 +1,31 @@
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, addDays } from "date-fns";
 
+export interface DigestData {
+  legislation: Array<{
+    id: string;
+    title: string;
+    status: string | null;
+    occurred_at: string | null;
+    jurisdictionName: string;
+    ai_summary: string | null;
+    summary: string | null;
+  }>;
+  meetings: Array<{
+    id: string;
+    title: string;
+    body_name: string;
+    starts_at: string;
+    location: string | null;
+    agenda_url: string | null;
+    jurisdictionName: string;
+  }>;
+  trends: Array<{
+    topic: string;
+    count: number;
+  }>;
+}
+
 export async function getPreviewLegislation(locations: string[], topics: string[]) {
   if (locations.length === 0) return [];
   
