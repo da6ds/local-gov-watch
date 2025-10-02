@@ -2,14 +2,16 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
-import { TrendingUp, Calendar, FileText, Bookmark, Bell, Sparkles, RefreshCw } from "lucide-react";
+import { TrendingUp, Calendar, FileText, Bookmark, Bell, Sparkles, RefreshCw, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, addDays, formatDistanceToNow } from "date-fns";
 import { GuestBanner } from "@/components/GuestBanner";
 import { TrendsPlaceholder } from "@/components/TrendsPlaceholder";
+import { useLiveDataStatus } from "@/hooks/useLiveDataStatus";
 
 export default function Dashboard() {
   const { user, isGuest, guestSession } = useAuth();
@@ -48,6 +50,10 @@ export default function Dashboard() {
     },
     enabled: !!effectiveJurisdictionId
   });
+
+  // Check if we have live data
+  const jurisdictionSlug = jurisdiction ? `${jurisdiction.type}:${jurisdiction.slug}` : undefined;
+  const { data: liveDataStatus } = useLiveDataStatus(jurisdictionSlug);
 
   // Fetch recent legislation (last 7 days)
   const { data: recentLegislation } = useQuery({
@@ -167,13 +173,52 @@ export default function Dashboard() {
           </Button>
         </div>
 
+        {/* Live/Seed Data Status Banner */}
+        {liveDataStatus && (
+          <div className="flex items-center justify-center gap-2 text-sm bg-muted/50 rounded-lg px-4 py-3">
+            {liveDataStatus.hasLiveData ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="font-medium">
+                    Live as of {liveDataStatus.lastRunAt && formatDistanceToNow(new Date(liveDataStatus.lastRunAt), { addSuffix: true })}
+                  </span>
+                </div>
+                {profile?.is_admin && (
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    <Link to="/admin/connectors" className="text-primary hover:underline flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3" />
+                      Refresh live data
+                    </Link>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Demo data (seeded)</span>
+                {profile?.is_admin && (
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    <Link to="/admin/connectors" className="text-primary hover:underline flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3" />
+                      Run connectors
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
         {/* Snapshot Cards - Zero-click data access */}
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="civic-card">
             <CardHeader>
               <TrendingUp className="h-8 w-8 text-primary mb-2" />
               <CardTitle>Recent Updates</CardTitle>
-              <CardDescription>New legislation this week</CardDescription>
+              <CardDescription>New legislation (last 7 days)</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold mb-2">{recentLegislation?.length || 0}</p>
@@ -267,23 +312,6 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Live Data Status */}
-        {latestConnectorRun?.last_run_at && (
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <span>
-              Live data as of {formatDistanceToNow(new Date(latestConnectorRun.last_run_at), { addSuffix: true })}
-            </span>
-            {profile?.is_admin && (
-              <>
-                <span>•</span>
-                <Link to="/admin/connectors" className="text-primary hover:underline flex items-center gap-1">
-                  <RefreshCw className="h-3 w-3" />
-                  Manage connectors
-                </Link>
-              </>
-            )}
-          </div>
-        )}
 
         {/* Topics Card */}
         {userTopics.length > 0 && (
@@ -302,50 +330,63 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {userTopics.map(topic => (
-                  <Badge key={topic} variant="secondary" className="text-sm capitalize">
-                    {topic.replace(/-/g, ' ')}
-                  </Badge>
-                ))}
-              </div>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start" 
-                  asChild={!isGuest}
-                  disabled={isGuest}
-                >
+              <TooltipProvider>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {userTopics.map(topic => (
+                    <Badge key={topic} variant="secondary" className="text-sm capitalize">
+                      {topic.replace(/-/g, ' ')}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="space-y-2">
                   {isGuest ? (
-                    <div className="w-full">
-                      <Bookmark className="h-4 w-4 mr-2" />
-                      Save to Watchlist (Create account)
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className="w-full justify-start" 
+                          disabled
+                        >
+                          <Bookmark className="h-4 w-4 mr-2" />
+                          Save to Watchlist
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Create an account to save watchlists</p>
+                      </TooltipContent>
+                    </Tooltip>
                   ) : (
-                    <Link to="/browse/legislation">
-                      <Bookmark className="h-4 w-4 mr-2" />
-                      Save to Watchlist
-                    </Link>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      asChild
+                    >
+                      <Link to="/browse/legislation">
+                        <Bookmark className="h-4 w-4 mr-2" />
+                        Save to Watchlist
+                      </Link>
+                    </Button>
                   )}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start" 
-                  asChild={!isGuest}
-                >
-                  {isGuest ? (
-                    <Link to="/digest-preview">
-                      <Bell className="h-4 w-4 mr-2" />
-                      Preview Digest
-                    </Link>
-                  ) : (
-                    <Link to="/settings">
-                      <Bell className="h-4 w-4 mr-2" />
-                      Update Digest Preferences
-                    </Link>
-                  )}
-                </Button>
-              </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    asChild
+                  >
+                    {isGuest ? (
+                      <Link to="/digest-preview">
+                        <Bell className="h-4 w-4 mr-2" />
+                        Preview Digest
+                      </Link>
+                    ) : (
+                      <Link to="/settings">
+                        <Bell className="h-4 w-4 mr-2" />
+                        Update Digest Preferences
+                      </Link>
+                    )}
+                  </Button>
+                </div>
+              </TooltipProvider>
             </CardContent>
           </Card>
         )}

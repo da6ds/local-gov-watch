@@ -38,11 +38,12 @@ export default function GuestLocation() {
     }
   });
 
-  // Auto-select Austin on mount
+  // Auto-select Austin and city scope on mount
   useEffect(() => {
     if (jurisdictions && !selectedJurisdiction) {
-      const austin = jurisdictions.find(j => j.slug === 'austin-tx');
+      const austin = jurisdictions.find(j => j.slug === 'austin-tx' && j.type === 'city');
       if (austin) {
+        setSelectedScope('city');
         setSelectedJurisdiction(austin.id);
       }
     }

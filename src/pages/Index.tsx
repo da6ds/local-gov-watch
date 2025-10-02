@@ -25,19 +25,23 @@ export default function Index() {
           Track Local Government Like Never Before
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl text-balance">
-          Hyper-local. AI-smart. Costs dozens, not thousands.
+          Live Austin data. AI-powered insights. Zero signup required.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
-          <Button size="lg" onClick={handleTryNow} className="touch-target">
-            Try it now (no signup)
+          <Button 
+            size="lg" 
+            onClick={handleTryNow} 
+            className="touch-target text-lg px-8 shadow-lg hover:shadow-xl transition-shadow"
+          >
+            Try it now — No signup
           </Button>
           <Button size="lg" variant="outline" asChild className="touch-target">
-            <Link to="/browse/legislation">Browse Legislation</Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild className="touch-target">
-            <Link to="/calendar">View Calendar</Link>
+            <Link to="/auth">Sign In</Link>
           </Button>
         </div>
+        <p className="text-sm text-muted-foreground mt-2">
+          Or explore: <Link to="/browse/legislation" className="text-primary hover:underline">Legislation</Link> • <Link to="/calendar" className="text-primary hover:underline">Calendar</Link> • <Link to="/browse/elections" className="text-primary hover:underline">Elections</Link>
+        </p>
       </div>
 
       {/* Features Grid */}
