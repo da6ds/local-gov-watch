@@ -46,13 +46,26 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const start = url.searchParams.get('start');
-    const end = url.searchParams.get('end');
-    const scope = url.searchParams.get('scope') || '';
-    const kinds = url.searchParams.get('kinds') || 'meetings,elections';
-    const format = url.searchParams.get('format'); // 'ics' for ICS export
-    const sessionId = url.searchParams.get('session_id') || '';
+    // Support both GET (with query params) and POST (with body)
+    let start, end, scope, kinds, format, sessionId;
+    
+    if (req.method === 'POST') {
+      const body = await req.json();
+      start = body.start;
+      end = body.end;
+      scope = body.scope || '';
+      kinds = body.kinds || 'meetings,elections';
+      format = body.format;
+      sessionId = body.session_id || '';
+    } else {
+      const url = new URL(req.url);
+      start = url.searchParams.get('start');
+      end = url.searchParams.get('end');
+      scope = url.searchParams.get('scope') || '';
+      kinds = url.searchParams.get('kinds') || 'meetings,elections';
+      format = url.searchParams.get('format');
+      sessionId = url.searchParams.get('session_id') || '';
+    }
 
     // Rate limiting for guests
     const authHeader = req.headers.get('Authorization');
@@ -77,7 +90,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Parse scope into jurisdiction slugs
-    const jurisdictionSlugs = scope.split(',').map(s => {
+    const jurisdictionSlugs = scope.split(',').map((s: string) => {
       const parts = s.split(':');
       return parts[1] || parts[0];
     }).filter(Boolean);

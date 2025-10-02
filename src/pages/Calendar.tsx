@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { CalendarView } from "@/components/CalendarView";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCalendarDataStatus } from "@/hooks/useCalendarDataStatus";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfMonth, endOfMonth, addDays } from "date-fns";
+import { format, startOfMonth, endOfMonth, addDays, addHours } from "date-fns";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { getGuestSessionId, getGuestProfile } from "@/lib/guestSession";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 interface CalendarEvent {
   id: string;
@@ -43,10 +43,27 @@ export default function Calendar() {
     return new Set(kindsParam ? kindsParam.split(',') : ['meetings', 'elections']);
   });
   
-  const [dateRange, setDateRange] = useState({
-    start: startOfMonth(new Date()),
-    end: endOfMonth(addDays(new Date(), 60)), // 2 months
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState<'month' | 'agenda'>(() => {
+    const saved = localStorage.getItem('calendar_view');
+    return (saved === 'agenda' ? 'agenda' : 'month') as 'month' | 'agenda';
   });
+  const [showDebug, setShowDebug] = useState(false);
+  
+  // Dynamic date range based on view
+  const dateRange = (() => {
+    if (view === 'agenda') {
+      return {
+        start: new Date(),
+        end: addDays(new Date(), 60),
+      };
+    }
+    // Month view: pad by 1 day on each side for timezone safety
+    return {
+      start: addDays(startOfMonth(currentDate), -1),
+      end: addDays(endOfMonth(currentDate), 1),
+    };
+  })();
 
   // Fetch user or guest profile for jurisdiction
   const { data: profile } = useQuery({
@@ -98,8 +115,8 @@ export default function Calendar() {
   const { data: calendarDataStatus, isLoading: statusLoading } = useCalendarDataStatus(jurisdictionIds);
 
   // Fetch calendar events
-  const { data: events = [], isLoading: eventsLoading } = useQuery<CalendarEvent[]>({
-    queryKey: ['calendar-events', dateRange, jurisdictionSlugs, selectedKinds],
+  const { data: rawEvents = [], isLoading: eventsLoading } = useQuery<CalendarEvent[]>({
+    queryKey: ['calendar-events', dateRange.start.toISOString(), dateRange.end.toISOString(), jurisdictionSlugs, Array.from(selectedKinds).join(','), view],
     queryFn: async () => {
       const scopeParam = jurisdictionSlugs.map(slug => {
         if (slug === 'austin-tx') return 'city:austin-tx';
@@ -109,33 +126,32 @@ export default function Calendar() {
       }).join(',');
 
       const sessionId = getGuestSessionId();
-      const params = new URLSearchParams({
-        start: dateRange.start.toISOString(),
-        end: dateRange.end.toISOString(),
-        scope: scopeParam,
-        kinds: Array.from(selectedKinds).join(','),
-        ...(sessionId && !user ? { session_id: sessionId } : {}),
+      const { data, error } = await supabase.functions.invoke('calendar-api', {
+        body: {
+          start: dateRange.start.toISOString(),
+          end: dateRange.end.toISOString(),
+          scope: scopeParam,
+          kinds: Array.from(selectedKinds).join(','),
+          session_id: sessionId && !user ? sessionId : undefined,
+        },
       });
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-api?${params}`,
-        {
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Calendar API error:', errorText);
+      if (error) {
+        console.error('Calendar API error:', error);
         throw new Error('Failed to fetch calendar events');
       }
 
-      return response.json();
+      return data as CalendarEvent[];
     },
     enabled: jurisdictionSlugs.length > 0,
   });
+
+  // Coerce ISO strings to Date objects with proper defaults
+  const events = rawEvents.map(e => ({
+    ...e,
+    start: new Date(e.start),
+    end: e.end ? new Date(e.end) : (e.allDay ? new Date(e.start) : addHours(new Date(e.start), 2)),
+  }));
 
   const handleExportICS = async () => {
     try {
@@ -191,6 +207,8 @@ export default function Calendar() {
     }
   };
 
+  const isAdmin = user?.email?.includes('admin');
+
   const toggleKind = (kind: string) => {
     const newKinds = new Set(selectedKinds);
     if (newKinds.has(kind)) {
@@ -228,16 +246,15 @@ export default function Calendar() {
         {/* Live Data Status */}
         {calendarDataStatus && (
           <div className={`flex items-center gap-2 p-3 rounded-lg ${
-            calendarDataStatus.hasLiveData 
+            calendarDataStatus.hasLiveData && events.length > 0
               ? 'bg-green-500/10 border border-green-500/20' 
               : 'bg-yellow-500/10 border border-yellow-500/20'
           }`}>
-            {calendarDataStatus.hasLiveData ? (
+            {calendarDataStatus.hasLiveData && events.length > 0 ? (
               <>
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 <span className="text-sm">
                   Live as of {calendarDataStatus.lastRunAt && format(new Date(calendarDataStatus.lastRunAt), 'MMM d, h:mm a')}
-                  {user?.email?.includes('admin') && ` • ${calendarDataStatus.meetingCount} meetings, ${calendarDataStatus.electionCount} elections`}
                 </span>
               </>
             ) : (
@@ -247,6 +264,44 @@ export default function Calendar() {
                   Demo data (seeded){calendarDataStatus.reason && ` • ${calendarDataStatus.reason}`}
                 </span>
               </>
+            )}
+          </div>
+        )}
+
+        {/* Admin Debug Overlay */}
+        {isAdmin && (
+          <div className="border border-border rounded-lg overflow-hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDebug(!showDebug)}
+              className="w-full justify-between"
+            >
+              <span className="text-xs font-mono">Debug Info</span>
+              {showDebug ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+            {showDebug && (
+              <div className="p-4 bg-muted/50 space-y-2 text-xs font-mono">
+                <div><strong>View:</strong> {view}</div>
+                <div><strong>Date Window:</strong> {format(dateRange.start, 'yyyy-MM-dd HH:mm')} → {format(dateRange.end, 'yyyy-MM-dd HH:mm')}</div>
+                <div><strong>Active Scope:</strong> {jurisdictionSlugs.join(', ') || 'none'}</div>
+                <div><strong>Selected Kinds:</strong> {Array.from(selectedKinds).join(', ')}</div>
+                <div><strong>Events Loaded:</strong> {events.length}</div>
+                {events.length > 0 && (
+                  <div>
+                    <strong>First 3 Events:</strong>
+                    <ul className="ml-4 mt-1 space-y-1">
+                      {events.slice(0, 3).map(e => (
+                        <li key={e.id}>
+                          {e.title} ({e.kind}) - {format(e.start, 'MMM d, h:mm a')}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div><strong>Last Meeting Run:</strong> {calendarDataStatus?.lastRunAt ? format(new Date(calendarDataStatus.lastRunAt), 'MMM d, h:mm a') : 'Never'}</div>
+                <div><strong>DB Counts:</strong> {calendarDataStatus?.meetingCount} meetings, {calendarDataStatus?.electionCount} elections</div>
+              </div>
             )}
           </div>
         )}
@@ -294,6 +349,10 @@ export default function Calendar() {
             events={events}
             onExportICS={handleExportICS}
             isLoading={eventsLoading}
+            currentDate={currentDate}
+            onDateChange={setCurrentDate}
+            view={view}
+            onViewChange={setView}
           />
         )}
       </div>

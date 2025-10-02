@@ -11,8 +11,8 @@ interface CalendarEvent {
   id: string;
   kind: 'meeting' | 'election';
   title: string;
-  start: string;
-  end: string | null;
+  start: Date;
+  end: Date | null;
   allDay: boolean;
   location: string | null;
   bodyName: string | null;
@@ -24,19 +24,25 @@ interface CalendarViewProps {
   events: CalendarEvent[];
   onExportICS: () => void;
   isLoading?: boolean;
+  currentDate: Date;
+  onDateChange: (date: Date) => void;
+  view: 'month' | 'agenda';
+  onViewChange: (view: 'month' | 'agenda') => void;
 }
 
-export function CalendarView({ events, onExportICS, isLoading }: CalendarViewProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<'month' | 'agenda'>(() => {
-    const saved = localStorage.getItem('calendar_view');
-    if (saved === 'agenda') return 'agenda';
-    return 'month';
-  });
+export function CalendarView({ 
+  events, 
+  onExportICS, 
+  isLoading, 
+  currentDate, 
+  onDateChange, 
+  view, 
+  onViewChange 
+}: CalendarViewProps) {
   const navigate = useNavigate();
 
   const handleViewChange = (newView: 'month' | 'agenda') => {
-    setView(newView);
+    onViewChange(newView);
     localStorage.setItem('calendar_view', newView);
   };
 
@@ -49,7 +55,7 @@ export function CalendarView({ events, onExportICS, isLoading }: CalendarViewPro
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
     events.forEach(event => {
-      const dateKey = format(parseISO(event.start), 'yyyy-MM-dd');
+      const dateKey = format(event.start, 'yyyy-MM-dd');
       if (!map.has(dateKey)) {
         map.set(dateKey, []);
       }
@@ -58,9 +64,9 @@ export function CalendarView({ events, onExportICS, isLoading }: CalendarViewPro
     return map;
   }, [events]);
 
-  const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-  const handleToday = () => setCurrentDate(new Date());
+  const handlePrevMonth = () => onDateChange(subMonths(currentDate, 1));
+  const handleNextMonth = () => onDateChange(addMonths(currentDate, 1));
+  const handleToday = () => onDateChange(new Date());
 
   const handleEventClick = (event: CalendarEvent) => {
     navigate(event.detailUrl);
@@ -68,7 +74,7 @@ export function CalendarView({ events, onExportICS, isLoading }: CalendarViewPro
 
   if (view === 'agenda') {
     const sortedEvents = [...events].sort((a, b) => 
-      new Date(a.start).getTime() - new Date(b.start).getTime()
+      a.start.getTime() - b.start.getTime()
     );
 
     return (
@@ -99,7 +105,7 @@ export function CalendarView({ events, onExportICS, isLoading }: CalendarViewPro
                   Next 30 Days
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => {
-                  setCurrentDate(addMonths(currentDate, 3));
+                  onDateChange(addMonths(currentDate, 3));
                 }}>
                   Next 90 Days
                 </Button>
@@ -120,11 +126,11 @@ export function CalendarView({ events, onExportICS, isLoading }: CalendarViewPro
               >
                 <div className="flex items-start gap-4">
                   <div className="text-center min-w-[60px]">
-                    <div className="text-2xl font-bold">{format(parseISO(event.start), 'd')}</div>
-                    <div className="text-xs text-muted-foreground uppercase">{format(parseISO(event.start), 'MMM')}</div>
+                    <div className="text-2xl font-bold">{format(event.start, 'd')}</div>
+                    <div className="text-xs text-muted-foreground uppercase">{format(event.start, 'MMM')}</div>
                     {!event.allDay && (
                       <div className="text-xs text-muted-foreground mt-1">
-                        {format(parseISO(event.start), 'h:mm a')}
+                        {format(event.start, 'h:mm a')}
                       </div>
                     )}
                   </div>
@@ -222,7 +228,7 @@ export function CalendarView({ events, onExportICS, isLoading }: CalendarViewPro
                       )}
                       title={event.title}
                     >
-                      {!event.allDay && format(parseISO(event.start), 'h:mm a') + ' '}
+                      {!event.allDay && format(event.start, 'h:mm a') + ' '}
                       {event.title}
                     </div>
                   ))}
@@ -243,14 +249,14 @@ export function CalendarView({ events, onExportICS, isLoading }: CalendarViewPro
           <div className="max-w-md mx-auto space-y-4">
             <p className="text-muted-foreground">No events in this time range</p>
             <div className="flex gap-2 justify-center flex-wrap">
-              <Button variant="outline" size="sm" onClick={handleNextMonth}>
-                Next 30 Days
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => {
-                setCurrentDate(addMonths(currentDate, 3));
-              }}>
-                Next 90 Days
-              </Button>
+                <Button variant="outline" size="sm" onClick={handleNextMonth}>
+                  Next 30 Days
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => {
+                  onDateChange(addMonths(currentDate, 3));
+                }}>
+                  Next 90 Days
+                </Button>
               <Button variant="outline" size="sm" onClick={() => handleViewChange('agenda')}>
                 Agenda View
               </Button>
