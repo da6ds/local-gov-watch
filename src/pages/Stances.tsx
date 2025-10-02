@@ -6,11 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ThumbsUp, ThumbsDown, Eye, XCircle, Info } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Eye, XCircle, Info, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getAllStances, type StanceType } from "@/lib/stanceStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { useDemoUser } from "@/hooks/useDemoUser";
+import { DemoLoginDialog } from "@/components/DemoLoginDialog";
 
 interface LegislationWithStance {
   id: string;
@@ -23,6 +25,8 @@ interface LegislationWithStance {
 }
 
 export default function Stances() {
+  const { isLoggedIn } = useDemoUser();
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [stances, setStances] = useState(getAllStances());
   const legislationIds = stances.map(s => s.legislationId);
 
@@ -161,6 +165,41 @@ export default function Stances() {
     );
   };
 
+  // Show login prompt if not logged in
+  if (!isLoggedIn) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-bold">My Stances</h1>
+            <p className="text-muted-foreground">
+              Track and manage your positions on local legislation
+            </p>
+          </div>
+
+          <Card className="p-12 text-center">
+            <div className="flex flex-col items-center gap-4 max-w-md mx-auto">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Sparkles className="h-8 w-8 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">Try the Demo to Use This Feature</h3>
+                <p className="text-muted-foreground text-sm">
+                  Start a demo session to track your stances on legislation. Your data will be saved for this browser session only.
+                </p>
+              </div>
+              <Button onClick={() => setShowLoginDialog(true)} className="mt-4 gap-2">
+                <Sparkles className="h-4 w-4" />
+                Start Demo
+              </Button>
+            </div>
+          </Card>
+        </div>
+        <DemoLoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -177,10 +216,10 @@ export default function Stances() {
               <div className="flex items-start gap-3">
                 <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">Using Local Storage</p>
+                  <p className="text-sm font-medium">Demo Mode: Temporary Data</p>
                   <p className="text-xs text-muted-foreground">
-                    Your stances are saved in your browser. They'll persist across sessions but won't sync across devices. 
-                    User accounts coming soon!
+                    Stances are saved for this session only. Your data will clear when you end the demo or close this tab. 
+                    Email subscriptions (digests and alerts) are permanent and email-based.
                   </p>
                 </div>
               </div>

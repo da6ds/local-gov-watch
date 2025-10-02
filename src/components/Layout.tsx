@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Menu, Scale } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -11,6 +12,12 @@ import { BrowseDropdown } from "@/components/nav/BrowseDropdown";
 import { MyWorkspaceDropdown } from "@/components/nav/MyWorkspaceDropdown";
 import { SearchIconButton } from "@/components/nav/SearchIconButton";
 import { OmniFiltersBar } from "@/components/nav/OmniFiltersBar";
+import { useDemoUser } from "@/hooks/useDemoUser";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -21,6 +28,7 @@ export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const queryClient = useQueryClient();
   const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([]);
+  const { isLoggedIn } = useDemoUser();
 
   // Initialize from session storage
   useEffect(() => {
@@ -118,6 +126,18 @@ export function Layout({ children }: LayoutProps) {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-2 ml-auto">
+            {isLoggedIn && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 hidden sm:flex">
+                    Demo Mode
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Your data is temporary and will clear when you close this tab
+                </TooltipContent>
+              </Tooltip>
+            )}
             <SearchIconButton />
             <div className="hidden md:flex">
               <MyWorkspaceDropdown />

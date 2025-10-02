@@ -17,7 +17,7 @@ export function setStance(legislationId: string, legislationTitle: string, stanc
   const key = `${STANCE_PREFIX}${legislationId}`;
   
   if (stance === null) {
-    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
     return;
   }
   
@@ -28,14 +28,14 @@ export function setStance(legislationId: string, legislationTitle: string, stanc
     timestamp: new Date().toISOString()
   };
   
-  localStorage.setItem(key, JSON.stringify(data));
+  sessionStorage.setItem(key, JSON.stringify(data));
 }
 
 export function getStance(legislationId: string): StanceType {
   if (typeof window === 'undefined') return null;
   
   const key = `${STANCE_PREFIX}${legislationId}`;
-  const stored = localStorage.getItem(key);
+  const stored = sessionStorage.getItem(key);
   
   if (!stored) return null;
   
@@ -52,10 +52,10 @@ export function getAllStances(): StanceData[] {
   
   const stances: StanceData[] = [];
   
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
     if (key?.startsWith(STANCE_PREFIX)) {
-      const stored = localStorage.getItem(key);
+      const stored = sessionStorage.getItem(key);
       if (stored) {
         try {
           const data: StanceData = JSON.parse(stored);
