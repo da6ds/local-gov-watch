@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Menu, Scale } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { TopicsPopover } from "@/components/TopicsPopover";
 import { RefreshControl } from "@/components/RefreshControl";
-import { LocationSelector } from "@/components/LocationSelector";
-import { GlobalSearchBar } from "@/components/GlobalSearchBar";
 import { getGuestScope, setGuestScope } from "@/lib/guestSessionStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { BrowseDropdown } from "@/components/nav/BrowseDropdown";
+import { MyWorkspaceDropdown } from "@/components/nav/MyWorkspaceDropdown";
+import { SearchIconButton } from "@/components/nav/SearchIconButton";
+import { OmniFiltersBar } from "@/components/nav/OmniFiltersBar";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -41,7 +41,7 @@ export function Layout({ children }: LayoutProps) {
     toast.success("Location updated");
   };
 
-  const tabItems = [
+  const mobileNavItems = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/browse/legislation", label: "Legislation" },
     { href: "/browse/meetings", label: "Meetings" },
@@ -51,11 +51,16 @@ export function Layout({ children }: LayoutProps) {
     { href: "/digest", label: "Digest" },
   ];
 
-  const mobileNavItems = [...tabItems];
+  const hasActiveFilters = selectedJurisdictions.length > 0;
+
+  const handleClearAll = () => {
+    handleJurisdictionChange([]);
+    toast.success("All filters cleared");
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Header */}
+      {/* Primary Navigation */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
           <Sheet open={open} onOpenChange={setOpen}>
@@ -94,35 +99,29 @@ export function Layout({ children }: LayoutProps) {
             <span className="font-semibold hidden sm:inline-block">Local Gov Watch</span>
           </Link>
 
-          {/* Desktop Nav - Tabs */}
-          <nav className="hidden md:flex items-center gap-1 ml-8">
-            {tabItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "text-sm font-medium px-3 py-2 rounded-md transition-colors",
-                  location.pathname === item.href
-                    ? "bg-secondary text-secondary-foreground"
-                    : "hover:bg-secondary/50"
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
+          {/* Desktop Primary Nav */}
+          <nav className="hidden md:flex items-center gap-2 ml-8">
+            <Button
+              variant={location.pathname === "/dashboard" ? "secondary" : "ghost"}
+              asChild
+            >
+              <Link to="/dashboard">Dashboard</Link>
+            </Button>
+            <BrowseDropdown />
+            <Button
+              variant={location.pathname === "/digest" ? "secondary" : "ghost"}
+              asChild
+            >
+              <Link to="/digest">Digest</Link>
+            </Button>
           </nav>
 
-          {/* Global Search & Filters - Desktop & Mobile */}
+          {/* Right Side Actions */}
           <div className="flex items-center gap-2 ml-auto">
-            <div className="hidden sm:block">
-              <GlobalSearchBar />
+            <SearchIconButton />
+            <div className="hidden md:flex">
+              <MyWorkspaceDropdown />
             </div>
-            <LocationSelector 
-              value={selectedJurisdictions}
-              onChange={handleJurisdictionChange}
-              maxSelections={3}
-            />
-            <TopicsPopover />
             <div className="hidden md:flex">
               <RefreshControl />
             </div>
@@ -130,7 +129,15 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </header>
 
-      <main className="container py-6">{children}</main>
+      {/* OmniFilters Bar */}
+      <OmniFiltersBar
+        selectedJurisdictions={selectedJurisdictions}
+        onJurisdictionChange={handleJurisdictionChange}
+        onClearAll={handleClearAll}
+        showClearAll={hasActiveFilters}
+      />
+
+      <main className="container py-6 mt-12">{children}</main>
 
       <footer className="border-t py-4 md:py-6">
         <div className="container text-center text-sm text-muted-foreground">

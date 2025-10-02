@@ -17,7 +17,11 @@ interface SearchResult {
   url: string;
 }
 
-export function GlobalSearchBar() {
+interface GlobalSearchBarProps {
+  onResultClick?: () => void;
+}
+
+export function GlobalSearchBar({ onResultClick }: GlobalSearchBarProps = {}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -96,6 +100,7 @@ export function GlobalSearchBar() {
     setIsOpen(false);
     setIsFocused(false);
     setSearchQuery("");
+    onResultClick?.();
   };
 
   const handleViewAll = () => {
@@ -103,6 +108,7 @@ export function GlobalSearchBar() {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
       setIsOpen(false);
       setIsFocused(false);
+      onResultClick?.();
     }
   };
 
