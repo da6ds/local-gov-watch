@@ -262,10 +262,11 @@ export default function Dashboard() {
     : subscription?.topics || [];
 
   return (
-    <>
-      {isGuest && <GuestBanner />}
-      <Layout>
-        <div className="space-y-6">
+    <TooltipProvider>
+      <>
+        {isGuest && <GuestBanner />}
+        <Layout>
+          <div className="space-y-6">
         {/* Header with jurisdiction */}
         <div className="flex items-center justify-between">
           <div>
@@ -468,63 +469,61 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <TooltipProvider>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {userTopics.map(topic => (
-                    <Badge key={topic} variant="secondary" className="text-sm capitalize">
-                      {topic.replace(/-/g, ' ')}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="space-y-2">
-                  {isGuest ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          className="w-full justify-start" 
-                          disabled
-                        >
-                          <Bookmark className="h-4 w-4 mr-2" />
-                          Save to Watchlist
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Create an account to save watchlists</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start" 
-                      asChild
-                    >
-                      <Link to="/browse/legislation">
+              <div className="flex flex-wrap gap-2 mb-4">
+                {userTopics.map(topic => (
+                  <Badge key={topic} variant="secondary" className="text-sm capitalize">
+                    {topic.replace(/-/g, ' ')}
+                  </Badge>
+                ))}
+              </div>
+              <div className="space-y-2">
+                {isGuest ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start" 
+                        disabled
+                      >
                         <Bookmark className="h-4 w-4 mr-2" />
                         Save to Watchlist
-                      </Link>
-                    </Button>
-                  )}
-                  
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Create an account to save watchlists</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
                   <Button 
                     variant="outline" 
                     className="w-full justify-start" 
                     asChild
                   >
-                    {isGuest ? (
-                      <Link to="/digest-preview">
-                        <Bell className="h-4 w-4 mr-2" />
-                        Preview Digest
-                      </Link>
-                    ) : (
-                      <Link to="/settings">
-                        <Bell className="h-4 w-4 mr-2" />
-                        Update Digest Preferences
-                      </Link>
-                    )}
+                    <Link to="/browse/legislation">
+                      <Bookmark className="h-4 w-4 mr-2" />
+                      Save to Watchlist
+                    </Link>
                   </Button>
-                </div>
-              </TooltipProvider>
+                )}
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start" 
+                  asChild
+                >
+                  {isGuest ? (
+                    <Link to="/digest-preview">
+                      <Bell className="h-4 w-4 mr-2" />
+                      Preview Digest
+                    </Link>
+                  ) : (
+                    <Link to="/settings">
+                      <Bell className="h-4 w-4 mr-2" />
+                      Update Digest Preferences
+                    </Link>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -550,5 +549,6 @@ export default function Dashboard() {
         </div>
       </Layout>
     </>
+    </TooltipProvider>
   );
 }
