@@ -17,8 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Mail } from "lucide-react";
 
 const digestFormSchema = z.object({
-  email: z.string().email("Please enter a valid email address").trim(),
-  name: z.string().min(2, "Name must be at least 2 characters").trim(),
+  email: z.string().email("Please enter a valid email address"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
   locations: z.array(z.string()).min(1, "Please select at least one location"),
   topics: z.array(z.string()).optional(),
   cadence: z.enum(['daily', 'weekly', 'biweekly']).default('weekly'),
@@ -77,8 +77,8 @@ export default function Digest() {
       const { error } = await supabase
         .from('digest_subscription')
         .insert({
-          email: data.email,
-          name: data.name,
+          email: data.email.trim(),
+          name: data.name.trim(),
           locations: data.locations,
           topics: data.topics || null,
           cadence: data.cadence,
