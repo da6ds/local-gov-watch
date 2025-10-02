@@ -1,163 +1,69 @@
-import { useState, useEffect, createContext, useContext } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { createContext, useContext, useEffect, useState } from 'react';
 import { 
-  generateGuestSessionId, 
+  generateGuestSessionId,
   getGuestSessionId, 
   setGuestSessionId, 
   createGuestProfile,
-  clearGuestSession,
   getGuestProfile,
   GuestSession
-} from "@/lib/guestSession";
+} from '@/lib/guestSession';
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: null;
+  session: null;
   loading: boolean;
   isGuest: boolean;
   guestSession: GuestSession | null;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
   startGuestSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
   const [guestSession, setGuestSession] = useState<GuestSession | null>(null);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // User logged in, clear guest session
-          setIsGuest(false);
-          setGuestSession(null);
-          clearGuestSession();
-        } else {
-          // Check for guest session or auto-create one
-          let guestId = getGuestSessionId();
-          if (!guestId) {
-            // Auto-create guest session on first visit
-            guestId = generateGuestSessionId();
-            setGuestSessionId(guestId);
-            await createGuestProfile(guestId, true);
-          }
-          const profile = await getGuestProfile(guestId);
-          if (profile) {
-            setIsGuest(true);
-            setGuestSession(profile);
-          }
-        }
-        
-        setLoading(false);
+    // Auto-create guest session on first visit
+    const initGuestSession = async () => {
+      let guestId = getGuestSessionId();
+      if (!guestId) {
+        guestId = generateGuestSessionId();
+        setGuestSessionId(guestId);
+        await createGuestProfile(guestId, true);
       }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (!session?.user) {
-        // Check for guest session or auto-create one
-        let guestId = getGuestSessionId();
-        if (!guestId) {
-          // Auto-create guest session on first visit
-          guestId = generateGuestSessionId();
-          setGuestSessionId(guestId);
-          await createGuestProfile(guestId, true);
-        }
-        const profile = await getGuestProfile(guestId);
-        if (profile) {
-          setIsGuest(true);
-          setGuestSession(profile);
-        }
+      const profile = await getGuestProfile(guestId);
+      if (profile) {
+        setIsGuest(true);
+        setGuestSession(profile);
       }
-      
       setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initGuestSession();
   }, []);
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Signed in successfully");
-    }
-    
-    return { error };
-  };
-
-  const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
-    });
-    
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Account created! You can now sign in.");
-    }
-    
-    return { error };
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    clearGuestSession();
-    setIsGuest(false);
-    setGuestSession(null);
-    toast.success("Signed out successfully");
-  };
 
   const startGuestSession = async () => {
     const sessionId = generateGuestSessionId();
     setGuestSessionId(sessionId);
-    // Create with default Austin/Travis/Texas setup
     await createGuestProfile(sessionId, true);
     const profile = await getGuestProfile(sessionId);
     setIsGuest(true);
     setGuestSession(profile);
-    toast.success("Demo started with Austin & Travis County data");
+  };
+
+  const value = {
+    user: null,
+    session: null,
+    loading,
+    isGuest,
+    guestSession,
+    startGuestSession,
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      loading, 
-      isGuest, 
-      guestSession,
-      signIn, 
-      signUp, 
-      signOut,
-      startGuestSession
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -166,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }

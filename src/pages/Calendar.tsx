@@ -30,7 +30,7 @@ interface CalendarEvent {
 }
 
 export default function Calendar() {
-  const { user } = useAuth();
+  const { isGuest } = useAuth();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -66,34 +66,8 @@ export default function Calendar() {
     };
   })();
 
-  // Fetch user or guest profile for jurisdiction
-  const { data: profile } = useQuery({
-    queryKey: ['profile', user?.id],
-    queryFn: async () => {
-      if (user) {
-        const { data } = await supabase
-          .from('profile')
-          .select('*, selected_jurisdiction:jurisdiction!profile_selected_jurisdiction_id_fkey(id, slug, name, type)')
-          .eq('id', user.id)
-          .single();
-        return data;
-      } else {
-        const sessionId = getGuestSessionId();
-        if (sessionId) {
-          const guestProfile = await getGuestProfile(sessionId);
-          if (guestProfile?.selectedJurisdictionId) {
-            const { data } = await supabase
-              .from('jurisdiction')
-              .select('id, slug, name, type')
-              .eq('id', guestProfile.selectedJurisdictionId)
-              .single();
-            return data ? { selected_jurisdiction: data, default_scope: guestProfile.defaultScope } : null;
-          }
-        }
-      }
-      return null;
-    },
-  });
+  // Guest mode - use session storage
+  const profile = null;
 
   // Build jurisdiction slugs and IDs based on scope
   const { jurisdictionSlugs, jurisdictionIds } = (() => {
@@ -133,7 +107,7 @@ export default function Calendar() {
           end: dateRange.end.toISOString(),
           scope: scopeParam,
           kinds: Array.from(selectedKinds).join(','),
-          session_id: sessionId && !user ? sessionId : undefined,
+          session_id: sessionId || undefined,
         },
       });
 
@@ -170,7 +144,7 @@ export default function Calendar() {
         scope: scopeParam,
         kinds: Array.from(selectedKinds).join(','),
         format: 'ics',
-        ...(sessionId && !user ? { session_id: sessionId } : {}),
+        ...(sessionId ? { session_id: sessionId } : {}),
       });
 
       const response = await fetch(
@@ -208,7 +182,7 @@ export default function Calendar() {
     }
   };
 
-  const isAdmin = user?.email?.includes('admin');
+  const isAdmin = false; // Admin features disabled in demo mode
 
   const toggleKind = (kind: string) => {
     const newKinds = new Set(selectedKinds);

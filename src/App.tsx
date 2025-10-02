@@ -6,10 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import RoleSelection from "./pages/onboarding/RoleSelection";
-import LocationSelection from "./pages/onboarding/LocationSelection";
 import DigestPreview from "./pages/DigestPreview";
 import Connectors from "./pages/admin/Connectors";
 import Settings from "./pages/Settings";
@@ -37,9 +34,6 @@ function App() {
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/onboarding/role" element={<RoleSelection />} />
-                <Route path="/onboarding/location" element={<LocationSelection />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/digest-preview" element={<DigestPreview />} />
                 <Route path="/admin/connectors" element={<Connectors />} />

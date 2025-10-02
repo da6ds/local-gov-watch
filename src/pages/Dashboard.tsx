@@ -24,22 +24,10 @@ import { MiniCalendar } from "@/components/MiniCalendar";
 import { getGuestScope, setGuestScope } from "@/lib/guestSessionStorage";
 
 export default function Dashboard() {
-  const { user, isGuest, guestSession } = useAuth();
+  const { isGuest, guestSession } = useAuth();
 
-  // Fetch user profile for scope (or use guest session)
-  const { data: profile } = useQuery({
-    queryKey: ['user-profile', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data } = await supabase
-        .from('profile')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      return data;
-    },
-    enabled: !!user && !isGuest
-  });
+  // Guest mode - no profile needed
+  const profile = null;
 
   // Use guest jurisdiction if in guest mode
   const effectiveJurisdictionId = isGuest 
@@ -241,25 +229,11 @@ export default function Dashboard() {
     enabled: !!jurisdiction?.slug
   });
 
-  // Fetch user's subscription for topics
-  const { data: subscription } = useQuery({
-    queryKey: ['user-subscription', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data } = await supabase
-        .from('subscription')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      return data;
-    },
-    enabled: !!user
-  });
+  // Guest mode - no subscription
+  const subscription = null;
 
-  // Get topics from guest session or subscription
-  const userTopics = isGuest 
-    ? guestSession?.topics || []
-    : subscription?.topics || [];
+  // Get topics from guest session storage
+  const userTopics = guestSession?.topics || [];
 
   return (
     <TooltipProvider>
@@ -537,13 +511,7 @@ export default function Dashboard() {
               <TrendingUp className="h-5 w-5" />
               Trends
             </h3>
-            {user ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Coming soon: Topic trends and analysis
-              </p>
-            ) : (
-              <TrendsPlaceholder />
-            )}
+            <TrendsPlaceholder />
           </Card>
         </div>
         </div>

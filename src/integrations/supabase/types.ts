@@ -740,44 +740,65 @@ export type Database = {
       topic_trend: {
         Row: {
           ai_summary: string | null
-          cities: string[]
-          cluster_label: string | null
-          county_id: string | null
           created_at: string | null
+          election_count: number | null
+          first_seen_at: string | null
           id: string
           item_count: number
           item_ids: string[]
-          tag: string
-          week_start: string
+          jurisdiction_id: string | null
+          last_seen_at: string | null
+          legislation_count: number | null
+          meeting_count: number | null
+          new_since_prev: number | null
+          pct_change: number | null
+          period_start: string
+          spread_count: number | null
+          time_window: string
+          topic: string
         }
         Insert: {
           ai_summary?: string | null
-          cities: string[]
-          cluster_label?: string | null
-          county_id?: string | null
           created_at?: string | null
-          id?: string
-          item_count: number
-          item_ids: string[]
-          tag: string
-          week_start: string
-        }
-        Update: {
-          ai_summary?: string | null
-          cities?: string[]
-          cluster_label?: string | null
-          county_id?: string | null
-          created_at?: string | null
+          election_count?: number | null
+          first_seen_at?: string | null
           id?: string
           item_count?: number
           item_ids?: string[]
-          tag?: string
-          week_start?: string
+          jurisdiction_id?: string | null
+          last_seen_at?: string | null
+          legislation_count?: number | null
+          meeting_count?: number | null
+          new_since_prev?: number | null
+          pct_change?: number | null
+          period_start: string
+          spread_count?: number | null
+          time_window: string
+          topic: string
+        }
+        Update: {
+          ai_summary?: string | null
+          created_at?: string | null
+          election_count?: number | null
+          first_seen_at?: string | null
+          id?: string
+          item_count?: number
+          item_ids?: string[]
+          jurisdiction_id?: string | null
+          last_seen_at?: string | null
+          legislation_count?: number | null
+          meeting_count?: number | null
+          new_since_prev?: number | null
+          pct_change?: number | null
+          period_start?: string
+          spread_count?: number | null
+          time_window?: string
+          topic?: string
         }
         Relationships: [
           {
-            foreignKeyName: "topic_trend_county_id_fkey"
-            columns: ["county_id"]
+            foreignKeyName: "topic_trend_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
             isOneToOne: false
             referencedRelation: "jurisdiction"
             referencedColumns: ["id"]

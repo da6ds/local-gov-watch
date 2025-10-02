@@ -1,9 +1,9 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, Scale, Calendar, BookOpen, Star, Settings as SettingsIcon } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useAuth } from "@/hooks/useAuth";
+import { DemoBanner } from "@/components/DemoBanner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,8 +18,6 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [open, setOpen] = useState(false);
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
 
   const navItems = [
@@ -28,20 +26,16 @@ export function Layout({ children }: LayoutProps) {
     { href: "/browse/meetings", label: "Meetings", icon: Calendar },
     { href: "/browse/elections", label: "Elections", icon: Star },
     { href: "/browse/trends", label: "Trends", icon: Star },
-    ...(user ? [{ href: "/watchlists", label: "Watchlists", icon: Star }] : []),
-    ...(user ? [{ href: "/settings", label: "Settings", icon: SettingsIcon }] : []),
+    { href: "/settings", label: "Settings", icon: SettingsIcon },
   ];
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
-    setOpen(false);
-  };
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Demo Banner - Always Visible */}
+      <DemoBanner />
+      
       {/* Mobile Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -71,20 +65,6 @@ export function Layout({ children }: LayoutProps) {
                     </Button>
                   ))}
                 </nav>
-                <div className="border-t pt-4 mt-4">
-                  {user ? (
-                    <>
-                      <p className="text-sm text-muted-foreground mb-2 px-2">{user.email}</p>
-                      <Button variant="ghost" className="w-full justify-start touch-target" onClick={handleSignOut}>
-                        Sign Out
-                      </Button>
-                    </>
-                  ) : (
-                    <Button className="w-full touch-target" asChild onClick={() => setOpen(false)}>
-                      <Link to="/auth">Sign In</Link>
-                    </Button>
-                  )}
-                </div>
               </div>
             </SheetContent>
           </Sheet>
@@ -118,32 +98,10 @@ export function Layout({ children }: LayoutProps) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {user && (
-              <>
-                <Link to="/watchlists" className="text-sm font-medium hover:text-primary transition-colors">
-                  Watchlists
-                </Link>
-                <Link to="/settings" className="text-sm font-medium hover:text-primary transition-colors">
-                  Settings
-                </Link>
-              </>
-            )}
+            <Link to="/settings" className="text-sm font-medium hover:text-primary transition-colors">
+              Settings
+            </Link>
           </nav>
-
-          <div className="ml-auto flex items-center gap-2">
-            {user ? (
-              <>
-                <span className="hidden md:inline-block text-sm text-muted-foreground">{user.email}</span>
-                <Button variant="outline" onClick={handleSignOut} className="hidden md:inline-flex">
-                  Sign Out
-                </Button>
-              </>
-            ) : (
-              <Button asChild>
-                <Link to="/auth">Sign In</Link>
-              </Button>
-            )}
-          </div>
         </div>
       </header>
 
