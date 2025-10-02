@@ -6,10 +6,23 @@ export const JURISDICTIONS = [
 
 export const LEGISLATION_STATUSES = [
   { value: 'introduced', label: 'Introduced', color: 'blue' },
+  { value: 'in_committee', label: 'In Committee', color: 'yellow' },
+  { value: 'first_reading', label: 'First Reading', color: 'orange' },
+  { value: 'second_reading', label: 'Second Reading', color: 'orange' },
   { value: 'passed', label: 'Passed', color: 'green' },
+  { value: 'failed', label: 'Failed', color: 'red' },
   { value: 'effective', label: 'Effective', color: 'emerald' },
   { value: 'withdrawn', label: 'Withdrawn', color: 'red' },
   { value: 'pending', label: 'Pending', color: 'amber' },
+] as const;
+
+export const LEGISLATION_TIMELINE_STAGES = [
+  { key: 'introduced', label: 'Introduced' },
+  { key: 'in_committee', label: 'In Committee' },
+  { key: 'first_reading', label: 'First Reading' },
+  { key: 'second_reading', label: 'Second Reading' },
+  { key: 'passed', label: 'Passed' },
+  { key: 'effective', label: 'Effective' },
 ] as const;
 
 export const ELECTION_KINDS = [

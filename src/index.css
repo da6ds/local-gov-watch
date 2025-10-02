@@ -136,6 +136,22 @@
     @apply bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400;
   }
   
+  .status-in_committee {
+    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400;
+  }
+  
+  .status-first_reading {
+    @apply bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400;
+  }
+  
+  .status-second_reading {
+    @apply bg-orange-100 text-orange-900 dark:bg-orange-900/30 dark:text-orange-500;
+  }
+  
+  .status-failed {
+    @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400;
+  }
+  
   /* Tag Chips */
   .tag-chip {
     @apply inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-secondary text-secondary-foreground;
