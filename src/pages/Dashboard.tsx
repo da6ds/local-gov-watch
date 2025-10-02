@@ -14,7 +14,8 @@ import { useGuestRunUpdate } from "@/hooks/useGuestRunUpdate";
 import { toast } from "sonner";
 import React, { useState, useEffect } from "react";
 import { LocationSelector } from "@/components/LocationSelector";
-import { MiniCalendar } from "@/components/MiniCalendar";
+import { Calendar as CalendarComponent } from "@/components/calendar/Calendar";
+import { ArrowRight } from "lucide-react";
 import { getGuestScope, setGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 import { Button } from "@/components/ui/button";
 
@@ -272,20 +273,21 @@ export default function Dashboard() {
           {/* Bottom Grid: Calendar & Trends */}
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Calendar Card */}
-            <Card>
-              <CardHeader>
-                <Link to="/calendar" className="group" aria-label="View full calendar">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer" role="heading" aria-level={2}>
-                    <Calendar className="h-5 w-5" />
-                    Calendar
-                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
-                  </CardTitle>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Calendar
+                </h2>
+                <Link to="/calendar">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    View all
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </Link>
-              </CardHeader>
-              <CardContent>
-                <MiniCalendar scope={scopeString || 'austin-tx,travis-county-tx,texas'} showSidePanel={true} />
-              </CardContent>
-            </Card>
+              </div>
+              <CalendarComponent variant="dashboard" />
+            </div>
 
             {/* Trends Card */}
             <Card>
