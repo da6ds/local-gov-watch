@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,12 +12,21 @@ import { LegislationTimeline } from "@/components/legislation/LegislationTimelin
 import { PDFViewer } from "@/components/legislation/PDFViewer";
 import { QuickActions } from "@/components/legislation/QuickActions";
 import { RelatedInfo } from "@/components/legislation/RelatedInfo";
-import { Copy, Tag } from "lucide-react";
+import { Copy, Tag, ArrowLeft, Home } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 export default function LegislationDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const { data: legislation, isLoading } = useQuery({
     queryKey: ['legislation', id],
@@ -111,8 +120,15 @@ export default function LegislationDetail() {
     );
   }
 
-  const summary = legislation.ai_summary || legislation.summary || legislation.full_text?.slice(0, 400);
-  const displayTopics = topics && topics.length > 0 ? topics.map(t => t.topic) : legislation.tags || [];
+  const summary = legislation.ai_summary || legislation.summary;
+  const hasMeaningfulSummary = summary && summary.length > 50;
+  const displayTopics = topics && topics.length > 0 
+    ? topics.map(t => t.topic) 
+    : legislation.tags || [];
+  
+  const truncateTitle = (title: string, maxLength: number = 50) => {
+    return title.length > maxLength ? `${title.slice(0, maxLength)}...` : title;
+  };
 
   return (
     <Layout>
@@ -125,13 +141,41 @@ export default function LegislationDetail() {
       </Helmet>
 
       <div className="container mx-auto py-8">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(-1)}
+          className="mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+
         {/* Breadcrumbs */}
-        <div className="mb-6 text-sm text-muted-foreground">
-          <Link to="/browse/legislation" className="hover:text-foreground">
-            Legislation
-          </Link>
-          <span className="mx-2">/</span>
-          <span>{legislation.title}</span>
+        <div className="mb-6">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/" className="flex items-center gap-1">
+                    <Home className="h-3 w-3" />
+                    Dashboard
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/browse/legislation">Legislation</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{truncateTitle(legislation.title)}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </div>
 
         {/* Two Column Layout */}
@@ -174,8 +218,8 @@ export default function LegislationDetail() {
               </div>
             </div>
 
-            {/* AI Summary */}
-            {summary && (
+            {/* AI Summary - only show if meaningful content exists */}
+            {hasMeaningfulSummary && (
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -288,7 +332,7 @@ export default function LegislationDetail() {
               effectiveAt={legislation.effective_at}
             />
 
-            <QuickActions />
+            <QuickActions legislationId={id!} legislationTitle={legislation.title} />
 
             <RelatedInfo
               jurisdiction={legislation.jurisdiction}

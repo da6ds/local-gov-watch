@@ -1,17 +1,101 @@
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, ThumbsDown, Eye, Lock, ArrowRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ThumbsUp, ThumbsDown, Eye, XCircle, Info } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getAllStances, type StanceType } from "@/lib/stanceStorage";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+
+interface LegislationWithStance {
+  id: string;
+  title: string;
+  status: string | null;
+  jurisdiction: { name: string } | null;
+  introduced_at: string | null;
+  stance: StanceType;
+  stanceTimestamp: string;
+}
 
 export default function Stances() {
-  // Placeholder data structure for when feature is live
+  const [stances, setStances] = useState(getAllStances());
+  const legislationIds = stances.map(s => s.legislationId);
+
+  const { data: legislationData, isLoading } = useQuery({
+    queryKey: ['stances-legislation', legislationIds],
+    queryFn: async () => {
+      if (legislationIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from('legislation')
+        .select(`
+          id,
+          title,
+          status,
+          introduced_at,
+          jurisdiction:jurisdiction_id (name)
+        `)
+        .in('id', legislationIds);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: legislationIds.length > 0
+  });
+
+  const legislationWithStances: LegislationWithStance[] = stances
+    .map(stance => {
+      const legislation = legislationData?.find(l => l.id === stance.legislationId);
+      if (!legislation) return null;
+      
+      return {
+        ...legislation,
+        stance: stance.stance,
+        stanceTimestamp: stance.timestamp
+      };
+    })
+    .filter((item): item is LegislationWithStance => item !== null);
+
   const stanceCounts = {
-    support: 0,
-    oppose: 0,
-    watching: 0,
+    support: legislationWithStances.filter(l => l.stance === 'support').length,
+    oppose: legislationWithStances.filter(l => l.stance === 'oppose').length,
+    watching: legislationWithStances.filter(l => l.stance === 'watching').length,
+    unimportant: legislationWithStances.filter(l => l.stance === 'unimportant').length,
+  };
+
+  const getStanceIcon = (stance: StanceType) => {
+    switch (stance) {
+      case 'support': return ThumbsUp;
+      case 'oppose': return ThumbsDown;
+      case 'watching': return Eye;
+      case 'unimportant': return XCircle;
+      default: return Info;
+    }
+  };
+
+  const getStanceColor = (stance: StanceType) => {
+    switch (stance) {
+      case 'support': return 'text-green-600 bg-green-100 dark:bg-green-900/30';
+      case 'oppose': return 'text-red-600 bg-red-100 dark:bg-red-900/30';
+      case 'watching': return 'text-blue-600 bg-blue-100 dark:bg-blue-900/30';
+      case 'unimportant': return 'text-gray-600 bg-gray-100 dark:bg-gray-900/30';
+      default: return '';
+    }
+  };
+
+  const getStanceLabel = (stance: StanceType) => {
+    switch (stance) {
+      case 'support': return 'Supporting';
+      case 'oppose': return 'Opposing';
+      case 'watching': return 'Watching';
+      case 'unimportant': return 'Unimportant';
+      default: return '';
+    }
   };
 
   const EmptyState = ({ 
@@ -32,24 +116,50 @@ export default function Stances() {
           <h3 className="text-lg font-semibold">{title}</h3>
           <p className="text-muted-foreground text-sm">{description}</p>
         </div>
-        <div className="flex flex-col items-center gap-3 mt-4 p-6 bg-muted/50 rounded-lg">
-          <div className="flex items-center gap-2 text-primary">
-            <Lock className="h-5 w-5" />
-            <span className="font-medium">Login Required</span>
-          </div>
-          <p className="text-sm text-muted-foreground text-center">
-            Track your positions on legislation by signing in or creating an account
-          </p>
-          <Button className="gap-2" asChild>
-            <Link to="/auth">
-              Sign In to Get Started
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
+        <Button variant="outline" asChild className="mt-4">
+          <Link to="/browse/legislation">Browse Legislation</Link>
+        </Button>
       </div>
     </Card>
   );
+
+  const renderLegislationCard = (item: LegislationWithStance) => {
+    const StanceIcon = getStanceIcon(item.stance);
+    
+    return (
+      <Link key={item.id} to={`/legislation/${item.id}`}>
+        <Card className="hover:bg-muted/50 transition-colors">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" className={`gap-1 ${getStanceColor(item.stance)}`}>
+                      <StanceIcon className="h-3 w-3" />
+                      {getStanceLabel(item.stance)}
+                    </Badge>
+                    {item.status && (
+                      <Badge variant="secondary">{item.status}</Badge>
+                    )}
+                  </div>
+                  <h3 className="font-semibold text-lg leading-tight">{item.title}</h3>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                {item.jurisdiction && <span>{item.jurisdiction.name}</span>}
+                {item.introduced_at && (
+                  <>
+                    <span>•</span>
+                    <span>Introduced {format(new Date(item.introduced_at), 'MMM d, yyyy')}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+    );
+  };
 
   return (
     <Layout>
@@ -61,8 +171,25 @@ export default function Stances() {
           </p>
         </div>
 
+        {legislationIds.length > 0 && (
+          <Card className="bg-muted/50 border-blue-200 dark:border-blue-900">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Using Local Storage</p>
+                  <p className="text-xs text-muted-foreground">
+                    Your stances are saved in your browser. They'll persist across sessions but won't sync across devices. 
+                    User accounts coming soon!
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs defaultValue="support" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="support" className="gap-2">
               <ThumbsUp className="h-4 w-4" />
               Support
@@ -90,58 +217,101 @@ export default function Stances() {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="unimportant" className="gap-2">
+              <XCircle className="h-4 w-4" />
+              Unimportant
+              {stanceCounts.unimportant > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {stanceCounts.unimportant}
+                </Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="support" className="mt-6">
-            <EmptyState
-              icon={ThumbsUp}
-              title="No supported legislation yet"
-              description="When you support legislation, it will appear here so you can track its progress and take action."
-            />
+            {isLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            ) : stanceCounts.support === 0 ? (
+              <EmptyState
+                icon={ThumbsUp}
+                title="No supported legislation yet"
+                description="When you support legislation, it will appear here so you can track its progress."
+              />
+            ) : (
+              <div className="space-y-3">
+                {legislationWithStances
+                  .filter(item => item.stance === 'support')
+                  .map(renderLegislationCard)}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="oppose" className="mt-6">
-            <EmptyState
-              icon={ThumbsDown}
-              title="No opposed legislation yet"
-              description="When you oppose legislation, it will appear here so you can monitor updates and engage with the process."
-            />
+            {isLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            ) : stanceCounts.oppose === 0 ? (
+              <EmptyState
+                icon={ThumbsDown}
+                title="No opposed legislation yet"
+                description="When you oppose legislation, it will appear here so you can monitor updates."
+              />
+            ) : (
+              <div className="space-y-3">
+                {legislationWithStances
+                  .filter(item => item.stance === 'oppose')
+                  .map(renderLegislationCard)}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="watching" className="mt-6">
-            <EmptyState
-              icon={Eye}
-              title="Not watching any legislation yet"
-              description="Track important legislation without taking a public stance. You'll get updates as it moves through the process."
-            />
+            {isLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            ) : stanceCounts.watching === 0 ? (
+              <EmptyState
+                icon={Eye}
+                title="Not watching any legislation yet"
+                description="Track important legislation without taking a public stance."
+              />
+            ) : (
+              <div className="space-y-3">
+                {legislationWithStances
+                  .filter(item => item.stance === 'watching')
+                  .map(renderLegislationCard)}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="unimportant" className="mt-6">
+            {isLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            ) : stanceCounts.unimportant === 0 ? (
+              <EmptyState
+                icon={XCircle}
+                title="No items marked as unimportant"
+                description="Mark legislation as unimportant to hide it from your main views."
+              />
+            ) : (
+              <div className="space-y-3">
+                {legislationWithStances
+                  .filter(item => item.stance === 'unimportant')
+                  .map(renderLegislationCard)}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
-
-        {/* Preview of what cards will look like when feature is live */}
-        <Card className="p-6 border-dashed opacity-60">
-          <div className="space-y-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="gap-1">
-                    <ThumbsUp className="h-3 w-3" />
-                    Supporting
-                  </Badge>
-                  <Badge variant="secondary">In Committee</Badge>
-                </div>
-                <h3 className="font-semibold">Example Legislation Title</h3>
-                <p className="text-sm text-muted-foreground">
-                  This is a preview of how legislation cards will appear when you take stances on items...
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Austin, TX</span>
-              <span>•</span>
-              <span>Last updated 2 days ago</span>
-            </div>
-          </div>
-        </Card>
       </div>
     </Layout>
   );

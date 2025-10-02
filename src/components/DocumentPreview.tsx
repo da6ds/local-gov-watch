@@ -17,6 +17,14 @@ export function DocumentPreview({ text, maxChars = 1500 }: DocumentPreviewProps)
   const displayText = isExpanded ? text : text.slice(0, maxChars);
   const needsExpansion = text.length > maxChars;
 
+  const countMatches = (content: string, search: string): number => {
+    if (!search.trim()) return 0;
+    const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    return (content.match(regex) || []).length;
+  };
+
+  const matchCount = countMatches(text, searchTerm);
+
   const highlightText = (content: string) => {
     if (!searchTerm.trim()) return content;
 
@@ -25,7 +33,7 @@ export function DocumentPreview({ text, maxChars = 1500 }: DocumentPreviewProps)
 
     return parts.map((part, i) =>
       regex.test(part) ? (
-        <mark key={i} className="bg-accent/30 text-foreground">
+        <mark key={i} className="bg-yellow-200 dark:bg-yellow-900 text-foreground">
           {part}
         </mark>
       ) : (
@@ -41,12 +49,17 @@ export function DocumentPreview({ text, maxChars = 1500 }: DocumentPreviewProps)
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Find in document..."
+            placeholder="Search in document..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
+        {searchTerm.trim() && (
+          <div className="text-sm text-muted-foreground whitespace-nowrap">
+            {matchCount} {matchCount === 1 ? 'match' : 'matches'}
+          </div>
+        )}
       </div>
 
       <div className="prose prose-sm dark:prose-invert max-w-none bg-muted/30 p-4 rounded-lg">
