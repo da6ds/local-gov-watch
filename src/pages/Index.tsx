@@ -10,8 +10,9 @@ export default function Index() {
   const navigate = useNavigate();
 
   const handleTryNow = async () => {
+    // Instant demo - no wizard, go straight to dashboard with default Austin scope
     await startGuestSession();
-    navigate("/onboarding/guest-role");
+    navigate("/dashboard");
   };
 
   return (
@@ -25,7 +26,7 @@ export default function Index() {
           Track Local Government Like Never Before
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl text-balance">
-          Live Austin data. AI-powered insights. Zero signup required.
+          Live Austin & Travis County data. AI-powered insights. Zero signup required.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Button 
@@ -33,7 +34,7 @@ export default function Index() {
             onClick={handleTryNow} 
             className="touch-target text-lg px-8 shadow-lg hover:shadow-xl transition-shadow"
           >
-            Try it now — No signup
+            Try the demo — No signup
           </Button>
           <Button size="lg" variant="outline" asChild className="touch-target">
             <Link to="/auth">Sign In</Link>

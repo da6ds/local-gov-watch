@@ -26,15 +26,27 @@ export function clearGuestSession(): void {
   localStorage.removeItem(GUEST_SESSION_KEY);
 }
 
-export async function createGuestProfile(sessionId: string): Promise<void> {
+export async function createGuestProfile(sessionId: string, defaultSetup: boolean = false): Promise<void> {
+  // Get Austin jurisdiction ID for default setup
+  let austinId = null;
+  if (defaultSetup) {
+    const { data: austin } = await supabase
+      .from('jurisdiction')
+      .select('id')
+      .eq('slug', 'austin-tx')
+      .eq('type', 'city')
+      .single();
+    austinId = austin?.id;
+  }
+
   const { error } = await supabase
     .from('guest_profile')
     .insert({
       session_id: sessionId,
-      user_role: null,
-      selected_jurisdiction_id: null,
+      user_role: defaultSetup ? 'resident' : null,
+      selected_jurisdiction_id: austinId,
       default_scope: 'city',
-      topics: []
+      topics: defaultSetup ? ['housing', 'transportation', 'budget', 'environment'] : []
     });
 
   if (error && error.code !== '23505') { // Ignore duplicate key errors

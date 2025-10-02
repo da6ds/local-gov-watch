@@ -14,6 +14,7 @@ import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { getGuestSessionId, getGuestProfile } from "@/lib/guestSession";
 import { CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { RefreshDataButton } from "@/components/RefreshDataButton";
 
 interface CalendarEvent {
   id: string;
@@ -240,7 +241,13 @@ export default function Calendar() {
               )}
             </p>
           </div>
-          <ScopeSelector value={scope} onChange={handleScopeChange} />
+          <div className="flex gap-2">
+            <RefreshDataButton 
+              scope={`${scope}:${profile?.selected_jurisdiction?.slug || 'austin-tx'}`}
+              size="sm"
+            />
+            <ScopeSelector value={scope} onChange={handleScopeChange} />
+          </div>
         </div>
 
         {/* Live Data Status */}

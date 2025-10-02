@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
-import { TrendingUp, Calendar, FileText, Bookmark, Bell, Sparkles, RefreshCw, AlertCircle } from "lucide-react";
+import { TrendingUp, Calendar, FileText, Bookmark, Bell, Sparkles, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import { GuestBanner } from "@/components/GuestBanner";
 import { TrendsPlaceholder } from "@/components/TrendsPlaceholder";
 import { useLiveDataStatus } from "@/hooks/useLiveDataStatus";
 import { DataHealthDrawer } from "@/components/DataHealthDrawer";
+import { RefreshDataButton } from "@/components/RefreshDataButton";
 
 export default function Dashboard() {
   const { user, isGuest, guestSession } = useAuth();
@@ -178,6 +179,7 @@ export default function Dashboard() {
             {profile?.is_admin && (
               <DataHealthDrawer jurisdictionSlugs={jurisdictionSlugs} />
             )}
+            <RefreshDataButton scope={`city:${jurisdiction?.slug || 'austin-tx'}`} />
             <Button asChild variant="outline">
               <Link to="/settings">
                 <Bell className="h-4 w-4 mr-2" />
@@ -191,23 +193,12 @@ export default function Dashboard() {
         {liveDataStatus && (
           <div className="flex items-center justify-center gap-2 text-sm bg-muted/50 rounded-lg px-4 py-3">
             {liveDataStatus.dataSource === 'live' ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="font-medium">
-                    Live as of {liveDataStatus.lastRunAt && formatDistanceToNow(new Date(liveDataStatus.lastRunAt), { addSuffix: true })}
-                  </span>
-                </div>
-                {profile?.is_admin && (
-                  <>
-                    <span className="text-muted-foreground">•</span>
-                    <Link to="/admin/connectors" className="text-primary hover:underline flex items-center gap-1">
-                      <RefreshCw className="h-3 w-3" />
-                      Refresh live data
-                    </Link>
-                  </>
-                )}
-              </>
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="font-medium">
+                  Live as of {liveDataStatus.lastRunAt && formatDistanceToNow(new Date(liveDataStatus.lastRunAt), { addSuffix: true })}
+                </span>
+              </div>
             ) : (
               <>
                 <AlertCircle className="h-4 w-4 text-muted-foreground" />
@@ -215,15 +206,6 @@ export default function Dashboard() {
                   Demo data (seeded)
                   {liveDataStatus.reason && ` - ${liveDataStatus.reason}`}
                 </span>
-                {profile?.is_admin && (
-                  <>
-                    <span className="text-muted-foreground">•</span>
-                    <Link to="/admin/connectors" className="text-primary hover:underline flex items-center gap-1">
-                      <RefreshCw className="h-3 w-3" />
-                      Run connectors
-                    </Link>
-                  </>
-                )}
               </>
             )}
           </div>

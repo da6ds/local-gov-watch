@@ -130,11 +130,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const startGuestSession = async () => {
     const sessionId = generateGuestSessionId();
     setGuestSessionId(sessionId);
-    await createGuestProfile(sessionId);
+    // Create with default Austin/Travis/Texas setup
+    await createGuestProfile(sessionId, true);
     const profile = await getGuestProfile(sessionId);
     setIsGuest(true);
     setGuestSession(profile);
-    toast.success("Started guest session");
+    toast.success("Demo started with Austin & Travis County data");
   };
 
   return (
