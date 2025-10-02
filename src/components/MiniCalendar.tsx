@@ -95,7 +95,7 @@ export function MiniCalendar({ scope, showSidePanel = false }: MiniCalendarProps
                 modifiersClassNames={{
                   hasEvent: "bg-primary/10 font-bold"
                 }}
-                className="rounded-md w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-cell]:h-14 [&_.rdp-day]:h-12 [&_.rdp-day]:w-12 [&_.rdp-day]:text-base"
+                className="rounded-md w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-cell]:h-14 [&_.rdp-day]:h-12 [&_.rdp-day]:w-full [&_.rdp-day]:text-base"
               />
             </div>
             
