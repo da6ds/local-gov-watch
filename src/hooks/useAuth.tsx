@@ -46,14 +46,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setGuestSession(null);
           clearGuestSession();
         } else {
-          // Check for guest session
-          const guestId = getGuestSessionId();
-          if (guestId) {
-            const profile = await getGuestProfile(guestId);
-            if (profile) {
-              setIsGuest(true);
-              setGuestSession(profile);
-            }
+          // Check for guest session or auto-create one
+          let guestId = getGuestSessionId();
+          if (!guestId) {
+            // Auto-create guest session on first visit
+            guestId = generateGuestSessionId();
+            setGuestSessionId(guestId);
+            await createGuestProfile(guestId, true);
+          }
+          const profile = await getGuestProfile(guestId);
+          if (profile) {
+            setIsGuest(true);
+            setGuestSession(profile);
           }
         }
         
@@ -67,14 +71,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       
       if (!session?.user) {
-        // Check for guest session
-        const guestId = getGuestSessionId();
-        if (guestId) {
-          const profile = await getGuestProfile(guestId);
-          if (profile) {
-            setIsGuest(true);
-            setGuestSession(profile);
-          }
+        // Check for guest session or auto-create one
+        let guestId = getGuestSessionId();
+        if (!guestId) {
+          // Auto-create guest session on first visit
+          guestId = generateGuestSessionId();
+          setGuestSessionId(guestId);
+          await createGuestProfile(guestId, true);
+        }
+        const profile = await getGuestProfile(guestId);
+        if (profile) {
+          setIsGuest(true);
+          setGuestSession(profile);
         }
       }
       

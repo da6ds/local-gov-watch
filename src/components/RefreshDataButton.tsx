@@ -12,9 +12,10 @@ interface RefreshDataButtonProps {
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
   sessionId?: string;
+  className?: string;
 }
 
-export function RefreshDataButton({ scope, variant = "outline", size = "default", sessionId }: RefreshDataButtonProps) {
+export function RefreshDataButton({ scope, variant = "outline", size = "default", sessionId, className }: RefreshDataButtonProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [eta, setEta] = useState<number | null>(null);
   const [startTime, setStartTime] = useState<number | null>(null);
@@ -93,7 +94,7 @@ export function RefreshDataButton({ scope, variant = "outline", size = "default"
       size={size}
       onClick={handleRefresh}
       disabled={isRefreshing}
-      className="gap-2"
+      className={className || "gap-2"}
     >
       {isRefreshing ? (
         <>

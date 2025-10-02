@@ -278,6 +278,53 @@ export type Database = {
           },
         ]
       }
+      item_topic: {
+        Row: {
+          cache_version: string | null
+          confidence: number
+          created_at: string | null
+          doc_hash: string | null
+          id: string
+          item_id: string
+          item_type: string
+          jurisdiction_id: string | null
+          occurred_at: string
+          topic: string
+        }
+        Insert: {
+          cache_version?: string | null
+          confidence?: number
+          created_at?: string | null
+          doc_hash?: string | null
+          id?: string
+          item_id: string
+          item_type: string
+          jurisdiction_id?: string | null
+          occurred_at: string
+          topic: string
+        }
+        Update: {
+          cache_version?: string | null
+          confidence?: number
+          created_at?: string | null
+          doc_hash?: string | null
+          id?: string
+          item_id?: string
+          item_type?: string
+          jurisdiction_id?: string | null
+          occurred_at?: string
+          topic?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_topic_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdiction"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jurisdiction: {
         Row: {
           created_at: string | null
@@ -474,6 +521,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plan: {
+        Row: {
+          created_at: string | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          max_jurisdictions: number
+          max_topics: number | null
+          name: string
+          price_cents: number
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          max_jurisdictions: number
+          max_topics?: number | null
+          name: string
+          price_cents?: number
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          max_jurisdictions?: number
+          max_topics?: number | null
+          name?: string
+          price_cents?: number
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       profile: {
         Row: {

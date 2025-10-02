@@ -1,137 +1,132 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Scale, Calendar, Star, TrendingUp, DollarSign, Zap } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Index() {
-  const { startGuestSession } = useAuth();
+  const { startGuestSession, isGuest } = useAuth();
   const navigate = useNavigate();
 
-  const handleTryNow = async () => {
-    // Instant demo - no wizard, go straight to dashboard with default Austin scope
-    await startGuestSession();
+  // Fetch live snapshot data
+  const { data: snapshotData, isLoading } = useQuery({
+    queryKey: ['landing-snapshot'],
+    queryFn: async () => {
+      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/data-status`);
+      url.searchParams.set('scope', 'city:austin-tx,county:travis-county-tx,state:texas');
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || ''
+        }
+      });
+
+      if (!response.ok) return null;
+      return await response.json();
+    },
+    staleTime: 60000 // 1 minute
+  });
+
+  const handleTryDemo = async () => {
+    if (!isGuest) {
+      await startGuestSession();
+    }
     navigate("/dashboard");
   };
 
   return (
     <Layout>
       {/* Hero Section */}
-      <div className="flex flex-col items-center text-center space-y-6 py-12 md:py-20">
-        <div className="inline-flex items-center justify-center p-2 bg-primary/10 rounded-full">
-          <Scale className="h-8 w-8 text-primary" />
-        </div>
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-balance max-w-4xl">
-          Track Local Government Like Never Before
+      <div className="flex flex-col items-center text-center space-y-6 py-16 md:py-24 max-w-[1320px] mx-auto px-4">
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-balance max-w-5xl">
+          Local government, at a glance
         </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl text-balance">
-          Live Austin & Travis County data. AI-powered insights. Zero signup required.
+        <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl text-balance">
+          Pick a place. See meetings, laws, and elections—fast.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4">
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          Works wherever data is available across the U.S.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 pt-4">
           <Button 
             size="lg" 
-            onClick={handleTryNow} 
-            className="touch-target text-lg px-8 shadow-lg hover:shadow-xl transition-shadow"
+            onClick={handleTryDemo} 
+            className="text-lg px-8 py-6"
           >
-            Try the demo — No signup
-          </Button>
-          <Button size="lg" variant="outline" asChild className="touch-target">
-            <Link to="/auth">Sign In</Link>
+            Try demo
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground mt-2">
-          Or explore: <Link to="/browse/legislation" className="text-primary hover:underline">Legislation</Link> • <Link to="/calendar" className="text-primary hover:underline">Calendar</Link> • <Link to="/browse/elections" className="text-primary hover:underline">Elections</Link>
+        <p className="text-sm text-muted-foreground pt-2">
+          Explore: <Link to="/browse/legislation" className="text-primary hover:underline">Legislation</Link> • <Link to="/calendar" className="text-primary hover:underline">Calendar</Link> • <Link to="/browse/elections" className="text-primary hover:underline">Elections</Link>
         </p>
       </div>
 
-      {/* Features Grid */}
-      <div className="grid md:grid-cols-3 gap-6 py-12">
-        <Card className="civic-card">
-          <CardHeader>
-            <Zap className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>AI-Powered Insights</CardTitle>
-            <CardDescription>
-              Automatic summaries, smart tagging, and natural language search powered by AI.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Ask questions like "What changed about zoning this week?" and get instant answers.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="civic-card">
-          <CardHeader>
-            <Calendar className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Never Miss a Meeting</CardTitle>
-            <CardDescription>
-              Track city council, county commissioners, and state sessions in one place.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Get alerts for upcoming meetings and new legislation that matters to you.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="civic-card">
-          <CardHeader>
-            <Star className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Custom Watchlists</CardTitle>
-            <CardDescription>
-              Save searches and get email digests when tracked items update.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Choose instant, daily, or weekly alerts to stay informed without the noise.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Why Section */}
-      <div className="py-12 border-t">
-        <div className="max-w-3xl mx-auto text-center space-y-6">
-          <h2 className="text-3xl font-bold">Why Local Gov Watch?</h2>
-          <div className="grid md:grid-cols-3 gap-6 text-left">
-            <div>
-              <DollarSign className="h-6 w-6 text-primary mb-2" />
-              <h3 className="font-semibold mb-1">Affordable</h3>
-              <p className="text-sm text-muted-foreground">
-                Under $100/month at MVP scale vs. $8k/month for Quorum.
-              </p>
-            </div>
-            <div>
-              <TrendingUp className="h-6 w-6 text-primary mb-2" />
-              <h3 className="font-semibold mb-1">Hyper-Local</h3>
-              <p className="text-sm text-muted-foreground">
-                Built specifically for Austin, Travis County, and Texas—not bloated with federal data.
-              </p>
-            </div>
-            <div>
-              <Zap className="h-6 w-6 text-primary mb-2" />
-              <h3 className="font-semibold mb-1">Fast & Simple</h3>
-              <p className="text-sm text-muted-foreground">
-                Mobile-first PWA with offline support. No complexity, just the info you need.
-              </p>
-            </div>
-          </div>
+      {/* Live Snapshot */}
+      <div className="max-w-[1320px] mx-auto px-4 py-12">
+        <div className="grid md:grid-cols-3 gap-6">
+          {isLoading ? (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>New this week</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-12 w-24" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Meetings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-12 w-24" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Elections</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-12 w-24" />
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>New this week</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold">{snapshotData?.tableCounts?.legislation || 0}</p>
+                  <p className="text-sm text-muted-foreground">Recent legislation</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Meetings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold">{snapshotData?.tableCounts?.meetings || 0}</p>
+                  <p className="text-sm text-muted-foreground">Total in database</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Elections</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold">{snapshotData?.tableCounts?.elections || 0}</p>
+                  <p className="text-sm text-muted-foreground">Total in database</p>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="py-12 text-center border-t">
-        <h2 className="text-3xl font-bold mb-4">Get Started Today</h2>
-        <p className="text-xl text-muted-foreground mb-6">
-          Create an account to save watchlists and receive alerts.
-        </p>
-        <Button size="lg" asChild className="touch-target">
-          <Link to="/auth">Sign Up for Free</Link>
-        </Button>
       </div>
     </Layout>
   );

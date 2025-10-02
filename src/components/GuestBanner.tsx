@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
-import { Sparkles, RotateCcw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Sparkles, RotateCcw, RefreshCw } from "lucide-react";
 import { clearGuestSession } from "@/lib/guestSession";
+import { clearGuestScope, clearGuestTopics } from "@/lib/guestSessionStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { RefreshDataButton } from "./RefreshDataButton";
 
 export function GuestBanner() {
   const navigate = useNavigate();
@@ -11,6 +13,8 @@ export function GuestBanner() {
 
   const handleRestartDemo = () => {
     clearGuestSession();
+    clearGuestScope();
+    clearGuestTopics();
     queryClient.clear();
     toast.success("Demo restarted");
     navigate("/");
@@ -30,6 +34,11 @@ export function GuestBanner() {
             </div>
           </div>
           <div className="flex gap-2">
+            <RefreshDataButton 
+              variant="ghost" 
+              size="sm"
+              className="gap-2"
+            />
             <Button 
               size="sm" 
               variant="ghost"
@@ -37,12 +46,7 @@ export function GuestBanner() {
               className="gap-2"
             >
               <RotateCcw className="h-4 w-4" />
-              <span className="hidden sm:inline">Restart demo</span>
-            </Button>
-            <Button size="sm" asChild className="bg-primary hover:bg-primary/90 shadow-sm">
-              <Link to="/auth?convert=true">
-                Save this setup
-              </Link>
+              <span className="hidden sm:inline">Restart</span>
             </Button>
           </div>
         </div>

@@ -19,6 +19,9 @@ import { useGuestRunUpdate } from "@/hooks/useGuestRunUpdate";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import React, { useState, useEffect } from "react";
+import { LocationSelector } from "@/components/LocationSelector";
+import { MiniCalendar } from "@/components/MiniCalendar";
+import { getGuestScope, setGuestScope } from "@/lib/guestSessionStorage";
 
 export default function Dashboard() {
   const { user, isGuest, guestSession } = useAuth();
@@ -58,26 +61,62 @@ export default function Dashboard() {
     enabled: !!effectiveJurisdictionId
   });
 
-  // Resolve scope for data status and queries
-  const [scopeString, setScopeString] = useState<string>('city:austin-tx,county:travis-county-tx,state:texas');
+  // Resolve scope using guest session storage or user profile
+  const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([]);
+  const [scopeString, setScopeString] = useState<string>('');
   const [resolvedScope, setResolvedScope] = useState<ResolvedScope | null>(null);
   const queryClient = useQueryClient();
   const runUpdate = useGuestRunUpdate();
   const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
   const [autoRefreshEta, setAutoRefreshEta] = useState<number | null>(null);
 
+  // Initialize selected jurisdictions from guest session storage
   useEffect(() => {
-    const resolveScopeAsync = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const resolved = await resolveScope(urlParams, profile, guestSession, supabase);
-      setScopeString(resolved.scopeString);
-      setResolvedScope(resolved);
+    const storedJurisdictions = getGuestScope();
+    setSelectedJurisdictions(storedJurisdictions);
+  }, []);
+
+  // Update scope string when jurisdictions change
+  useEffect(() => {
+    if (selectedJurisdictions.length === 0) return;
+    
+    const buildScope = async () => {
+      // Fetch jurisdiction details to build proper scope string
+      const { data: jurisdictions } = await supabase
+        .from('jurisdiction')
+        .select('slug, type')
+        .in('slug', selectedJurisdictions);
+      
+      if (jurisdictions) {
+        const scopeParts = jurisdictions.map(j => `${j.type}:${j.slug}`);
+        const newScopeString = scopeParts.join(',');
+        setScopeString(newScopeString);
+        setResolvedScope({
+          scopeString: newScopeString,
+          jurisdictionIds: [],
+          jurisdictionSlugs: selectedJurisdictions
+        });
+      }
     };
-    resolveScopeAsync();
-  }, [profile, guestSession]);
+    
+    buildScope();
+  }, [selectedJurisdictions]);
+
+  const handleJurisdictionChange = (slugs: string[]) => {
+    setSelectedJurisdictions(slugs);
+    setGuestScope(slugs);
+    
+    // Invalidate all data queries to refetch with new scope
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['calendar'] });
+    queryClient.invalidateQueries({ queryKey: ['legislation'] });
+    queryClient.invalidateQueries({ queryKey: ['meetings'] });
+    queryClient.invalidateQueries({ queryKey: ['elections'] });
+    queryClient.invalidateQueries({ queryKey: ['data-status'] });
+  };
 
   // Check data status with unified scope
-  const { data: dataStatus, refetch: refetchDataStatus, isLoading: isDataStatusLoading } = useDataStatus(scopeString);
+  const { data: dataStatus, refetch: refetchDataStatus, isLoading: isDataStatusLoading } = useDataStatus(scopeString || 'city:austin-tx,county:travis-county-tx,state:texas');
 
   // Auto-refresh on load if mode is seed and no data
   useEffect(() => {
@@ -230,10 +269,12 @@ export default function Dashboard() {
         {/* Header with jurisdiction */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-            <p className="text-muted-foreground">
-              {jurisdiction?.name || 'Select a jurisdiction in settings'}
-            </p>
+            <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
+            <LocationSelector 
+              value={selectedJurisdictions}
+              onChange={handleJurisdictionChange}
+              maxSelections={3}
+            />
           </div>
           <div className="flex gap-2">
             {profile?.is_admin && (
@@ -488,29 +529,9 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Trends and Calendar Cards */}
+        {/* Calendar and Trends Cards */}
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="p-6">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Calendar
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              View all meetings and elections in calendar format
-            </p>
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="w-full"
-            >
-              <Link
-                to={`/calendar?kinds=meetings,elections&defaultScope=${profile?.default_scope || guestSession?.defaultScope || 'city'}`}
-              >
-                View calendar →
-              </Link>
-            </Button>
-          </Card>
+          <MiniCalendar scope={scopeString || 'austin-tx,travis-county-tx,texas'} />
 
           <Card className="p-6">
             <h3 className="font-semibold mb-4 flex items-center gap-2">
