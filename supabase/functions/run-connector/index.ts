@@ -45,10 +45,35 @@ serve(async (req) => {
     // Get jurisdiction
     const jurisdictionId = await getJurisdictionId(supabase, connector.jurisdiction_slug);
     
+    // Get or create source record
+    let sourceId = connector.source_id;
+    if (!sourceId) {
+      const { data: source, error: sourceError } = await supabase
+        .from("source")
+        .insert({
+          jurisdiction_id: jurisdictionId,
+          kind: connector.kind,
+          url: connector.url,
+          connector_id: connector.id,
+        })
+        .select()
+        .single();
+      
+      if (sourceError) throw sourceError;
+      sourceId = source.id;
+      
+      // Update connector with source_id
+      await supabase
+        .from("connector")
+        .update({ source_id: sourceId })
+        .eq("id", connector.id);
+    }
+    
     // Create ingest run
     const { data: ingestRun, error: runError } = await supabase
       .from("ingest_run")
       .insert({
+        source_id: sourceId,
         status: "running",
         log: `Starting ${connector.key}`,
       })
@@ -63,7 +88,9 @@ serve(async (req) => {
 
     try {
       // Run the appropriate parser based on parser_key
-      stats = await runParser(supabase, connector, jurisdictionId);
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      stats = await runParser(connector, supabaseUrl, supabaseKey, sourceId, jurisdictionId);
       log = `Completed: ${stats.newCount} new, ${stats.updatedCount} updated, ${stats.errorCount} errors`;
     } catch (error) {
       status = "error";
@@ -124,38 +151,42 @@ async function getJurisdictionId(supabase: any, slug: string): Promise<string> {
 }
 
 async function runParser(
-  supabase: any,
   connector: any,
+  supabaseUrl: string,
+  supabaseKey: string,
+  sourceId: string,
   jurisdictionId: string
 ): Promise<ConnectorStats> {
-  // This is a stub - actual parser implementations would go here
-  // For now, just return mock stats
-  console.log(`Parser ${connector.parser_key} would run for ${connector.url}`);
+  console.log(`Running parser: ${connector.parser_key}`);
   
-  // Simulate processing based on parser type
-  if (connector.parser_key === "austin_council_meetings") {
-    return await mockAustinMeetings(supabase, jurisdictionId);
-  } else if (connector.parser_key === "austin_ordinances") {
-    return await mockAustinOrdinances(supabase, jurisdictionId);
-  } else if (connector.parser_key === "travis_elections") {
-    return await mockTravisElections(supabase, jurisdictionId);
+  // Import shared helpers
+  const { createIngestStats } = await import('../_shared/helpers.ts');
+  const stats = createIngestStats();
+  
+  // Route to appropriate parser based on parser_key
+  switch (connector.parser_key) {
+    case 'austin.councilMeetings': {
+      const { parseAustinMeetings } = await import('../_shared/parsers/austinMeetings.ts');
+      await parseAustinMeetings(supabaseUrl, supabaseKey, sourceId, jurisdictionId, stats);
+      break;
+    }
+    case 'austin.ordinances': {
+      const { parseAustinOrdinances } = await import('../_shared/parsers/austinOrdinances.ts');
+      await parseAustinOrdinances(supabaseUrl, supabaseKey, sourceId, jurisdictionId, stats);
+      break;
+    }
+    case 'travis.elections': {
+      const { parseTravisElections } = await import('../_shared/parsers/travisElections.ts');
+      await parseTravisElections(supabaseUrl, supabaseKey, sourceId, jurisdictionId, stats);
+      break;
+    }
+    default:
+      throw new Error(`Unknown parser: ${connector.parser_key}`);
   }
-
-  return { newCount: 0, updatedCount: 0, errorCount: 0 };
-}
-
-async function mockAustinMeetings(supabase: any, jurisdictionId: string): Promise<ConnectorStats> {
-  // This would actually scrape and parse, but for now just log
-  console.log("Would scrape Austin council meetings");
-  return { newCount: 0, updatedCount: 0, errorCount: 0 };
-}
-
-async function mockAustinOrdinances(supabase: any, jurisdictionId: string): Promise<ConnectorStats> {
-  console.log("Would scrape Austin ordinances");
-  return { newCount: 0, updatedCount: 0, errorCount: 0 };
-}
-
-async function mockTravisElections(supabase: any, jurisdictionId: string): Promise<ConnectorStats> {
-  console.log("Would scrape Travis County elections");
-  return { newCount: 0, updatedCount: 0, errorCount: 0 };
+  
+  return {
+    newCount: stats.newCount,
+    updatedCount: stats.updatedCount,
+    errorCount: stats.errorCount,
+  };
 }

@@ -62,10 +62,24 @@ export default function Connectors() {
     onSuccess: (data) => {
       setRunningConnector(null);
       queryClient.invalidateQueries({ queryKey: ["connectors"] });
-      toast({
-        title: "Connector run complete",
-        description: `Processed ${data.stats?.newCount || 0} new items, ${data.stats?.updatedCount || 0} updated`,
-      });
+      
+      const stats = data.stats || {};
+      const newCount = stats.newCount || 0;
+      const updatedCount = stats.updatedCount || 0;
+      const errorCount = stats.errorCount || 0;
+      
+      if (data.status === "error") {
+        toast({
+          title: "Connector run failed",
+          description: `${errorCount} errors occurred`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Connector run complete",
+          description: `${newCount} new, ${updatedCount} updated${errorCount > 0 ? `, ${errorCount} errors` : ''}`,
+        });
+      }
     },
     onError: (error) => {
       setRunningConnector(null);
