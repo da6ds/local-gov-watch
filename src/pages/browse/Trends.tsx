@@ -71,17 +71,21 @@ export default function Trends() {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Trends</h1>
-              <p className="text-muted-foreground">
-                What's happening in your selected locations
-                {selectedTopics.length > 0 && ` • Filtered by ${selectedTopics.length} topic${selectedTopics.length > 1 ? 's' : ''}`}
-              </p>
-            </div>
-            
+      <div className="space-y-6">
+        {/* Header - visible on mobile only */}
+        <div className="md:hidden">
+          <h1 className="text-3xl font-bold mb-2">Trends</h1>
+          <p className="text-muted-foreground">
+            What's trending in your area
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Trending Topics
+            </CardTitle>
             <div className="flex gap-2 flex-wrap">
               {(['7d', '30d', '6m', '1y'] as const).map((window) => (
                 <Button
@@ -94,27 +98,24 @@ export default function Trends() {
                 </Button>
               ))}
             </div>
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-12 text-muted-foreground">
-              Loading trends...
-            </div>
-          ) : trends.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading trends...
+              </div>
+            ) : trends.length === 0 ? (
+              <div className="py-8 text-center">
                 <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No trends yet</h3>
                 <p className="text-muted-foreground">
                   Trends will appear here once we analyze content for this time period
                 </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {trends.map((trend, index) => (
-                <Card key={`${trend.topic}-${index}`} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {trends.map((trend, index) => (
+                  <div key={`${trend.topic}-${index}`} className="border rounded-lg p-4 hover:border-primary/50 transition-colors">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
@@ -130,26 +131,24 @@ export default function Trends() {
                             </Badge>
                           )}
                         </div>
-                        <CardTitle className="text-xl capitalize">
+                        <p className="font-medium text-sm mb-2 capitalize">
                           {trend.topic.replace(/-/g, ' ')} Activity
-                        </CardTitle>
+                        </p>
+                        <div className="flex gap-2 text-sm text-muted-foreground">
+                          <span>{trend.by_kind?.meeting || 0} meetings</span>
+                          <span>•</span>
+                          <span>{trend.by_kind?.legislation || 0} legislation</span>
+                          <span>•</span>
+                          <span>{trend.by_kind?.election || 0} elections</span>
+                        </div>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex gap-2 text-sm text-muted-foreground">
-                      <span>{trend.by_kind?.meeting || 0} meetings</span>
-                      <span>•</span>
-                      <span>{trend.by_kind?.legislation || 0} legislation</span>
-                      <span>•</span>
-                      <span>{trend.by_kind?.election || 0} elections</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );

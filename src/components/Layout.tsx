@@ -1,10 +1,14 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, Scale } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { TopicsPopover } from "@/components/TopicsPopover";
 import { RefreshControl } from "@/components/RefreshControl";
+import { LocationSelector } from "@/components/LocationSelector";
+import { getGuestScope, setGuestScope } from "@/lib/guestSessionStorage";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface LayoutProps {
@@ -14,6 +18,27 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const queryClient = useQueryClient();
+  const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([]);
+
+  // Initialize from session storage
+  useEffect(() => {
+    setSelectedJurisdictions(getGuestScope());
+  }, []);
+
+  // Handle jurisdiction change
+  const handleJurisdictionChange = (slugs: string[]) => {
+    setSelectedJurisdictions(slugs);
+    setGuestScope(slugs);
+    
+    // Invalidate all data queries
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['calendar'] });
+    queryClient.invalidateQueries({ queryKey: ['browse'] });
+    queryClient.invalidateQueries({ queryKey: ['trends'] });
+    
+    toast.success("Location updated");
+  };
 
   const tabItems = [
     { href: "/dashboard", label: "Dashboard" },
@@ -67,11 +92,6 @@ export function Layout({ children }: LayoutProps) {
             <span className="font-semibold hidden sm:inline-block">Local Gov Watch</span>
           </Link>
 
-          {/* Mobile Topics Pill - visible on mobile only, before Refresh */}
-          <div className="flex md:hidden items-center gap-2 ml-auto">
-            <TopicsPopover />
-          </div>
-
           {/* Desktop Nav - Tabs */}
           <nav className="hidden md:flex items-center gap-1 ml-8">
             {tabItems.map((item) => (
@@ -90,20 +110,26 @@ export function Layout({ children }: LayoutProps) {
             ))}
           </nav>
 
-          {/* Right Actions - Desktop */}
-          <div className="hidden md:flex items-center gap-3 ml-auto h-10">
+          {/* Global Filters - Desktop & Mobile */}
+          <div className="flex items-center gap-2 ml-auto">
+            <LocationSelector 
+              value={selectedJurisdictions}
+              onChange={handleJurisdictionChange}
+              maxSelections={3}
+            />
             <TopicsPopover />
-            <RefreshControl />
+            <div className="hidden md:flex">
+              <RefreshControl />
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container py-6">{children}</main>
 
-      <footer className="border-t py-6 md:py-8">
+      <footer className="border-t py-4 md:py-6">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>Local Gov Watch • Austin, Travis County, Texas</p>
-          <p className="mt-2">Hyper-local. AI-smart. Costs dozens, not thousands.</p>
+          <p>Local Gov Watch</p>
         </div>
       </footer>
     </div>

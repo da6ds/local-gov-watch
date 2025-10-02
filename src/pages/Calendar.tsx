@@ -113,114 +113,82 @@ export default function Calendar() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div>
+        {/* Header - visible on mobile only */}
+        <div className="md:hidden">
           <h1 className="text-3xl font-bold mb-2">Calendar</h1>
           <p className="text-muted-foreground">View upcoming meetings and elections</p>
         </div>
 
-        <div className="grid lg:grid-cols-[300px_1fr] gap-6">
-          {/* Sidebar */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Event Type Filters */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium">Event Types</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="meetings"
-                      checked={showMeetings}
-                      onCheckedChange={(checked) => setShowMeetings(checked as boolean)}
-                    />
-                    <Label htmlFor="meetings" className="text-sm">Meetings</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="elections"
-                      checked={showElections}
-                      onCheckedChange={(checked) => setShowElections(checked as boolean)}
-                    />
-                    <Label htmlFor="elections" className="text-sm">Elections</Label>
+        <div className="grid lg:grid-cols-[1fr_300px] gap-6">
+          {/* Left side - Filters on mobile/tablet, Calendar on desktop */}
+          <div className="lg:order-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarIcon className="h-5 w-5" />
+                  Filters
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Event Type Filters */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium">Event Types</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="meetings"
+                        checked={showMeetings}
+                        onCheckedChange={(checked) => setShowMeetings(checked as boolean)}
+                      />
+                      <Label htmlFor="meetings" className="text-sm">Meetings</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="elections"
+                        checked={showElections}
+                        onCheckedChange={(checked) => setShowElections(checked as boolean)}
+                      />
+                      <Label htmlFor="elections" className="text-sm">Elections</Label>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Topic Filters */}
-              <div className="pt-4 border-t space-y-3">
-                <h4 className="text-sm font-medium">Filter by Topics</h4>
-                <InteractiveTopicChips
-                  topics={availableTopics}
-                  selectedTopics={selectedTopics}
-                  onToggle={toggleTopic}
-                  onClear={clearTopics}
-                  showClear={true}
-                />
-                {selectedTopics.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Showing events matching {selectedTopics.length} topic{selectedTopics.length > 1 ? 's' : ''}
-                  </p>
-                )}
-              </div>
-
-              {/* Export */}
-              <div className="pt-4 border-t">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleExportCalendar}
-                  disabled={isLoading}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export .ics
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Calendar View */}
-          <div className="space-y-4">
-            {selectedTopics.length > 0 && (
-              <Card className="bg-primary/5 border-primary/20">
-                <CardContent className="pt-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{selectedTopics.length}</Badge>
-                    <span className="text-sm">topic{selectedTopics.length > 1 ? 's' : ''} selected</span>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={clearTopics}>
-                    Clear
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {events.length === 0 && !isLoading ? (
-              <Card>
-                <CardContent className="pt-6 text-center text-muted-foreground">
-                  {selectedTopics.length > 0 ? (
-                    <div>
-                      <p>No events found for selected topics</p>
-                      <Button
-                        variant="link"
-                        onClick={clearTopics}
-                        className="mt-2"
-                      >
-                        Clear topic filters
-                      </Button>
-                    </div>
-                  ) : (
-                    <p>No events scheduled for this month</p>
+                {/* Topic Filters */}
+                <div className="pt-4 border-t space-y-3">
+                  <h4 className="text-sm font-medium">Filter by Topics</h4>
+                  <InteractiveTopicChips
+                    topics={availableTopics}
+                    selectedTopics={selectedTopics}
+                    onToggle={toggleTopic}
+                    onClear={clearTopics}
+                    showClear={true}
+                  />
+                  {selectedTopics.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Showing events matching {selectedTopics.length} topic{selectedTopics.length > 1 ? 's' : ''}
+                    </p>
                   )}
-                </CardContent>
-              </Card>
-            ) : (
-              <MiniCalendar scope={scopeString} />
-            )}
+                </div>
+
+                {/* Export */}
+                <div className="pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleExportCalendar}
+                    disabled={isLoading}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export .ics
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right side - Calendar with side panel for event details */}
+          <div className="lg:order-1">
+            <MiniCalendar scope={scopeString} showSidePanel={true} />
           </div>
         </div>
       </div>

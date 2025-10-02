@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface MiniCalendarProps {
   scope: string; // e.g., "austin-tx,travis-county-tx,texas"
+  showSidePanel?: boolean; // Show events in side panel (desktop) vs below (mobile/widget)
 }
 
 interface CalendarEvent {
@@ -19,7 +20,7 @@ interface CalendarEvent {
   jurisdiction: string;
 }
 
-export function MiniCalendar({ scope }: MiniCalendarProps) {
+export function MiniCalendar({ scope, showSidePanel = false }: MiniCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const navigate = useNavigate();
 
@@ -77,6 +78,61 @@ export function MiniCalendar({ scope }: MiniCalendarProps) {
     return <Skeleton className="h-[320px] w-full" />;
   }
 
+  if (showSidePanel) {
+    // Desktop layout with side panel
+    return (
+      <Card>
+        <CardContent className="p-0">
+          <div className="grid lg:grid-cols-[1fr_280px]">
+            <div className="p-4 border-r">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                modifiers={{
+                  hasEvent: datesWithEvents
+                }}
+                modifiersClassNames={{
+                  hasEvent: "bg-primary/10 font-bold"
+                }}
+                className="rounded-md"
+              />
+            </div>
+            
+            <div className="p-4 bg-muted/20 max-h-[400px] overflow-y-auto">
+              {eventsOnDate.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm font-medium sticky top-0 bg-muted/20 py-1">
+                    {format(selectedDate!, 'MMM d, yyyy')}
+                  </p>
+                  <div className="space-y-2">
+                    {eventsOnDate.map((event) => (
+                      <div
+                        key={event.id}
+                        onClick={() => handleEventClick(event)}
+                        className="flex flex-col gap-1 p-2 rounded-md hover:bg-background cursor-pointer transition-colors border"
+                      >
+                        <Badge variant={event.kind === 'meeting' ? 'default' : 'secondary'} className="w-fit">
+                          {event.kind}
+                        </Badge>
+                        <span className="text-sm line-clamp-2">{event.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : selectedDate ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No events on this day
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Default widget layout
   return (
     <div className="space-y-4">
         <Calendar

@@ -42,69 +42,43 @@ export function TrendsWidget() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            Trends
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-muted-foreground text-center py-6">
-          Loading trends...
-        </CardContent>
-      </Card>
+      <div className="text-muted-foreground text-center py-6">
+        Loading trends...
+      </div>
     );
   }
 
   if (!trends?.length) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            Trends
-          </CardTitle>
-          <CardDescription>Last 7 days</CardDescription>
-        </CardHeader>
-        <CardContent className="text-muted-foreground text-center py-6">
-          No trends available yet
-        </CardContent>
-      </Card>
+      <div className="text-muted-foreground text-center py-6">
+        No trends available yet
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          Trends
-        </CardTitle>
-        <CardDescription>Last 7 days</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {trends.map((trend: any, index: number) => (
-          <div key={`${trend.topic}-${index}`} className="border-l-2 border-accent pl-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Badge variant="secondary" className="bg-accent/20 text-accent-foreground capitalize">
-                {trend.topic.replace(/-/g, ' ')}
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                {trend.count} {trend.count === 1 ? 'item' : 'items'}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {trend.by_kind?.meeting || 0} meetings • {trend.by_kind?.legislation || 0} legislation • {trend.by_kind?.election || 0} elections
-            </p>
+    <div className="space-y-4">
+      {trends.map((trend: any, index: number) => (
+        <div key={`${trend.topic}-${index}`} className="border-l-2 border-accent pl-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="secondary" className="bg-accent/20 text-accent-foreground capitalize">
+              {trend.topic.replace(/-/g, ' ')}
+            </Badge>
+            <span className="text-sm text-muted-foreground">
+              {trend.count} {trend.count === 1 ? 'item' : 'items'}
+            </span>
           </div>
-        ))}
-        <Link
-          to="/browse/trends"
-          className="inline-block text-sm text-primary hover:underline font-medium"
-        >
-          View all trends →
-        </Link>
-      </CardContent>
-    </Card>
+          <p className="text-sm text-muted-foreground">
+            {trend.by_kind?.meeting || 0} meetings • {trend.by_kind?.legislation || 0} legislation • {trend.by_kind?.election || 0} elections
+          </p>
+        </div>
+      ))}
+      <Link
+        to="/browse/trends"
+        className="inline-block text-sm text-primary hover:underline font-medium"
+      >
+        View all trends →
+      </Link>
+    </div>
   );
 }

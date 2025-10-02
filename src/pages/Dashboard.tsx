@@ -135,8 +135,8 @@ export default function Dashboard() {
     <TooltipProvider>
       <Layout>
         <div className="space-y-6">
-          {/* Header */}
-          <div>
+          {/* Header - visible on mobile only */}
+          <div className="md:hidden">
             <h1 className="text-3xl font-bold mb-1">Dashboard</h1>
             {/* Subtle status line */}
             <div className="text-sm text-muted-foreground" aria-live="polite">
@@ -149,15 +149,6 @@ export default function Dashboard() {
                 <span>No recent local updates yet</span>
               ) : null}
             </div>
-          </div>
-
-          {/* Toolbar with Location Selector */}
-          <div className="flex items-center justify-between gap-4">
-            <LocationSelector 
-              value={selectedJurisdictions}
-              onChange={handleJurisdictionChange}
-              maxSelections={3}
-            />
           </div>
 
           {/* Snapshot Cards */}
@@ -284,13 +275,12 @@ export default function Dashboard() {
             <Card>
               <CardHeader>
                 <Link to="/calendar" className="group" aria-label="View full calendar">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
+                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer" role="heading" aria-level={2}>
                     <Calendar className="h-5 w-5" />
                     Calendar
                     <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
-                <CardDescription>Upcoming meetings and elections</CardDescription>
               </CardHeader>
               <CardContent>
                 <MiniCalendar scope={scopeString || 'austin-tx,travis-county-tx,texas'} />
@@ -301,13 +291,12 @@ export default function Dashboard() {
             <Card>
               <CardHeader>
                 <Link to="/browse/trends" className="group" aria-label="View all trends">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
+                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer" role="heading" aria-level={2}>
                     <TrendingUp className="h-5 w-5" />
-                    Trends
+                    Trending Topics
                     <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
-                <CardDescription>What's happening now</CardDescription>
               </CardHeader>
               <CardContent>
                 <TrendsPlaceholder />
