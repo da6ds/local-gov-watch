@@ -6,11 +6,20 @@ auto_confirm_email = true
 [functions.analyze-topics]
 verify_jwt = false
 
+[functions.calendar-api]
+verify_jwt = false
+
+[functions.cron-connectors]
+verify_jwt = false
+
+[functions.data-status]
+verify_jwt = false
+
 [functions.digest-weekly]
 verify_jwt = false
 
 [functions.run-connector]
 verify_jwt = false
 
-[functions.cron-connectors]
+[functions.run-connectors]
 verify_jwt = false

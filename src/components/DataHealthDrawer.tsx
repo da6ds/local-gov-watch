@@ -3,14 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Activity, RefreshCw } from "lucide-react";
-import { format } from "date-fns";
+import { Separator } from "@/components/ui/separator";
+import { Activity, RefreshCw, ExternalLink } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { DataStatus } from "@/hooks/useDataStatus";
 
 interface DataHealthDrawerProps {
-  jurisdictionSlugs: string[];
+  scopeString: string;
+  dataStatus?: DataStatus;
 }
 
-export function DataHealthDrawer({ jurisdictionSlugs }: DataHealthDrawerProps) {
+export function DataHealthDrawer({ scopeString, dataStatus }: DataHealthDrawerProps) {
+  const navigate = useNavigate();
+  const jurisdictionSlugs = dataStatus?.diagnostics.jurisdictionSlugs || [];
   const { data: healthData, isLoading, refetch } = useQuery({
     queryKey: ['data-health', ...jurisdictionSlugs],
     queryFn: async () => {
@@ -50,16 +56,52 @@ export function DataHealthDrawer({ jurisdictionSlugs }: DataHealthDrawerProps) {
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Data Health Diagnostics</SheetTitle>
+          <SheetTitle>Data Health Status</SheetTitle>
           <SheetDescription>
-            View data counts and connector status for your jurisdictions
+            Current data status and diagnostics
           </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-6 mt-6">
+          {/* Data Status Summary */}
+          {dataStatus && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Status Summary</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Mode:</span>
+                  <Badge variant={dataStatus.mode === 'live' ? 'default' : 'secondary'}>
+                    {dataStatus.mode}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Reason:</span>
+                  <span className="font-mono text-xs">{dataStatus.reason}</span>
+                </div>
+                {dataStatus.lastRunAt && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Last Run:</span>
+                    <span>{formatDistanceToNow(new Date(dataStatus.lastRunAt), { addSuffix: true })}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Scope:</span>
+                  <span className="font-mono text-xs">{scopeString}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <Separator />
+
           {/* Table Counts */}
           <div>
-            <h3 className="font-semibold mb-3">Data Counts</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Data Counts</h3>
+              <Button size="sm" variant="ghost" onClick={() => refetch()}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-muted p-3 rounded-lg">
                 <div className="text-2xl font-bold">{healthData?.counts.legislation || 0}</div>
@@ -76,14 +118,51 @@ export function DataHealthDrawer({ jurisdictionSlugs }: DataHealthDrawerProps) {
             </div>
           </div>
 
-          {/* Connector Status */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">Connector Status</h3>
-              <Button size="sm" variant="ghost" onClick={() => refetch()}>
-                <RefreshCw className="h-4 w-4" />
+          <Separator />
+
+          {/* Diagnostics */}
+          {dataStatus && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Diagnostics</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Enabled Connectors:</span>
+                  <span>{dataStatus.diagnostics.enabledConnectors}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Recent Runs:</span>
+                  <span>{dataStatus.diagnostics.recentRuns}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Meetings:</span>
+                  <span>{dataStatus.tableCounts.meetings}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Legislation:</span>
+                  <span>{dataStatus.tableCounts.legislation}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Elections:</span>
+                  <span>{dataStatus.tableCounts.elections}</span>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-2"
+                onClick={() => navigate("/admin/connectors")}
+              >
+                <ExternalLink className="h-3 w-3 mr-2" />
+                Manage Connectors
               </Button>
             </div>
+          )}
+
+          <Separator />
+
+          {/* Connector Status */}
+          <div>
+            <h3 className="font-semibold mb-3">Connector Status</h3>
             <div className="space-y-3">
               {healthData?.connectors.map((connector) => (
                 <div key={connector.id} className="border rounded-lg p-3 space-y-2">

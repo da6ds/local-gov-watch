@@ -11,9 +11,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, addDays, formatDistanceToNow } from "date-fns";
 import { GuestBanner } from "@/components/GuestBanner";
 import { TrendsPlaceholder } from "@/components/TrendsPlaceholder";
-import { useLiveDataStatus } from "@/hooks/useLiveDataStatus";
+import { useDataStatus } from "@/hooks/useDataStatus";
+import { resolveScope } from "@/lib/scopeResolver";
 import { DataHealthDrawer } from "@/components/DataHealthDrawer";
 import { RefreshDataButton } from "@/components/RefreshDataButton";
+import React from "react";
 
 export default function Dashboard() {
   const { user, isGuest, guestSession } = useAuth();
@@ -53,17 +55,20 @@ export default function Dashboard() {
     enabled: !!effectiveJurisdictionId
   });
 
-  // Check if we have live data - pass hierarchical jurisdiction slugs
-  const jurisdictionSlugs: string[] = [];
-  if (jurisdiction) {
-    jurisdictionSlugs.push(jurisdiction.slug);
-    
-    // For Austin, also check Travis County and Texas
-    if (jurisdiction.slug === 'austin-tx') {
-      jurisdictionSlugs.push('travis-county-tx', 'texas');
-    }
-  }
-  const { data: liveDataStatus } = useLiveDataStatus(jurisdictionSlugs);
+  // Resolve scope for data status
+  const [scopeString, setScopeString] = React.useState<string>('city:austin-tx,county:travis-county-tx,state:texas');
+
+  React.useEffect(() => {
+    const resolveScopeAsync = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const resolved = await resolveScope(urlParams, profile, guestSession, supabase);
+      setScopeString(resolved.scopeString);
+    };
+    resolveScopeAsync();
+  }, [profile, guestSession]);
+
+  // Check data status with unified scope
+  const dataStatus = useDataStatus(scopeString);
 
   // Fetch recent legislation (last 7 days)
   const { data: recentLegislation } = useQuery({
@@ -177,9 +182,12 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-2">
             {profile?.is_admin && (
-              <DataHealthDrawer jurisdictionSlugs={jurisdictionSlugs} />
+              <DataHealthDrawer 
+                scopeString={scopeString}
+                dataStatus={dataStatus.data}
+              />
             )}
-            <RefreshDataButton scope={`city:${jurisdiction?.slug || 'austin-tx'}`} />
+            <RefreshDataButton scope={scopeString} />
             <Button asChild variant="outline">
               <Link to="/settings">
                 <Bell className="h-4 w-4 mr-2" />
@@ -189,26 +197,53 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Live/Seed Data Status Banner */}
-        {liveDataStatus && (
-          <div className="flex items-center justify-center gap-2 text-sm bg-muted/50 rounded-lg px-4 py-3">
-            {liveDataStatus.dataSource === 'live' ? (
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="font-medium">
-                  Live as of {liveDataStatus.lastRunAt && formatDistanceToNow(new Date(liveDataStatus.lastRunAt), { addSuffix: true })}
-                </span>
+        {/* Data Status Banner */}
+        {!dataStatus.isLoading && dataStatus.data && (
+          <Card className={`mb-6 ${
+            dataStatus.data.mode === 'live'
+              ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900" 
+              : "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900"
+          }`}>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    {dataStatus.data.mode === 'live' ? (
+                      <>
+                        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                        <h3 className="font-semibold text-green-900 dark:text-green-100">
+                          Live Data
+                        </h3>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                        <h3 className="font-semibold text-yellow-900 dark:text-yellow-100">
+                          Demo Data (Seeded)
+                        </h3>
+                      </>
+                    )}
+                  </div>
+                  
+                  <p className="text-sm text-muted-foreground">
+                    {dataStatus.data.mode === 'live' ? (
+                      <>
+                        Live as of {dataStatus.data.lastRunAt 
+                          ? formatDistanceToNow(new Date(dataStatus.data.lastRunAt), { addSuffix: true })
+                          : 'recently'}
+                      </>
+                    ) : (
+                      <>
+                        {dataStatus.data.reason === 'no-successful-runs' && 'No recent connector runs'}
+                        {dataStatus.data.reason === 'tables-empty' && 'Tables are empty'}
+                        {dataStatus.data.reason === 'success-but-empty-window' && 'Success but empty window'}
+                      </>
+                    )}
+                  </p>
+                </div>
               </div>
-            ) : (
-              <>
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">
-                  Demo data (seeded)
-                  {liveDataStatus.reason && ` - ${liveDataStatus.reason}`}
-                </span>
-              </>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Snapshot Cards - Zero-click data access */}
