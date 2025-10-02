@@ -408,32 +408,44 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Trends - Show placeholder for guest mode */}
-        {isGuest ? (
-          <TrendsPlaceholder />
-        ) : (
-          <Card className="border-dashed">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-8 w-8 text-accent" />
-                <div className="flex-1">
-                  <CardTitle>Emerging Trends</CardTitle>
-                  <CardDescription>AI-powered insights across multiple jurisdictions</CardDescription>
-                </div>
-                <Badge variant="secondary">Coming Soon</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Soon you'll see patterns like "Multiple cities in your area are considering tax changes" 
-                with aggregated insights and cross-jurisdictional analysis.
-              </p>
-              <Button variant="outline" asChild>
-                <Link to="/browse/trends">Preview Trends →</Link>
-              </Button>
-            </CardContent>
+        {/* Trends and Calendar Cards */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="p-6">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Calendar
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              View all meetings and elections in calendar format
+            </p>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <Link
+                to={`/calendar?kinds=meetings,elections&defaultScope=${profile?.default_scope || guestSession?.defaultScope || 'city'}`}
+              >
+                View calendar →
+              </Link>
+            </Button>
           </Card>
-        )}
+
+          <Card className="p-6">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Trends
+            </h3>
+            {user ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Coming soon: Topic trends and analysis
+              </p>
+            ) : (
+              <TrendsPlaceholder />
+            )}
+          </Card>
+        </div>
         </div>
       </Layout>
     </>
