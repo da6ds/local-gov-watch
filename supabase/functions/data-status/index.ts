@@ -14,6 +14,12 @@ interface DataStatusResponse {
     legislation: number;
     elections: number;
   };
+  avgDurations: {
+    meetings: number;
+    legislation: number;
+    elections: number;
+  };
+  totalEstimate: number;
   scopeUsed: string;
   diagnostics: {
     enabledConnectors: number;
@@ -102,6 +108,53 @@ Deno.serve(async (req) => {
 
     const totalRows = tableCounts.meetings + tableCounts.legislation + tableCounts.elections;
 
+    // Calculate average durations from recent successful runs
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: recentRuns } = await supabase
+      .from('ingest_run')
+      .select('started_at, finished_at, source!inner(kind)')
+      .eq('status', 'success')
+      .gte('started_at', thirtyDaysAgo)
+      .not('finished_at', 'is', null);
+
+    const avgDurations = {
+      meetings: 0,
+      legislation: 0,
+      elections: 0
+    };
+
+    if (recentRuns && recentRuns.length > 0) {
+      const durations: { [key: string]: number[] } = {
+        meetings: [],
+        legislation: [],
+        elections: []
+      };
+
+      recentRuns.forEach(run => {
+        const start = new Date(run.started_at).getTime();
+        const end = new Date(run.finished_at!).getTime();
+        const duration = end - start;
+        
+        if (duration > 0 && duration < 600000) { // Filter outliers (< 10 min)
+          const kind = (run.source as any)?.kind;
+          if (kind && durations[kind]) {
+            durations[kind].push(duration);
+          }
+        }
+      });
+
+      // Calculate averages
+      Object.keys(durations).forEach(key => {
+        if (durations[key].length > 0) {
+          avgDurations[key as keyof typeof avgDurations] = Math.round(
+            durations[key].reduce((a, b) => a + b, 0) / durations[key].length
+          );
+        }
+      });
+    }
+
+    const totalEstimate = avgDurations.meetings + avgDurations.legislation + avgDurations.elections;
+
     // Determine mode and reason
     let mode: 'live' | 'seed' = 'seed';
     let reason: DataStatusResponse['reason'] = 'no-successful-runs';
@@ -122,6 +175,8 @@ Deno.serve(async (req) => {
       reason,
       lastRunAt,
       tableCounts,
+      avgDurations,
+      totalEstimate,
       scopeUsed: scopeParam,
       diagnostics: {
         enabledConnectors: enabledCount,

@@ -160,6 +160,42 @@ export type Database = {
           },
         ]
       }
+      guest_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          estimated_duration_ms: number | null
+          id: string
+          progress_message: string | null
+          scope: string
+          session_id: string | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          estimated_duration_ms?: number | null
+          id?: string
+          progress_message?: string | null
+          scope: string
+          session_id?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          estimated_duration_ms?: number | null
+          id?: string
+          progress_message?: string | null
+          scope?: string
+          session_id?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       guest_profile: {
         Row: {
           created_at: string | null

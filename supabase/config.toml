@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.cron-connectors]
 verify_jwt = false
 
+[functions.guest-run-update]
+verify_jwt = false
+
 [functions.data-status]
 verify_jwt = false
 

@@ -10,6 +10,12 @@ export interface DataStatus {
     legislation: number;
     elections: number;
   };
+  avgDurations: {
+    meetings: number;
+    legislation: number;
+    elections: number;
+  };
+  totalEstimate: number;
   scopeUsed: string;
   diagnostics: {
     enabledConnectors: number;
@@ -42,6 +48,8 @@ export function useDataStatus(scope: string) {
           reason: 'no-successful-runs',
           lastRunAt: null,
           tableCounts: { meetings: 0, legislation: 0, elections: 0 },
+          avgDurations: { meetings: 0, legislation: 0, elections: 0 },
+          totalEstimate: 0,
           scopeUsed: scope,
           diagnostics: {
             enabledConnectors: 0,
