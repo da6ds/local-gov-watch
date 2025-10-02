@@ -24,6 +24,8 @@ import Trends from "./pages/browse/Trends";
 import Digest from "./pages/Digest";
 import Unsubscribe from "./pages/Unsubscribe";
 import Search from "./pages/Search";
+import Stances from "./pages/Stances";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +55,8 @@ function App() {
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/digest" element={<Digest />} />
                 <Route path="/search" element={<Search />} />
+                <Route path="/stances" element={<Stances />} />
+                <Route path="/auth" element={<Auth />} />
                 <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
                 <Route path="/unsubscribe" element={<Unsubscribe />} />
                 <Route path="/watchlists" element={<Watchlists />} />
