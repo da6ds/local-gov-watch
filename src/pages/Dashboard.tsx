@@ -1,33 +1,26 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
-import { TrendingUp, Calendar, FileText, Tag, Bell, AlertCircle, Settings } from "lucide-react";
+import { TrendingUp, Calendar, FileText, Scale, Vote } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, formatDistanceToNow } from "date-fns";
 import { TrendsPlaceholder } from "@/components/TrendsPlaceholder";
 import { useDataStatus } from "@/hooks/useDataStatus";
-import { resolveScope } from "@/lib/scopeResolver";
-import { DataHealthDrawer } from "@/components/DataHealthDrawer";
-import { RefreshDataButton } from "@/components/RefreshDataButton";
 import { useGuestRunUpdate } from "@/hooks/useGuestRunUpdate";
 import { toast } from "sonner";
 import React, { useState, useEffect } from "react";
 import { LocationSelector } from "@/components/LocationSelector";
 import { MiniCalendar } from "@/components/MiniCalendar";
-import { getGuestScope, setGuestScope, getGuestTopics, setGuestTopics } from "@/lib/guestSessionStorage";
-import { InteractiveTopicChips } from "@/components/InteractiveTopicChips";
-import { useTopics } from "@/hooks/useTopics";
+import { getGuestScope, setGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
+import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const { isGuest, guestSession } = useAuth();
-  const { data: availableTopics = [] } = useTopics();
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([]);
   const [scopeString, setScopeString] = useState<string>('');
   const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
@@ -35,13 +28,11 @@ export default function Dashboard() {
   const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
   const [autoRefreshEta, setAutoRefreshEta] = useState<number | null>(null);
 
-  // Initialize and manage selected jurisdictions and topics from guest session
+  // Initialize jurisdictions from guest session
   useEffect(() => {
     const guestScope = getGuestScope();
-    const guestTopics = getGuestTopics();
     setSelectedJurisdictions(guestScope);
     setScopeString(guestScope.join(','));
-    setSelectedTopics(guestTopics);
   }, []);
 
   // Resolve jurisdiction IDs when scope changes
@@ -77,35 +68,6 @@ export default function Dashboard() {
     queryClient.invalidateQueries({ queryKey: ['trends'] });
     
     toast.success("Location updated");
-  };
-
-  // Handle topic toggle
-  const toggleTopic = (slug: string) => {
-    const updated = selectedTopics.includes(slug)
-      ? selectedTopics.filter(t => t !== slug)
-      : [...selectedTopics, slug];
-    
-    setSelectedTopics(updated);
-    setGuestTopics(updated);
-    
-    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-    queryClient.invalidateQueries({ queryKey: ['calendar'] });
-    queryClient.invalidateQueries({ queryKey: ['browse'] });
-    queryClient.invalidateQueries({ queryKey: ['trends'] });
-    
-    toast.success("Topics updated");
-  };
-
-  const clearTopics = () => {
-    setSelectedTopics([]);
-    setGuestTopics([]);
-    
-    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-    queryClient.invalidateQueries({ queryKey: ['calendar'] });
-    queryClient.invalidateQueries({ queryKey: ['browse'] });
-    queryClient.invalidateQueries({ queryKey: ['trends'] });
-    
-    toast.success("Topics cleared");
   };
 
   // Check data status
@@ -149,8 +111,8 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [isAutoRefreshing, refetchDataStatus, queryClient]);
 
-  // Fetch data using dashboard API with topic filtering
-  const topicsParam = selectedTopics.join(',');
+  // Fetch data using dashboard API with topic filtering from sessionStorage
+  const topicsParam = getGuestTopics().join(',');
   
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: ['dashboard', scopeString, topicsParam],
@@ -173,210 +135,187 @@ export default function Dashboard() {
     <TooltipProvider>
       <Layout>
         <div className="space-y-6">
-          {/* Header with jurisdiction and status line */}
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold">Dashboard</h1>
-              {/* Subtle status line under title */}
-              <div className="text-sm text-muted-foreground mt-1" aria-live="polite">
-                {isAutoRefreshing ? (
-                  <span>Updating... ~{Math.round((autoRefreshEta || 120000) / 1000 / 60)}m remaining</span>
-                ) : dataStatus?.mode === 'live' && dataStatus.lastRunAt ? (
-                  <span>Live as of {formatDistanceToNow(new Date(dataStatus.lastRunAt), { addSuffix: true })}</span>
-                ) : dataStatus?.mode === 'seed' && dataStatus.reason === 'no-successful-runs' && 
-                   (dataStatus.tableCounts.meetings + dataStatus.tableCounts.legislation + dataStatus.tableCounts.elections === 0) ? (
-                  <span>No recent local updates yet</span>
-                ) : null}
-              </div>
-              <div className="mt-4">
-                <LocationSelector 
-                  value={selectedJurisdictions}
-                  onChange={handleJurisdictionChange}
-                  maxSelections={3}
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <RefreshDataButton 
-                scope={scopeString}
-                sessionId={(guestSession as any)?.session_id || (typeof guestSession === 'string' ? guestSession : undefined)}
-              />
-              <Button asChild variant="outline">
-                <Link to="/settings">
-                  <Bell className="h-4 w-4 mr-2" />
-                  Settings
-                </Link>
-              </Button>
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-bold mb-1">Dashboard</h1>
+            {/* Subtle status line */}
+            <div className="text-sm text-muted-foreground" aria-live="polite">
+              {isAutoRefreshing ? (
+                <span>Updating... ~{Math.round((autoRefreshEta || 120000) / 1000 / 60)}m remaining</span>
+              ) : dataStatus?.mode === 'live' && dataStatus.lastRunAt ? (
+                <span>Live as of {formatDistanceToNow(new Date(dataStatus.lastRunAt), { addSuffix: true })}</span>
+              ) : dataStatus?.mode === 'seed' && dataStatus.reason === 'no-successful-runs' && 
+                 (dataStatus.tableCounts.meetings + dataStatus.tableCounts.legislation + dataStatus.tableCounts.elections === 0) ? (
+                <span>No recent local updates yet</span>
+              ) : null}
             </div>
           </div>
 
-            {/* Topic Filter Indicator */}
-            {selectedTopics.length > 0 && (
-              <Card className="bg-primary/5 border-primary/20">
-                <CardContent className="pt-6 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4" />
-                    <span className="text-sm font-medium">
-                      Filtering by {selectedTopics.length} topic{selectedTopics.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={clearTopics}>
-                    Clear
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+          {/* Toolbar with Location Selector */}
+          <div className="flex items-center justify-between gap-4">
+            <LocationSelector 
+              value={selectedJurisdictions}
+              onChange={handleJurisdictionChange}
+              maxSelections={3}
+            />
+          </div>
 
-            {/* Snapshot Cards */}
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <TrendingUp className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle>Recent Updates</CardTitle>
-                  <CardDescription>New legislation</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold mb-2">{recentLegislation.length}</p>
-                  {recentLegislation.length > 0 ? (
-                    <div className="space-y-2 mb-3">
-                      {recentLegislation.slice(0, 3).map((item: any) => (
-                        <Link 
-                          key={item.id} 
-                          to={`/legislation/${item.id}`}
-                          className="block text-sm text-foreground hover:text-primary line-clamp-1"
-                        >
-                          • {item.title}
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground mb-3">No recent updates</p>
-                  )}
-                  <Button variant="link" asChild className="p-0 h-auto">
-                    <Link to="/browse/legislation">View all →</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <Calendar className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle>Upcoming Meetings</CardTitle>
-                  <CardDescription>Next 14 days</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold mb-2">{upcomingMeetings.length}</p>
-                  {upcomingMeetings.length > 0 ? (
-                    <div className="space-y-2 mb-3">
-                      {upcomingMeetings.slice(0, 3).map((meeting: any) => (
-                        <Link
-                          key={meeting.id}
-                          to={`/meeting/${meeting.id}`}
-                          className="block text-sm"
-                        >
-                          <p className="text-foreground hover:text-primary line-clamp-1">
-                            • {meeting.title || meeting.body_name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {meeting.starts_at && format(new Date(meeting.starts_at), 'MMM d, h:mm a')}
-                          </p>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground mb-3">No meetings scheduled</p>
-                  )}
-                  <Button variant="link" asChild className="p-0 h-auto">
-                    <Link to="/calendar">View calendar →</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <FileText className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle>Upcoming Elections</CardTitle>
-                  <CardDescription>Next 90 days</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold mb-2">{upcomingElections.length}</p>
-                  {upcomingElections.length > 0 ? (
-                    <div className="space-y-2 mb-3">
-                      {upcomingElections.map((election: any) => (
-                        <Link
-                          key={election.id}
-                          to={`/election/${election.id}`}
-                          className="block text-sm"
-                        >
-                          <p className="text-foreground hover:text-primary line-clamp-1">
-                            • {election.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {election.date && format(new Date(election.date), 'MMM d, yyyy')}
-                          </p>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground mb-3">No elections scheduled</p>
-                  )}
-                  <Button variant="link" asChild className="p-0 h-auto">
-                    <Link to="/browse/elections">View all →</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Bottom Grid: Your Topics + Calendar + Trends */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Your Topics Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Tag className="h-5 w-5" />
-                    Your Topics
+          {/* Snapshot Cards */}
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Recent Legislation */}
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <Link to="/browse/legislation" className="group">
+                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors">
+                    <Scale className="h-5 w-5 text-primary" />
+                    Recent Updates
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                   </CardTitle>
-                  <CardDescription>
-                    Click topics to filter all data
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <InteractiveTopicChips
-                    topics={availableTopics}
-                    selectedTopics={selectedTopics}
-                    onToggle={toggleTopic}
-                    onClear={clearTopics}
-                    showClear={true}
-                  />
-                  {selectedTopics.length > 0 && (
-                    <div className="text-sm text-muted-foreground pt-2 border-t">
-                      Filtering by {selectedTopics.length} topic{selectedTopics.length > 1 ? 's' : ''}
-                    </div>
-                  )}
-                  <div className="space-y-2 pt-4 border-t">
-                    <Link to="/settings">
-                      <Button variant="outline" className="w-full justify-start">
-                        <Settings className="mr-2 h-4 w-4" />
-                        Settings
-                      </Button>
-                    </Link>
+                </Link>
+                <CardDescription>New bills and ordinances</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold mb-2">{recentLegislation.length}</p>
+                {recentLegislation.length > 0 ? (
+                  <div className="space-y-2 mb-3">
+                    {recentLegislation.slice(0, 3).map((item: any) => (
+                      <Link 
+                        key={item.id} 
+                        to={`/legislation/${item.id}`}
+                        className="block text-sm text-foreground hover:text-primary line-clamp-1"
+                      >
+                        • {item.title}
+                      </Link>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
+                ) : (
+                  <p className="text-sm text-muted-foreground mb-3">No recent updates</p>
+                )}
+                <Button variant="link" asChild className="p-0 h-auto">
+                  <Link to="/browse/legislation">View all →</Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-              {/* Trends Card */}
-              <Card className="p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Trends
-                </h3>
-                <TrendsPlaceholder />
-              </Card>
-            </div>
+            {/* Upcoming Meetings */}
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <Link to="/browse/meetings" className="group">
+                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    Upcoming Meetings
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  </CardTitle>
+                </Link>
+                <CardDescription>City & county sessions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold mb-2">{upcomingMeetings.length}</p>
+                {upcomingMeetings.length > 0 ? (
+                  <div className="space-y-2 mb-3">
+                    {upcomingMeetings.slice(0, 3).map((meeting: any) => (
+                      <Link
+                        key={meeting.id}
+                        to={`/meeting/${meeting.id}`}
+                        className="block text-sm"
+                      >
+                        <p className="text-foreground hover:text-primary line-clamp-1">
+                          • {meeting.title || meeting.body_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {meeting.starts_at && format(new Date(meeting.starts_at), 'MMM d, h:mm a')}
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground mb-3">No meetings scheduled</p>
+                )}
+                <Button variant="link" asChild className="p-0 h-auto">
+                  <Link to="/calendar">View calendar →</Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-            <MiniCalendar scope={scopeString || 'austin-tx,travis-county-tx,texas'} />
+            {/* Upcoming Elections */}
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <Link to="/browse/elections" className="group">
+                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors">
+                    <Vote className="h-5 w-5 text-primary" />
+                    Upcoming Elections
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  </CardTitle>
+                </Link>
+                <CardDescription>Register and vote</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold mb-2">{upcomingElections.length}</p>
+                {upcomingElections.length > 0 ? (
+                  <div className="space-y-2 mb-3">
+                    {upcomingElections.map((election: any) => (
+                      <Link
+                        key={election.id}
+                        to={`/election/${election.id}`}
+                        className="block text-sm"
+                      >
+                        <p className="text-foreground hover:text-primary line-clamp-1">
+                          • {election.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {election.date && format(new Date(election.date), 'MMM d, yyyy')}
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground mb-3">No elections scheduled</p>
+                )}
+                <Button variant="link" asChild className="p-0 h-auto">
+                  <Link to="/browse/elections">View all →</Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
-        </Layout>
-      </TooltipProvider>
-    );
+
+          {/* Bottom Grid: Calendar & Trends */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Calendar Card */}
+            <Card>
+              <CardHeader>
+                <Link to="/calendar" className="group">
+                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors">
+                    <Calendar className="h-5 w-5" />
+                    Calendar
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  </CardTitle>
+                </Link>
+                <CardDescription>Upcoming meetings and elections</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MiniCalendar scope={scopeString || 'austin-tx,travis-county-tx,texas'} />
+              </CardContent>
+            </Card>
+
+            {/* Trends Card */}
+            <Card>
+              <CardHeader>
+                <Link to="/browse/trends" className="group">
+                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors">
+                    <TrendingUp className="h-5 w-5" />
+                    Trends
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  </CardTitle>
+                </Link>
+                <CardDescription>What's happening now</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TrendsPlaceholder />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </Layout>
+    </TooltipProvider>
+  );
 }

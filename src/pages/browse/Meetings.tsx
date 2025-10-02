@@ -3,21 +3,38 @@ import { Card } from "@/components/ui/card";
 import { Calendar, MapPin, FileText, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from "react";
+import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 
 export default function BrowseMeetings() {
-  // Guest-only mode - default to Austin
-  const jurisdictionId = "1e42532f-a7f2-44cc-ba2b-59422c79d47f";
+  const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
+  const topicsParam = getGuestTopics().join(',');
+
+  // Resolve jurisdiction IDs
+  useEffect(() => {
+    const fetchIds = async () => {
+      const guestScope = getGuestScope();
+      const { data } = await supabase
+        .from('jurisdiction')
+        .select('id')
+        .in('slug', guestScope);
+      
+      if (data) {
+        setJurisdictionIds(data.map(j => j.id));
+      }
+    };
+    fetchIds();
+  }, []);
 
   const now = new Date();
   const twoWeeksLater = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
   const { data: upcomingMeetings, isLoading: loadingUpcoming } = useQuery({
-    queryKey: ['meetings-upcoming', jurisdictionId],
+    queryKey: ['meetings-upcoming', jurisdictionIds, topicsParam],
     queryFn: async () => {
       let query = supabase
         .from('meeting')
@@ -26,18 +43,37 @@ export default function BrowseMeetings() {
         .lte('starts_at', twoWeeksLater.toISOString())
         .order('starts_at', { ascending: true });
 
-      if (jurisdictionId) {
-        query = query.eq('jurisdiction_id', jurisdictionId);
+      if (jurisdictionIds.length > 0) {
+        query = query.in('jurisdiction_id', jurisdictionIds);
       }
 
       const { data, error } = await query;
       if (error) throw error;
+
+      // Filter by topics if present
+      if (topicsParam && data) {
+        const topics = topicsParam.split(',').filter(Boolean);
+        if (topics.length > 0) {
+          const { data: topicData } = await supabase
+            .from('item_topic')
+            .select('item_id')
+            .eq('item_type', 'meeting')
+            .in('topic', topics);
+          
+          if (topicData) {
+            const topicItemIds = new Set(topicData.map(t => t.item_id));
+            return data.filter(item => topicItemIds.has(item.id));
+          }
+        }
+      }
+
       return data;
-    }
+    },
+    enabled: jurisdictionIds.length > 0,
   });
 
   const { data: pastMeetings, isLoading: loadingPast } = useQuery({
-    queryKey: ['meetings-past', jurisdictionId],
+    queryKey: ['meetings-past', jurisdictionIds, topicsParam],
     queryFn: async () => {
       let query = supabase
         .from('meeting')
@@ -46,14 +82,33 @@ export default function BrowseMeetings() {
         .order('starts_at', { ascending: false })
         .limit(20);
 
-      if (jurisdictionId) {
-        query = query.eq('jurisdiction_id', jurisdictionId);
+      if (jurisdictionIds.length > 0) {
+        query = query.in('jurisdiction_id', jurisdictionIds);
       }
 
       const { data, error } = await query;
       if (error) throw error;
+
+      // Filter by topics if present
+      if (topicsParam && data) {
+        const topics = topicsParam.split(',').filter(Boolean);
+        if (topics.length > 0) {
+          const { data: topicData } = await supabase
+            .from('item_topic')
+            .select('item_id')
+            .eq('item_type', 'meeting')
+            .in('topic', topics);
+          
+          if (topicData) {
+            const topicItemIds = new Set(topicData.map(t => t.item_id));
+            return data.filter(item => topicItemIds.has(item.id));
+          }
+        }
+      }
+
       return data;
-    }
+    },
+    enabled: jurisdictionIds.length > 0,
   });
 
   const MeetingCard = ({ meeting }: { meeting: any }) => (
@@ -135,10 +190,14 @@ export default function BrowseMeetings() {
               </div>
             ) : (
               <Card className="p-8 text-center">
-                <p className="text-muted-foreground">No upcoming meetings scheduled.</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Check back soon for updates from Austin, TX.
+                <p className="text-muted-foreground">
+                  {topicsParam ? 'No upcoming meetings for selected topics.' : 'No upcoming meetings scheduled.'}
                 </p>
+                {!topicsParam && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Check back soon for updates.
+                  </p>
+                )}
               </Card>
             )}
           </TabsContent>
@@ -154,7 +213,9 @@ export default function BrowseMeetings() {
               </div>
             ) : (
               <Card className="p-8 text-center">
-                <p className="text-muted-foreground">No past meetings available.</p>
+                <p className="text-muted-foreground">
+                  {topicsParam ? 'No past meetings for selected topics.' : 'No past meetings available.'}
+                </p>
               </Card>
             )}
           </TabsContent>

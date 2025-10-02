@@ -5,22 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Search, Calendar, FileText } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TagChips } from "@/components/TagChips";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 
 export default function BrowseLegislation() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
+  const topicsParam = getGuestTopics().join(',');
 
-  // Guest-only mode - default to Austin
-  const jurisdictionId = "1e42532f-a7f2-44cc-ba2b-59422c79d47f";
+  // Resolve jurisdiction IDs
+  useEffect(() => {
+    const fetchIds = async () => {
+      const guestScope = getGuestScope();
+      const { data } = await supabase
+        .from('jurisdiction')
+        .select('id')
+        .in('slug', guestScope);
+      
+      if (data) {
+        setJurisdictionIds(data.map(j => j.id));
+      }
+    };
+    fetchIds();
+  }, []);
 
   const { data: legislation, isLoading } = useQuery({
-    queryKey: ['legislation', jurisdictionId, searchTerm],
+    queryKey: ['legislation', jurisdictionIds, searchTerm, topicsParam],
     queryFn: async () => {
       let query = supabase
         .from('legislation')
@@ -28,8 +43,8 @@ export default function BrowseLegislation() {
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (jurisdictionId) {
-        query = query.eq('jurisdiction_id', jurisdictionId);
+      if (jurisdictionIds.length > 0) {
+        query = query.in('jurisdiction_id', jurisdictionIds);
       }
 
       if (searchTerm) {
@@ -38,8 +53,27 @@ export default function BrowseLegislation() {
 
       const { data, error } = await query;
       if (error) throw error;
+
+      // Filter by topics if present
+      if (topicsParam && data) {
+        const topics = topicsParam.split(',').filter(Boolean);
+        if (topics.length > 0) {
+          const { data: topicData } = await supabase
+            .from('item_topic')
+            .select('item_id')
+            .eq('item_type', 'legislation')
+            .in('topic', topics);
+          
+          if (topicData) {
+            const topicItemIds = new Set(topicData.map(t => t.item_id));
+            return data.filter(item => topicItemIds.has(item.id));
+          }
+        }
+      }
+
       return data;
-    }
+    },
+    enabled: jurisdictionIds.length > 0,
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -121,11 +155,11 @@ export default function BrowseLegislation() {
         ) : (
           <Card className="p-8 text-center">
             <p className="text-muted-foreground">
-              {searchTerm ? 'No legislation found matching your search.' : 'No legislation data available yet.'}
+              {searchTerm || topicsParam ? 'No legislation found matching your filters.' : 'No legislation data available yet.'}
             </p>
-            {!searchTerm && (
+            {!searchTerm && !topicsParam && (
               <p className="text-sm text-muted-foreground mt-2">
-                Check back soon for updates from Austin, TX.
+                Check back soon for updates.
               </p>
             )}
           </Card>

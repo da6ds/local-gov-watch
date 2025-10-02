@@ -3,21 +3,38 @@ import { Card } from "@/components/ui/card";
 import { Calendar, AlertCircle, Vote } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { format, isPast, differenceInDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 
 export default function BrowseElections() {
-  // Guest-only mode - default to Austin
-  const jurisdictionId = "1e42532f-a7f2-44cc-ba2b-59422c79d47f";
+  const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
+  const topicsParam = getGuestTopics().join(',');
+
+  // Resolve jurisdiction IDs
+  useEffect(() => {
+    const fetchIds = async () => {
+      const guestScope = getGuestScope();
+      const { data } = await supabase
+        .from('jurisdiction')
+        .select('id')
+        .in('slug', guestScope);
+      
+      if (data) {
+        setJurisdictionIds(data.map(j => j.id));
+      }
+    };
+    fetchIds();
+  }, []);
 
   const now = new Date();
   const ninetyDaysLater = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
   const { data: elections, isLoading } = useQuery({
-    queryKey: ['elections', jurisdictionId],
+    queryKey: ['elections', jurisdictionIds, topicsParam],
     queryFn: async () => {
       let query = supabase
         .from('election')
@@ -26,14 +43,33 @@ export default function BrowseElections() {
         .lte('date', ninetyDaysLater.toISOString().split('T')[0])
         .order('date', { ascending: true });
 
-      if (jurisdictionId) {
-        query = query.eq('jurisdiction_id', jurisdictionId);
+      if (jurisdictionIds.length > 0) {
+        query = query.in('jurisdiction_id', jurisdictionIds);
       }
 
       const { data, error } = await query;
       if (error) throw error;
+
+      // Filter by topics if present
+      if (topicsParam && data) {
+        const topics = topicsParam.split(',').filter(Boolean);
+        if (topics.length > 0) {
+          const { data: topicData } = await supabase
+            .from('item_topic')
+            .select('item_id')
+            .eq('item_type', 'election')
+            .in('topic', topics);
+          
+          if (topicData) {
+            const topicItemIds = new Set(topicData.map(t => t.item_id));
+            return data.filter(item => topicItemIds.has(item.id));
+          }
+        }
+      }
+
       return data;
-    }
+    },
+    enabled: jurisdictionIds.length > 0,
   });
 
   const getElectionBadge = (election: any) => {
@@ -140,10 +176,14 @@ export default function BrowseElections() {
           </div>
         ) : (
           <Card className="p-8 text-center">
-            <p className="text-muted-foreground">No upcoming elections in the next 90 days.</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Check back soon for updates from Austin, TX.
+            <p className="text-muted-foreground">
+              {topicsParam ? 'No upcoming elections for selected topics.' : 'No upcoming elections in the next 90 days.'}
             </p>
+            {!topicsParam && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Check back soon for updates.
+              </p>
+            )}
           </Card>
         )}
       </div>

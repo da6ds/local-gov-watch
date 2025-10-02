@@ -1,15 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, Scale, Calendar, BookOpen, Star, Settings as SettingsIcon } from "lucide-react";
+import { Menu, Scale } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { TopicsPopover } from "@/components/TopicsPopover";
+import { RefreshControl } from "@/components/RefreshControl";
+import { cn } from "@/lib/utils";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,13 +15,17 @@ export function Layout({ children }: LayoutProps) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
-  const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: BookOpen },
-    { href: "/browse/legislation", label: "Legislation", icon: Scale },
-    { href: "/browse/meetings", label: "Meetings", icon: Calendar },
-    { href: "/browse/elections", label: "Elections", icon: Star },
-    { href: "/browse/trends", label: "Trends", icon: Star },
-    { href: "/settings", label: "Settings", icon: SettingsIcon },
+  const tabItems = [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/browse/legislation", label: "Legislation" },
+    { href: "/browse/meetings", label: "Meetings" },
+    { href: "/browse/elections", label: "Elections" },
+    { href: "/browse/trends", label: "Trends" },
+  ];
+
+  const mobileNavItems = [
+    ...tabItems,
+    { href: "/calendar", label: "Calendar" },
   ];
 
   return (
@@ -46,7 +46,7 @@ export function Layout({ children }: LayoutProps) {
                   <span className="font-semibold">Local Gov Watch</span>
                 </Link>
                 <nav className="flex flex-col gap-2">
-                  {navItems.map((item) => (
+                  {mobileNavItems.map((item) => (
                     <Button
                       key={item.href}
                       variant={location.pathname === item.href ? "secondary" : "ghost"}
@@ -55,7 +55,6 @@ export function Layout({ children }: LayoutProps) {
                       onClick={() => setOpen(false)}
                     >
                       <Link to={item.href}>
-                        <item.icon className="h-4 w-4 mr-2" />
                         {item.label}
                       </Link>
                     </Button>
@@ -70,34 +69,29 @@ export function Layout({ children }: LayoutProps) {
             <span className="font-semibold hidden sm:inline-block">Local Gov Watch</span>
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6 ml-8">
-            <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
-              Dashboard
-            </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1">
-                Browse <ChevronDown className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem asChild>
-                  <Link to="/browse/legislation">Legislation</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/browse/meetings">Meetings</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/browse/elections">Elections</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/browse/trends">Trends</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Link to="/settings" className="text-sm font-medium hover:text-primary transition-colors">
-              Settings
-            </Link>
+          {/* Desktop Nav - Tabs */}
+          <nav className="hidden md:flex items-center gap-1 ml-8">
+            {tabItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "text-sm font-medium px-3 py-2 rounded-md transition-colors",
+                  location.pathname === item.href
+                    ? "bg-secondary text-secondary-foreground"
+                    : "hover:bg-secondary/50"
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
+
+          {/* Right Actions */}
+          <div className="hidden md:flex items-center gap-3 ml-auto">
+            <TopicsPopover />
+            <RefreshControl />
+          </div>
         </div>
       </header>
 
