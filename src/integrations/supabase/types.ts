@@ -145,6 +145,7 @@ export type Database = {
           locations: Json
           name: string
           topics: string[] | null
+          unsubscribe_token: string | null
         }
         Insert: {
           active?: boolean | null
@@ -157,6 +158,7 @@ export type Database = {
           locations: Json
           name: string
           topics?: string[] | null
+          unsubscribe_token?: string | null
         }
         Update: {
           active?: boolean | null
@@ -169,6 +171,7 @@ export type Database = {
           locations?: Json
           name?: string
           topics?: string[] | null
+          unsubscribe_token?: string | null
         }
         Relationships: []
       }
