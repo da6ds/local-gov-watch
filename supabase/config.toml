@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.cron-connectors]
 verify_jwt = false
 
+[functions.dashboard-api]
+verify_jwt = false
+
 [functions.guest-run-update]
 verify_jwt = false
 
@@ -25,4 +28,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.run-connectors]
+verify_jwt = false
+
+[functions.topics]
 verify_jwt = false

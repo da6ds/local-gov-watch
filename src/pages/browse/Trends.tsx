@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
@@ -6,18 +6,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrendingUp } from "lucide-react";
-import { getGuestScope } from "@/lib/guestSessionStorage";
+import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 
 export default function Trends() {
   const [timeWindow, setTimeWindow] = useState<'7d' | '30d' | '180d' | '365d'>('7d');
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelectedTopics(getGuestTopics());
+  }, []);
 
   const { data: trends, isLoading } = useQuery({
-    queryKey: ['trends', timeWindow, getGuestScope()],
+    queryKey: ['trends', timeWindow, getGuestScope(), selectedTopics],
     queryFn: async () => {
       const scopes = getGuestScope();
       if (!scopes.length) return [];
 
-      // Get jurisdictions for the selected scopes
       const { data: jurisdictions } = await supabase
         .from('jurisdiction')
         .select('id, name')
@@ -27,7 +31,7 @@ export default function Trends() {
 
       const jurisdictionIds = jurisdictions.map(j => j.id);
 
-      const { data, error } = await supabase
+      const { data: allTrends } = await supabase
         .from('topic_trend')
         .select('*')
         .in('jurisdiction_id', jurisdictionIds)
@@ -35,8 +39,16 @@ export default function Trends() {
         .order('item_count', { ascending: false })
         .limit(20);
 
-      if (error) throw error;
-      return data || [];
+      if (!allTrends) return [];
+
+      // Prioritize selected topics
+      if (selectedTopics.length > 0) {
+        const matching = allTrends.filter(t => selectedTopics.includes(t.topic));
+        const others = allTrends.filter(t => !selectedTopics.includes(t.topic));
+        return [...matching, ...others];
+      }
+
+      return allTrends;
     },
   });
 
@@ -56,10 +68,10 @@ export default function Trends() {
               <h1 className="text-3xl font-bold text-foreground mb-2">Trends</h1>
               <p className="text-muted-foreground">
                 What's happening in your selected locations
+                {selectedTopics.length > 0 && ` • Filtered by ${selectedTopics.length} topic${selectedTopics.length > 1 ? 's' : ''}`}
               </p>
             </div>
             
-            {/* Time Window Selector */}
             <div className="flex gap-2 flex-wrap">
               {(['7d', '30d', '180d', '365d'] as const).map((window) => (
                 <Button

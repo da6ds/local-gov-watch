@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
   try {
     // Support both GET (with query params) and POST (with body)
-    let start, end, scope, kinds, format, sessionId;
+    let start, end, scope, kinds, format, sessionId, topicsParam;
     
     if (req.method === 'POST') {
       const body = await req.json();
@@ -57,6 +57,7 @@ Deno.serve(async (req) => {
       kinds = body.kinds || 'meetings,elections';
       format = body.format;
       sessionId = body.session_id || '';
+      topicsParam = body.topics || '';
     } else {
       const url = new URL(req.url);
       start = url.searchParams.get('start');
@@ -65,7 +66,10 @@ Deno.serve(async (req) => {
       kinds = url.searchParams.get('kinds') || 'meetings,elections';
       format = url.searchParams.get('format');
       sessionId = url.searchParams.get('session_id') || '';
+      topicsParam = url.searchParams.get('topics') || '';
     }
+
+    const topics = topicsParam ? topicsParam.split(',').filter(Boolean) : [];
 
     // Rate limiting for guests
     const authHeader = req.headers.get('Authorization');
@@ -113,9 +117,33 @@ Deno.serve(async (req) => {
     const includeKinds = kinds.split(',');
     const events: CalendarEvent[] = [];
 
+    // Get topic-filtered item IDs if topics are provided
+    let meetingIds: string[] | null = null;
+    let electionIds: string[] | null = null;
+
+    if (topics.length > 0) {
+      const { data: topicMatches } = await supabase
+        .from('item_topic')
+        .select('item_id, item_type')
+        .in('topic', topics)
+        .in('jurisdiction_id', jurisdictionIds);
+
+      if (topicMatches) {
+        meetingIds = topicMatches
+          .filter(m => m.item_type === 'meeting')
+          .map(m => m.item_id);
+        electionIds = topicMatches
+          .filter(m => m.item_type === 'election')
+          .map(m => m.item_id);
+      } else {
+        meetingIds = [];
+        electionIds = [];
+      }
+    }
+
     // Fetch meetings if requested
     if (includeKinds.includes('meetings')) {
-      const { data: meetings, error: meetingError } = await supabase
+      let meetingsQuery = supabase
         .from('meeting')
         .select(`
           id,
@@ -131,6 +159,18 @@ Deno.serve(async (req) => {
         .lt('starts_at', end)
         .order('starts_at', { ascending: true })
         .limit(500);
+
+      // Apply topic filter if provided
+      if (meetingIds !== null) {
+        if (meetingIds.length > 0) {
+          meetingsQuery = meetingsQuery.in('id', meetingIds);
+        } else {
+          // No matches, skip query
+          meetingsQuery = meetingsQuery.eq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      }
+
+      const { data: meetings, error: meetingError } = await meetingsQuery;
 
       if (meetingError) {
         console.error('Error fetching meetings:', meetingError);
@@ -158,7 +198,7 @@ Deno.serve(async (req) => {
 
     // Fetch elections if requested
     if (includeKinds.includes('elections')) {
-      const { data: elections, error: electionError } = await supabase
+      let electionsQuery = supabase
         .from('election')
         .select(`
           id,
@@ -172,6 +212,18 @@ Deno.serve(async (req) => {
         .lt('date', end.split('T')[0])
         .order('date', { ascending: true })
         .limit(500);
+
+      // Apply topic filter if provided
+      if (electionIds !== null) {
+        if (electionIds.length > 0) {
+          electionsQuery = electionsQuery.in('id', electionIds);
+        } else {
+          // No matches, skip query
+          electionsQuery = electionsQuery.eq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      }
+
+      const { data: elections, error: electionError } = await electionsQuery;
 
       if (electionError) {
         console.error('Error fetching elections:', electionError);

@@ -1,21 +1,20 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { TOPIC_KEYWORDS } from "@/lib/constants";
 import { getGuestScope, setGuestScope, getGuestTopics, setGuestTopics } from "@/lib/guestSessionStorage";
 import { LocationSelector } from "@/components/LocationSelector";
 import { useQueryClient } from "@tanstack/react-query";
+import { InteractiveTopicChips } from "@/components/InteractiveTopicChips";
+import { useTopics } from "@/hooks/useTopics";
 
 export default function Settings() {
   const queryClient = useQueryClient();
+  const { data: topics = [], isLoading: topicsLoading } = useTopics();
   const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([]);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [cadence, setCadence] = useState<'instant' | 'daily' | 'weekly'>('weekly');
+  const [cadence] = useState<'instant' | 'daily' | 'weekly'>('weekly');
 
   // Load from sessionStorage on mount
   useEffect(() => {
@@ -23,10 +22,10 @@ export default function Settings() {
     setSelectedTopics(getGuestTopics());
   }, []);
 
-  const toggleTopic = (topic: string) => {
-    const updated = selectedTopics.includes(topic)
-      ? selectedTopics.filter(t => t !== topic)
-      : [...selectedTopics, topic];
+  const toggleTopic = (slug: string) => {
+    const updated = selectedTopics.includes(slug)
+      ? selectedTopics.filter(t => t !== slug)
+      : [...selectedTopics, slug];
     
     setSelectedTopics(updated);
     setGuestTopics(updated);
@@ -38,6 +37,18 @@ export default function Settings() {
     queryClient.invalidateQueries({ queryKey: ['trends'] });
     
     toast.success("Topics updated");
+  };
+
+  const clearTopics = () => {
+    setSelectedTopics([]);
+    setGuestTopics([]);
+    
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['calendar'] });
+    queryClient.invalidateQueries({ queryKey: ['browse'] });
+    queryClient.invalidateQueries({ queryKey: ['trends'] });
+    
+    toast.success("Topics cleared");
   };
 
   const handleJurisdictionChange = (slugs: string[]) => {
@@ -83,30 +94,21 @@ export default function Settings() {
             <CardHeader>
               <CardTitle>Topics of Interest</CardTitle>
               <CardDescription>
-                Select topics to filter your dashboard and calendar
+                Click topics to filter your dashboard, calendar, and browse pages
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-3 gap-4">
-                {Object.keys(TOPIC_KEYWORDS).map(topic => (
-                  <div
-                    key={topic}
-                    className="flex items-start space-x-3 p-3 rounded-lg border"
-                  >
-                    <Checkbox
-                      id={topic}
-                      checked={selectedTopics.includes(topic)}
-                      onCheckedChange={() => toggleTopic(topic)}
-                    />
-                    <Label
-                      htmlFor={topic}
-                      className="text-sm font-medium cursor-pointer capitalize flex-1"
-                    >
-                      {topic.replace(/-/g, ' ')}
-                    </Label>
-                  </div>
-                ))}
-              </div>
+              {topicsLoading ? (
+                <div className="text-muted-foreground">Loading topics...</div>
+              ) : (
+                <InteractiveTopicChips
+                  topics={topics}
+                  selectedTopics={selectedTopics}
+                  onToggle={toggleTopic}
+                  onClear={clearTopics}
+                  showClear={true}
+                />
+              )}
             </CardContent>
           </Card>
 

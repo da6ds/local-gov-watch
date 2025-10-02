@@ -1,341 +1,228 @@
-import { useState } from "react";
-import { Layout } from "@/components/Layout";
-import { CalendarView } from "@/components/CalendarView";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ScopeSelector } from "@/components/ScopeSelector";
-import { useAuth } from "@/hooks/useAuth";
-import { useCalendarDataStatus } from "@/hooks/useCalendarDataStatus";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfMonth, endOfMonth, addDays, addHours } from "date-fns";
-import { useSearchParams } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { getGuestSessionId, getGuestProfile } from "@/lib/guestSession";
-import { CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
-import { RefreshDataButton } from "@/components/RefreshDataButton";
-
-interface CalendarEvent {
-  id: string;
-  kind: 'meeting' | 'election';
-  title: string;
-  start: string;
-  end: string | null;
-  allDay: boolean;
-  location: string | null;
-  bodyName: string | null;
-  jurisdiction: string;
-  detailUrl: string;
-}
+import { Layout } from "@/components/Layout";
+import { CalendarView } from "@/components/CalendarView";
+import { MiniCalendar } from "@/components/MiniCalendar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Calendar as CalendarIcon, Download, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { format, startOfMonth, endOfMonth } from "date-fns";
+import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
+import { InteractiveTopicChips } from "@/components/InteractiveTopicChips";
+import { useTopics } from "@/hooks/useTopics";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Calendar() {
-  const { isGuest } = useAuth();
-  const { toast } = useToast();
-  const [searchParams, setSearchParams] = useSearchParams();
-  
-  // Get initial state from URL params or defaults
-  const [scope, setScope] = useState<'city' | 'county' | 'state'>(() => {
-    return (searchParams.get('defaultScope') as 'city' | 'county' | 'state') || 'city';
-  });
-  
-  const [selectedKinds, setSelectedKinds] = useState<Set<string>>(() => {
-    const kindsParam = searchParams.get('kinds');
-    return new Set(kindsParam ? kindsParam.split(',') : ['meetings', 'elections']);
-  });
-  
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<'month' | 'agenda'>(() => {
-    const saved = localStorage.getItem('calendar_view');
-    return (saved === 'agenda' ? 'agenda' : 'month') as 'month' | 'agenda';
-  });
-  const [showDebug, setShowDebug] = useState(false);
-  
-  // Dynamic date range based on view
-  const dateRange = (() => {
-    if (view === 'agenda') {
-      return {
-        start: new Date(),
-        end: addDays(new Date(), 60),
-      };
-    }
-    // Month view: pad by 1 day on each side for timezone safety
-    return {
-      start: addDays(startOfMonth(currentDate), -1),
-      end: addDays(endOfMonth(currentDate), 1),
-    };
-  })();
+  const queryClient = useQueryClient();
+  const { data: availableTopics = [] } = useTopics();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showMeetings, setShowMeetings] = useState(true);
+  const [showElections, setShowElections] = useState(true);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
-  // Guest mode - use session storage
-  const profile = null;
+  // Initialize topics from session
+  useEffect(() => {
+    setSelectedTopics(getGuestTopics());
+  }, []);
 
-  // Build jurisdiction slugs and IDs based on scope
-  const { jurisdictionSlugs, jurisdictionIds } = (() => {
-    if (!profile?.selected_jurisdiction) return { jurisdictionSlugs: [], jurisdictionIds: [] };
-    
-    const jurisdiction = profile.selected_jurisdiction;
-    const effectiveScope = searchParams.get('defaultScope') || profile.default_scope || scope;
-    
-    // Austin hierarchy: austin-tx (city), travis-county-tx (county), texas (state)
-    if (jurisdiction.slug === 'austin-tx') {
-      if (effectiveScope === 'city') return { jurisdictionSlugs: ['austin-tx'], jurisdictionIds: [jurisdiction.id] };
-      // For county and state, we need to fetch the other jurisdiction IDs
-      // For now, just use city - this will be expanded when we have those jurisdictions
-      return { jurisdictionSlugs: ['austin-tx'], jurisdictionIds: [jurisdiction.id] };
-    }
-    
-    return { jurisdictionSlugs: [jurisdiction.slug], jurisdictionIds: [jurisdiction.id] };
-  })();
+  const monthStart = format(startOfMonth(selectedDate), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+  const monthEnd = format(endOfMonth(selectedDate), "yyyy-MM-dd'T'HH:mm:ss'Z'");
 
-  const { data: calendarDataStatus, isLoading: statusLoading } = useCalendarDataStatus(jurisdictionIds);
+  const scopeString = getGuestScope().join(',');
+  const kinds = [
+    ...(showMeetings ? ['meetings'] : []),
+    ...(showElections ? ['elections'] : []),
+  ].join(',');
 
-  // Fetch calendar events
-  const { data: rawEvents = [], isLoading: eventsLoading } = useQuery<CalendarEvent[]>({
-    queryKey: ['calendar-events', dateRange.start.toISOString(), dateRange.end.toISOString(), jurisdictionSlugs, Array.from(selectedKinds).join(','), view],
+  const topicsParam = selectedTopics.join(',');
+
+  const { data: events = [], isLoading } = useQuery({
+    queryKey: ['calendar', monthStart, monthEnd, scopeString, kinds, topicsParam],
     queryFn: async () => {
-      const scopeParam = jurisdictionSlugs.map(slug => {
-        if (slug === 'austin-tx') return 'city:austin-tx';
-        if (slug === 'travis-county-tx') return 'county:travis-county-tx';
-        if (slug === 'texas') return 'state:texas';
-        return slug;
-      }).join(',');
-
-      const sessionId = getGuestSessionId();
       const { data, error } = await supabase.functions.invoke('calendar-api', {
         body: {
-          start: dateRange.start.toISOString(),
-          end: dateRange.end.toISOString(),
-          scope: scopeParam,
-          kinds: Array.from(selectedKinds).join(','),
-          session_id: sessionId || undefined,
+          start: monthStart,
+          end: monthEnd,
+          scope: scopeString,
+          kinds: kinds,
+          topics: topicsParam,
         },
       });
 
       if (error) {
         console.error('Calendar API error:', error);
-        throw new Error('Failed to fetch calendar events');
+        throw error;
       }
 
-      return data as CalendarEvent[];
+      return data || [];
     },
-    enabled: jurisdictionSlugs.length > 0,
+    enabled: !!scopeString && kinds.length > 0,
   });
 
-  // Coerce ISO strings to Date objects with proper defaults
-  const events = rawEvents.map(e => ({
-    ...e,
-    start: new Date(e.start),
-    end: e.end ? new Date(e.end) : (e.allDay ? new Date(e.start) : addHours(new Date(e.start), 2)),
-  }));
+  const toggleTopic = (slug: string) => {
+    const updated = selectedTopics.includes(slug)
+      ? selectedTopics.filter(t => t !== slug)
+      : [...selectedTopics, slug];
+    setSelectedTopics(updated);
+    queryClient.invalidateQueries({ queryKey: ['calendar'] });
+  };
 
-  const handleExportICS = async () => {
+  const clearTopics = () => {
+    setSelectedTopics([]);
+    queryClient.invalidateQueries({ queryKey: ['calendar'] });
+  };
+
+  const handleExportCalendar = async () => {
     try {
-      const scopeParam = jurisdictionSlugs.map(slug => {
-        if (slug === 'austin-tx') return 'city:austin-tx';
-        if (slug === 'travis-county-tx') return 'county:travis-county-tx';
-        if (slug === 'texas') return 'state:texas';
-        return slug;
-      }).join(',');
-
-      const sessionId = getGuestSessionId();
-      const params = new URLSearchParams({
-        start: dateRange.start.toISOString(),
-        end: dateRange.end.toISOString(),
-        scope: scopeParam,
-        kinds: Array.from(selectedKinds).join(','),
-        format: 'ics',
-        ...(sessionId ? { session_id: sessionId } : {}),
+      const { data, error } = await supabase.functions.invoke('calendar-api', {
+        body: {
+          start: format(startOfMonth(selectedDate), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
+          end: format(endOfMonth(selectedDate), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
+          scope: scopeString,
+          kinds: kinds,
+          topics: topicsParam,
+          format: 'ics',
+        },
       });
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-api?${params}`,
-        {
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-        }
-      );
+      if (error) throw error;
 
-      if (!response.ok) throw new Error('Failed to export calendar');
-
-      const blob = await response.blob();
+      // Create download link
+      const blob = new Blob([data], { type: 'text/calendar' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `calendar-${format(new Date(), 'yyyy-MM-dd')}.ics`;
+      a.download = `calendar-${format(selectedDate, 'yyyy-MM')}.ics`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
 
-      toast({
-        title: "Calendar exported",
-        description: "Your calendar file has been downloaded",
-      });
+      toast.success("Calendar exported!");
     } catch (error) {
       console.error('Export error:', error);
-      toast({
-        title: "Export failed",
-        description: "Failed to export calendar. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to export calendar");
     }
-  };
-
-  const isAdmin = false; // Admin features disabled in demo mode
-
-  const toggleKind = (kind: string) => {
-    const newKinds = new Set(selectedKinds);
-    if (newKinds.has(kind)) {
-      newKinds.delete(kind);
-    } else {
-      newKinds.add(kind);
-    }
-    setSelectedKinds(newKinds);
-  };
-
-  const handleScopeChange = (newScope: 'city' | 'county' | 'state') => {
-    setScope(newScope);
-    // Update URL params
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set('defaultScope', newScope);
-    setSearchParams(newParams);
   };
 
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Calendar</h1>
-            <p className="text-muted-foreground">
-              Meetings and elections timeline
-              {profile?.selected_jurisdiction && (
-                <> for {profile.selected_jurisdiction.name}</>
-              )}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <RefreshDataButton 
-              scope={`${scope}:${profile?.selected_jurisdiction?.slug || 'austin-tx'}`}
-              size="sm"
-            />
-            <ScopeSelector value={scope} onChange={handleScopeChange} />
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Calendar</h1>
+          <p className="text-muted-foreground">View upcoming meetings and elections</p>
         </div>
 
-        {/* Live Data Status */}
-        {calendarDataStatus && (
-          <div className={`flex items-center gap-2 p-3 rounded-lg ${
-            calendarDataStatus.hasLiveData && events.length > 0
-              ? 'bg-green-500/10 border border-green-500/20' 
-              : 'bg-yellow-500/10 border border-yellow-500/20'
-          }`}>
-            {calendarDataStatus.hasLiveData && events.length > 0 ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <span className="text-sm">
-                  Live as of {calendarDataStatus.lastRunAt && format(new Date(calendarDataStatus.lastRunAt), 'MMM d, h:mm a')}
-                </span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="h-4 w-4 text-yellow-600" />
-                <span className="text-sm">
-                  Demo data (seeded){calendarDataStatus.reason && ` • ${calendarDataStatus.reason}`}
-                </span>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Admin Debug Overlay */}
-        {isAdmin && (
-          <div className="border border-border rounded-lg overflow-hidden">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowDebug(!showDebug)}
-              className="w-full justify-between"
-            >
-              <span className="text-xs font-mono">Debug Info</span>
-              {showDebug ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-            {showDebug && (
-              <div className="p-4 bg-muted/50 space-y-2 text-xs font-mono">
-                <div><strong>View:</strong> {view}</div>
-                <div><strong>Date Window:</strong> {format(dateRange.start, 'yyyy-MM-dd HH:mm')} → {format(dateRange.end, 'yyyy-MM-dd HH:mm')}</div>
-                <div><strong>Active Scope:</strong> {jurisdictionSlugs.join(', ') || 'none'}</div>
-                <div><strong>Selected Kinds:</strong> {Array.from(selectedKinds).join(', ')}</div>
-                <div><strong>Events Loaded:</strong> {events.length}</div>
-                {events.length > 0 && (
-                  <div>
-                    <strong>First 3 Events:</strong>
-                    <ul className="ml-4 mt-1 space-y-1">
-                      {events.slice(0, 3).map(e => (
-                        <li key={e.id}>
-                          {e.title} ({e.kind}) - {format(e.start, 'MMM d, h:mm a')}
-                        </li>
-                      ))}
-                    </ul>
+        <div className="grid lg:grid-cols-[300px_1fr] gap-6">
+          {/* Sidebar */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                Filters
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Event Type Filters */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Event Types</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="meetings"
+                      checked={showMeetings}
+                      onCheckedChange={(checked) => setShowMeetings(checked as boolean)}
+                    />
+                    <Label htmlFor="meetings" className="text-sm">Meetings</Label>
                   </div>
-                )}
-                <div><strong>Last Meeting Run:</strong> {calendarDataStatus?.lastRunAt ? format(new Date(calendarDataStatus.lastRunAt), 'MMM d, h:mm a') : 'Never'}</div>
-                <div><strong>DB Counts:</strong> {calendarDataStatus?.meetingCount} meetings, {calendarDataStatus?.electionCount} elections</div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="elections"
+                      checked={showElections}
+                      onCheckedChange={(checked) => setShowElections(checked as boolean)}
+                    />
+                    <Label htmlFor="elections" className="text-sm">Elections</Label>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        )}
 
-        {/* Filters */}
-        <div className="flex gap-2 flex-wrap items-center">
-          <Button
-            variant={selectedKinds.has('meetings') ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => toggleKind('meetings')}
-          >
-            Meetings
-            {selectedKinds.has('meetings') && calendarDataStatus && (
-              <Badge variant="secondary" className="ml-2">
-                {calendarDataStatus.meetingCount}
-              </Badge>
-            )}
-          </Button>
-          <Button
-            variant={selectedKinds.has('elections') ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => toggleKind('elections')}
-          >
-            Elections
-            {selectedKinds.has('elections') && calendarDataStatus && (
-              <Badge variant="secondary" className="ml-2">
-                {calendarDataStatus.electionCount}
-              </Badge>
-            )}
-          </Button>
-          {events && events.length > 0 && (
-            <span className="text-sm text-muted-foreground ml-2">
-              {events.length} event{events.length !== 1 ? 's' : ''} in date range
-            </span>
-          )}
-        </div>
+              {/* Topic Filters */}
+              <div className="pt-4 border-t space-y-3">
+                <h4 className="text-sm font-medium">Filter by Topics</h4>
+                <InteractiveTopicChips
+                  topics={availableTopics}
+                  selectedTopics={selectedTopics}
+                  onToggle={toggleTopic}
+                  onClear={clearTopics}
+                  showClear={true}
+                />
+                {selectedTopics.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Showing events matching {selectedTopics.length} topic{selectedTopics.length > 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
 
-        {/* Calendar View */}
-        {eventsLoading ? (
+              {/* Export */}
+              <div className="pt-4 border-t">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleExportCalendar}
+                  disabled={isLoading}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export .ics
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Calendar View */}
           <div className="space-y-4">
-            <Skeleton className="h-[400px]" />
+            {selectedTopics.length > 0 && (
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="pt-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{selectedTopics.length}</Badge>
+                    <span className="text-sm">topic{selectedTopics.length > 1 ? 's' : ''} selected</span>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={clearTopics}>
+                    Clear
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {events.length === 0 && !isLoading ? (
+              <Card>
+                <CardContent className="pt-6 text-center text-muted-foreground">
+                  {selectedTopics.length > 0 ? (
+                    <div>
+                      <p>No events found for selected topics</p>
+                      <Button
+                        variant="link"
+                        onClick={clearTopics}
+                        className="mt-2"
+                      >
+                        Clear topic filters
+                      </Button>
+                    </div>
+                  ) : (
+                    <p>No events scheduled for this month</p>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <MiniCalendar scope={scopeString} />
+            )}
           </div>
-        ) : (
-          <CalendarView
-            events={events}
-            onExportICS={handleExportICS}
-            isLoading={eventsLoading}
-            currentDate={currentDate}
-            onDateChange={setCurrentDate}
-            view={view}
-            onViewChange={setView}
-          />
-        )}
+        </div>
       </div>
     </Layout>
   );
