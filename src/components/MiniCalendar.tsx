@@ -83,8 +83,8 @@ export function MiniCalendar({ scope, showSidePanel = false }: MiniCalendarProps
     return (
       <Card>
         <CardContent className="p-0">
-          <div className="grid lg:grid-cols-[1fr_280px]">
-            <div className="p-4 border-r">
+          <div className="grid lg:grid-cols-[2fr_1fr]">
+            <div className="p-6">
               <Calendar
                 mode="single"
                 selected={selectedDate}
@@ -95,14 +95,14 @@ export function MiniCalendar({ scope, showSidePanel = false }: MiniCalendarProps
                 modifiersClassNames={{
                   hasEvent: "bg-primary/10 font-bold"
                 }}
-                className="rounded-md"
+                className="rounded-md w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-cell]:h-14 [&_.rdp-day]:h-12 [&_.rdp-day]:w-12 [&_.rdp-day]:text-base"
               />
             </div>
             
-            <div className="p-4 bg-muted/20 max-h-[400px] overflow-y-auto">
+            <div className="p-6 bg-muted/20 border-l max-h-[600px] overflow-y-auto">
               {eventsOnDate.length > 0 ? (
                 <div className="space-y-3">
-                  <p className="text-sm font-medium sticky top-0 bg-muted/20 py-1">
+                  <p className="text-sm font-medium sticky top-0 bg-muted/20 py-1 z-10">
                     {format(selectedDate!, 'MMM d, yyyy')}
                   </p>
                   <div className="space-y-2">
@@ -110,12 +110,13 @@ export function MiniCalendar({ scope, showSidePanel = false }: MiniCalendarProps
                       <div
                         key={event.id}
                         onClick={() => handleEventClick(event)}
-                        className="flex flex-col gap-1 p-2 rounded-md hover:bg-background cursor-pointer transition-colors border"
+                        className="flex flex-col gap-1 p-3 rounded-md hover:bg-background cursor-pointer transition-colors border"
                       >
                         <Badge variant={event.kind === 'meeting' ? 'default' : 'secondary'} className="w-fit">
                           {event.kind}
                         </Badge>
                         <span className="text-sm line-clamp-2">{event.title}</span>
+                        <span className="text-xs text-muted-foreground">{event.jurisdiction}</span>
                       </div>
                     ))}
                   </div>
@@ -124,7 +125,11 @@ export function MiniCalendar({ scope, showSidePanel = false }: MiniCalendarProps
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No events on this day
                 </p>
-              ) : null}
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Select a date to view events
+                </p>
+              )}
             </div>
           </div>
         </CardContent>
@@ -132,24 +137,30 @@ export function MiniCalendar({ scope, showSidePanel = false }: MiniCalendarProps
     );
   }
 
-  // Default widget layout
+  // Mobile layout - show calendar, on click open bottom sheet
   return (
     <div className="space-y-4">
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={setSelectedDate}
-          modifiers={{
-            hasEvent: datesWithEvents
-          }}
-          modifiersClassNames={{
-            hasEvent: "bg-primary/10 font-bold"
-          }}
-          className="rounded-md border"
-        />
-        
-        {eventsOnDate.length > 0 && (
-          <div className="space-y-2">
+      <Card>
+        <CardContent className="p-4">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            modifiers={{
+              hasEvent: datesWithEvents
+            }}
+            modifiersClassNames={{
+              hasEvent: "bg-primary/10 font-bold"
+            }}
+            className="rounded-md w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full"
+          />
+        </CardContent>
+      </Card>
+      
+      {/* Mobile: Show events in a simple list below */}
+      {eventsOnDate.length > 0 && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
             <p className="text-sm font-medium">
               {format(selectedDate!, 'MMMM d, yyyy')}
             </p>
@@ -158,23 +169,19 @@ export function MiniCalendar({ scope, showSidePanel = false }: MiniCalendarProps
                 <div
                   key={event.id}
                   onClick={() => handleEventClick(event)}
-                  className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer transition-colors"
+                  className="flex flex-col gap-1 p-3 rounded-md hover:bg-muted cursor-pointer transition-colors border"
                 >
-                  <Badge variant={event.kind === 'meeting' ? 'default' : 'secondary'}>
+                  <Badge variant={event.kind === 'meeting' ? 'default' : 'secondary'} className="w-fit">
                     {event.kind}
                   </Badge>
-                  <span className="text-sm truncate flex-1">{event.title}</span>
+                  <span className="text-sm line-clamp-2">{event.title}</span>
+                  <span className="text-xs text-muted-foreground">{event.jurisdiction}</span>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-        
-        {eventsOnDate.length === 0 && selectedDate && (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No events on this day
-          </p>
-        )}
-      </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
