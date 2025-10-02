@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeScopeKey } from "@/lib/scopeResolver";
 
 export interface DataStatus {
   mode: 'live' | 'seed';
@@ -25,12 +26,14 @@ export interface DataStatus {
 }
 
 export function useDataStatus(scope: string) {
+  const normalizedScope = normalizeScopeKey(scope);
+  
   return useQuery({
-    queryKey: ['data-status', scope],
+    queryKey: ['data-status', normalizedScope],
     queryFn: async (): Promise<DataStatus> => {
       // Call the edge function with GET request (query params)
       const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/data-status`);
-      url.searchParams.set('scope', scope);
+      url.searchParams.set('scope', normalizedScope);
 
       const response = await fetch(url.toString(), {
         method: 'GET',

@@ -1,12 +1,24 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrendingUp } from "lucide-react";
 import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
+import { normalizeScopeKey } from "@/lib/scopeResolver";
+
+interface TrendItem {
+  topic: string;
+  score: number;
+  count: number;
+  by_kind: {
+    legislation?: number;
+    meeting?: number;
+    election?: number;
+  };
+  sample_item_ids: string[];
+}
 
 export default function Trends() {
   const [timeWindow, setTimeWindow] = useState<'7d' | '30d' | '6m' | '1y'>('7d');
@@ -16,24 +28,23 @@ export default function Trends() {
     setSelectedTopics(getGuestTopics());
   }, []);
 
-  const { data: trendsData, isLoading } = useQuery({
+  const { data: trendsResponse, isLoading } = useQuery({
     queryKey: ['trends', timeWindow, getGuestScope(), selectedTopics],
     queryFn: async () => {
       const scopes = getGuestScope();
-      if (!scopes.length) return null;
+      if (!scopes.length) return { items: [] as TrendItem[] };
 
-      const scopeParam = scopes.join(',');
-      const topicsParam = selectedTopics.length > 0 ? selectedTopics.join(',') : '';
-      
+      const scopeKey = normalizeScopeKey(scopes.join(','));
+      const topicsQuery = selectedTopics.length > 0 ? selectedTopics.join(',') : '';
+
       const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/trends-api`);
-      url.searchParams.set('scope', scopeParam);
+      url.searchParams.set('scope', scopeKey);
       url.searchParams.set('window', timeWindow);
-      if (topicsParam) {
-        url.searchParams.set('topics', topicsParam);
+      if (topicsQuery) {
+        url.searchParams.set('topics', topicsQuery);
       }
 
       const response = await fetch(url.toString(), {
-        method: 'GET',
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || ''
@@ -41,15 +52,15 @@ export default function Trends() {
       });
 
       if (!response.ok) {
-        console.error('Failed to fetch trends:', await response.text());
-        return null;
+        console.error('Error fetching trends:', await response.text());
+        return { items: [] as TrendItem[] };
       }
 
       return await response.json();
     },
   });
 
-  const trends = trendsData?.items || [];
+  const trends = trendsResponse?.items || [];
 
   const windowLabels = {
     '7d': '7 days',
@@ -89,7 +100,7 @@ export default function Trends() {
             <div className="text-center py-12 text-muted-foreground">
               Loading trends...
             </div>
-          ) : trends?.length === 0 ? (
+          ) : trends.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -101,7 +112,7 @@ export default function Trends() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {trends.map((trend: any, index: number) => (
+              {trends.map((trend, index) => (
                 <Card key={`${trend.topic}-${index}`} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between gap-4">
@@ -113,6 +124,11 @@ export default function Trends() {
                           <span className="text-sm text-muted-foreground">
                             {trend.count} {trend.count === 1 ? 'item' : 'items'}
                           </span>
+                          {trend.score > trend.count && (
+                            <Badge variant="outline" className="text-xs">
+                              +{Math.round((trend.score / trend.count - 1) * 100)}%
+                            </Badge>
+                          )}
                         </div>
                         <CardTitle className="text-xl capitalize">
                           {trend.topic.replace(/-/g, ' ')} Activity
@@ -122,11 +138,11 @@ export default function Trends() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex gap-2 text-sm text-muted-foreground">
-                      <span>{trend.byKind?.meeting || 0} meetings</span>
+                      <span>{trend.by_kind?.meeting || 0} meetings</span>
                       <span>•</span>
-                      <span>{trend.byKind?.legislation || 0} legislation</span>
+                      <span>{trend.by_kind?.legislation || 0} legislation</span>
                       <span>•</span>
-                      <span>{trend.byKind?.election || 0} elections</span>
+                      <span>{trend.by_kind?.election || 0} elections</span>
                     </div>
                   </CardContent>
                 </Card>

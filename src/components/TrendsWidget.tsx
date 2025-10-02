@@ -18,7 +18,6 @@ export function TrendsWidget() {
       const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/trends-api`);
       url.searchParams.set('scope', scopeParam);
       url.searchParams.set('window', '7d');
-      url.searchParams.set('limit', '4');
 
       const response = await fetch(url.toString(), {
         method: 'GET',
@@ -33,7 +32,9 @@ export function TrendsWidget() {
         return null;
       }
 
-      return await response.json();
+      const data = await response.json();
+      // Limit to top 4 trends for widget
+      return { ...data, items: (data.items || []).slice(0, 4) };
     },
   });
 
@@ -93,7 +94,7 @@ export function TrendsWidget() {
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              {trend.byKind?.meeting || 0} meetings • {trend.byKind?.legislation || 0} legislation • {trend.byKind?.election || 0} elections
+              {trend.by_kind?.meeting || 0} meetings • {trend.by_kind?.legislation || 0} legislation • {trend.by_kind?.election || 0} elections
             </p>
           </div>
         ))}
