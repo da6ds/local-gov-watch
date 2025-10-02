@@ -9,54 +9,53 @@ import { TrendingUp } from "lucide-react";
 import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 
 export default function Trends() {
-  const [timeWindow, setTimeWindow] = useState<'7d' | '30d' | '180d' | '365d'>('7d');
+  const [timeWindow, setTimeWindow] = useState<'7d' | '30d' | '6m' | '1y'>('7d');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
   useEffect(() => {
     setSelectedTopics(getGuestTopics());
   }, []);
 
-  const { data: trends, isLoading } = useQuery({
+  const { data: trendsData, isLoading } = useQuery({
     queryKey: ['trends', timeWindow, getGuestScope(), selectedTopics],
     queryFn: async () => {
       const scopes = getGuestScope();
-      if (!scopes.length) return [];
+      if (!scopes.length) return null;
 
-      const { data: jurisdictions } = await supabase
-        .from('jurisdiction')
-        .select('id, name')
-        .in('slug', scopes);
-
-      if (!jurisdictions?.length) return [];
-
-      const jurisdictionIds = jurisdictions.map(j => j.id);
-
-      const { data: allTrends } = await supabase
-        .from('topic_trend')
-        .select('*')
-        .in('jurisdiction_id', jurisdictionIds)
-        .eq('time_window', timeWindow)
-        .order('item_count', { ascending: false })
-        .limit(20);
-
-      if (!allTrends) return [];
-
-      // Prioritize selected topics
-      if (selectedTopics.length > 0) {
-        const matching = allTrends.filter(t => selectedTopics.includes(t.topic));
-        const others = allTrends.filter(t => !selectedTopics.includes(t.topic));
-        return [...matching, ...others];
+      const scopeParam = scopes.join(',');
+      const topicsParam = selectedTopics.length > 0 ? selectedTopics.join(',') : '';
+      
+      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/trends-api`);
+      url.searchParams.set('scope', scopeParam);
+      url.searchParams.set('window', timeWindow);
+      if (topicsParam) {
+        url.searchParams.set('topics', topicsParam);
       }
 
-      return allTrends;
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+        }
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch trends:', await response.text());
+        return null;
+      }
+
+      return await response.json();
     },
   });
+
+  const trends = trendsData?.items || [];
 
   const windowLabels = {
     '7d': '7 days',
     '30d': '30 days',
-    '180d': '6 months',
-    '365d': '1 year'
+    '6m': '6 months',
+    '1y': '1 year'
   };
 
   return (
@@ -73,7 +72,7 @@ export default function Trends() {
             </div>
             
             <div className="flex gap-2 flex-wrap">
-              {(['7d', '30d', '180d', '365d'] as const).map((window) => (
+              {(['7d', '30d', '6m', '1y'] as const).map((window) => (
                 <Button
                   key={window}
                   variant={timeWindow === window ? 'default' : 'outline'}
@@ -102,8 +101,8 @@ export default function Trends() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {trends?.map((trend) => (
-                <Card key={trend.id} className="hover:shadow-md transition-shadow">
+              {trends.map((trend: any, index: number) => (
+                <Card key={`${trend.topic}-${index}`} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
@@ -112,27 +111,22 @@ export default function Trends() {
                             {trend.topic.replace(/-/g, ' ')}
                           </Badge>
                           <span className="text-sm text-muted-foreground">
-                            {trend.item_count} {trend.item_count === 1 ? 'item' : 'items'}
+                            {trend.count} {trend.count === 1 ? 'item' : 'items'}
                           </span>
                         </div>
                         <CardTitle className="text-xl capitalize">
                           {trend.topic.replace(/-/g, ' ')} Activity
                         </CardTitle>
-                        {trend.ai_summary && (
-                          <CardDescription className="mt-2">
-                            {trend.ai_summary}
-                          </CardDescription>
-                        )}
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="flex gap-2 text-sm text-muted-foreground">
-                      <span>{trend.meeting_count || 0} meetings</span>
+                      <span>{trend.byKind?.meeting || 0} meetings</span>
                       <span>•</span>
-                      <span>{trend.legislation_count || 0} legislation</span>
+                      <span>{trend.byKind?.legislation || 0} legislation</span>
                       <span>•</span>
-                      <span>{trend.election_count || 0} elections</span>
+                      <span>{trend.byKind?.election || 0} elections</span>
                     </div>
                   </CardContent>
                 </Card>

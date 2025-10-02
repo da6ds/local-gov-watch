@@ -7,35 +7,37 @@ import { Link } from "react-router-dom";
 import { getGuestScope } from "@/lib/guestSessionStorage";
 
 export function TrendsWidget() {
-  const { data: trends, isLoading } = useQuery({
+  const { data: trendsData, isLoading } = useQuery({
     queryKey: ['dashboard-trends', getGuestScope()],
     queryFn: async () => {
       const scopes = getGuestScope();
-      if (!scopes.length) return [];
+      if (!scopes.length) return null;
 
-      // Get jurisdictions for the selected scopes
-      const { data: jurisdictions } = await supabase
-        .from('jurisdiction')
-        .select('id, name')
-        .in('slug', scopes);
+      const scopeParam = scopes.join(',');
+      
+      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/trends-api`);
+      url.searchParams.set('scope', scopeParam);
+      url.searchParams.set('window', '7d');
+      url.searchParams.set('limit', '4');
 
-      if (!jurisdictions?.length) return [];
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+        }
+      });
 
-      const jurisdictionIds = jurisdictions.map(j => j.id);
+      if (!response.ok) {
+        console.error('Failed to fetch trends:', await response.text());
+        return null;
+      }
 
-      // Get trends for 7-day window
-      const { data, error } = await supabase
-        .from('topic_trend')
-        .select('*')
-        .in('jurisdiction_id', jurisdictionIds)
-        .eq('time_window', '7d')
-        .order('item_count', { ascending: false })
-        .limit(4);
-
-      if (error) throw error;
-      return data || [];
+      return await response.json();
     },
   });
+
+  const trends = trendsData?.items || [];
 
   if (isLoading) {
     return (
@@ -80,19 +82,19 @@ export function TrendsWidget() {
         <CardDescription>Last 7 days</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {trends.map((trend) => (
-          <div key={trend.id} className="border-l-2 border-accent pl-4">
+        {trends.map((trend: any, index: number) => (
+          <div key={`${trend.topic}-${index}`} className="border-l-2 border-accent pl-4">
             <div className="flex items-center gap-2 mb-1">
               <Badge variant="secondary" className="bg-accent/20 text-accent-foreground capitalize">
                 {trend.topic.replace(/-/g, ' ')}
               </Badge>
               <span className="text-sm text-muted-foreground">
-                {trend.item_count} {trend.item_count === 1 ? 'item' : 'items'}
+                {trend.count} {trend.count === 1 ? 'item' : 'items'}
               </span>
             </div>
-            {trend.ai_summary && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{trend.ai_summary}</p>
-            )}
+            <p className="text-sm text-muted-foreground">
+              {trend.byKind?.meeting || 0} meetings • {trend.byKind?.legislation || 0} legislation • {trend.byKind?.election || 0} elections
+            </p>
           </div>
         ))}
         <Link
