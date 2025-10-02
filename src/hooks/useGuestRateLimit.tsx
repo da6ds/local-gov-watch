@@ -11,7 +11,7 @@ const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
 const STORAGE_KEY = 'guest_rate_limit';
 
 export function useGuestRateLimit() {
-  const { user, isGuest } = useAuth();
+  const { isGuest } = useAuth();
   const [rateLimitState, setRateLimitState] = useState<RateLimitState>(() => {
     if (typeof window === 'undefined') return { count: 0, resetAt: Date.now() + RATE_LIMIT_WINDOW };
     
@@ -42,10 +42,7 @@ export function useGuestRateLimit() {
   }, [rateLimitState.resetAt]);
 
   const checkRateLimit = (): { allowed: boolean; remaining: number; resetIn: number } => {
-    // Logged-in users have no rate limit
-    if (user && !isGuest) {
-      return { allowed: true, remaining: Infinity, resetIn: 0 };
-    }
+    // All users are guests now, apply rate limit
 
     const now = Date.now();
     
@@ -65,8 +62,7 @@ export function useGuestRateLimit() {
   };
 
   const incrementRateLimit = () => {
-    // Don't rate limit logged-in users
-    if (user && !isGuest) return;
+    // All users are guests now, apply rate limit
 
     const now = Date.now();
     

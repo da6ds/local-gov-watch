@@ -14,13 +14,10 @@ import { TagChips } from "@/components/TagChips";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BrowseLegislation() {
-  const { user, guestSession } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Get jurisdiction ID (from user or guest session)
-  const jurisdictionId = user 
-    ? undefined // Will use user's selected jurisdiction from profile
-    : "1e42532f-a7f2-44cc-ba2b-59422c79d47f"; // Austin for guests
+  // Guest-only mode - default to Austin
+  const jurisdictionId = "1e42532f-a7f2-44cc-ba2b-59422c79d47f";
 
   const { data: legislation, isLoading } = useQuery({
     queryKey: ['legislation', jurisdictionId, searchTerm],

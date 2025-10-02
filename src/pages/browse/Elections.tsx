@@ -10,12 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 
 export default function BrowseElections() {
-  const { user } = useAuth();
-
-  // Get jurisdiction ID (from user or guest session - default to Austin for guests)
-  const jurisdictionId = user 
-    ? undefined // Will use user's selected jurisdiction
-    : "1e42532f-a7f2-44cc-ba2b-59422c79d47f"; // Austin for guests
+  // Guest-only mode - default to Austin
+  const jurisdictionId = "1e42532f-a7f2-44cc-ba2b-59422c79d47f";
 
   const now = new Date();
   const ninetyDaysLater = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
