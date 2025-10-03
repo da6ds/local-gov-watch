@@ -19,15 +19,18 @@ export default function Unsubscribe() {
 
     const unsubscribe = async () => {
       try {
-        const { error } = await supabase
-          .from('digest_subscription')
-          .update({ active: false })
-          .eq('unsubscribe_token', token);
+        const { data, error } = await supabase
+          .rpc('unsubscribe_by_token', { token });
 
         if (error) throw error;
-
-        setStatus('success');
-        setMessage("You've been successfully unsubscribed from our digest emails.");
+        
+        if (data) {
+          setStatus('success');
+          setMessage("You've been successfully unsubscribed from our digest emails.");
+        } else {
+          setStatus('error');
+          setMessage('Failed to unsubscribe. The link may be invalid or expired.');
+        }
       } catch (error) {
         console.error('Unsubscribe error:', error);
         setStatus('error');

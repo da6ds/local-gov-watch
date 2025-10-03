@@ -1162,6 +1162,10 @@ export type Database = {
         Args: { "": unknown[] }
         Returns: number
       }
+      unsubscribe_by_token: {
+        Args: { token: string }
+        Returns: boolean
+      }
       vector_avg: {
         Args: { "": number[] }
         Returns: string
