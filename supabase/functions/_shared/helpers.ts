@@ -185,10 +185,16 @@ export async function extractPdfText(pdfUrl: string): Promise<string | null> {
     });
 
     if (!response.ok) {
-      throw new Error(`Jina AI returned ${response.status}`);
+      console.error(`Jina AI returned ${response.status} for ${pdfUrl}`);
+      return null;
     }
 
     const text = await response.text();
+    
+    if (!text || text.trim().length === 0) {
+      console.warn(`Jina AI returned empty text for ${pdfUrl}`);
+      return null;
+    }
     
     // Basic cleanup
     const cleaned = text
@@ -197,7 +203,7 @@ export async function extractPdfText(pdfUrl: string): Promise<string | null> {
       .trim();
     
     console.log(`Successfully extracted ${cleaned.length} characters from PDF`);
-    return cleaned || null;
+    return cleaned;
   } catch (error) {
     console.error(`Failed to extract PDF text from ${pdfUrl}:`, error);
     return null;
