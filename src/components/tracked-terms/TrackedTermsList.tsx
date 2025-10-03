@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,69 +7,32 @@ import { Label } from "@/components/ui/label";
 import { Eye, Edit, Trash2, MapPin, Tag, Bell } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { getAllTrackedTerms, updateTrackedTerm, deleteTrackedTerm } from "@/lib/trackedTermStorage";
 
-interface TrackedTermsListProps {
-  email: string;
-}
-
-export function TrackedTermsList({ email }: TrackedTermsListProps) {
+export function TrackedTermsList() {
   const { data: terms, isLoading, refetch } = useQuery({
-    queryKey: ['tracked-terms', email],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tracked_term')
-        .select('*')
-        .eq('email', email)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!email,
+    queryKey: ['tracked-terms-session'],
+    queryFn: () => getAllTrackedTerms(),
   });
 
-  const handleToggleActive = async (id: string, currentValue: boolean) => {
-    const { error } = await supabase
-      .from('tracked_term')
-      .update({ active: !currentValue })
-      .eq('id', id);
-
-    if (error) {
-      toast.error("Failed to update term");
-    } else {
-      toast.success(currentValue ? "Term paused" : "Term activated");
-      refetch();
-    }
+  const handleToggleActive = (id: string, currentValue: boolean) => {
+    updateTrackedTerm(id, { active: !currentValue });
+    toast.success(currentValue ? "Term paused" : "Term activated");
+    refetch();
   };
 
-  const handleToggleAlert = async (id: string, currentValue: boolean) => {
-    const { error } = await supabase
-      .from('tracked_term')
-      .update({ alert_enabled: !currentValue })
-      .eq('id', id);
-
-    if (error) {
-      toast.error("Failed to update alert settings");
-    } else {
-      toast.success(currentValue ? "Alerts disabled" : "Alerts enabled");
-      refetch();
-    }
+  const handleToggleAlert = (id: string, currentValue: boolean) => {
+    updateTrackedTerm(id, { alertEnabled: !currentValue });
+    toast.success(currentValue ? "Alerts disabled" : "Alerts enabled");
+    refetch();
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Are you sure you want to delete this tracked term?")) return;
 
-    const { error } = await supabase
-      .from('tracked_term')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast.error("Failed to delete term");
-    } else {
-      toast.success("Term deleted");
-      refetch();
-    }
+    deleteTrackedTerm(id);
+    toast.success("Term deleted");
+    refetch();
   };
 
   if (isLoading) {
@@ -119,9 +81,9 @@ export function TrackedTermsList({ email }: TrackedTermsListProps) {
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1 flex-1">
                   <h3 className="text-lg font-semibold">{term.name}</h3>
-                  {term.match_count > 0 && (
+                  {term.matchCount > 0 && (
                     <Badge variant="secondary" className="text-xs">
-                      {term.match_count} new matches
+                      {term.matchCount} new matches
                     </Badge>
                   )}
                 </div>
@@ -176,8 +138,8 @@ export function TrackedTermsList({ email }: TrackedTermsListProps) {
                 </div>
                 <Switch
                   id={`alert-${term.id}`}
-                  checked={term.alert_enabled}
-                  onCheckedChange={() => handleToggleAlert(term.id, term.alert_enabled)}
+                  checked={term.alertEnabled}
+                  onCheckedChange={() => handleToggleAlert(term.id, term.alertEnabled)}
                 />
               </div>
 

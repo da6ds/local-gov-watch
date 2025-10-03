@@ -22,11 +22,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { LocationSelector } from "@/components/LocationSelector";
 import { Checkbox } from "@/components/ui/checkbox";
+import { createTrackedTerm } from "@/lib/trackedTermStorage";
 
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
@@ -38,13 +38,11 @@ const formSchema = z.object({
 interface CreateTrackedTermDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  email: string;
 }
 
 export function CreateTrackedTermDialog({
   open,
   onOpenChange,
-  email,
 }: CreateTrackedTermDialogProps) {
   const [keywordInput, setKeywordInput] = useState("");
   const queryClient = useQueryClient();
@@ -114,24 +112,17 @@ export function CreateTrackedTermDialog({
     }
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const { error } = await supabase.from("tracked_term").insert({
-      email,
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    createTrackedTerm({
       name: values.name,
       keywords: values.keywords,
       jurisdictions: values.jurisdictions,
-      alert_enabled: values.alertEnabled,
       active: true,
+      alertEnabled: values.alertEnabled,
     });
 
-    if (error) {
-      toast.error("Failed to create tracked term");
-      console.error(error);
-      return;
-    }
-
     toast.success("Tracked term created");
-    queryClient.invalidateQueries({ queryKey: ["tracked-terms", email] });
+    queryClient.invalidateQueries({ queryKey: ["tracked-terms-session"] });
     onOpenChange(false);
     form.reset();
   };

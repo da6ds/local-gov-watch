@@ -1,96 +1,17 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Filter } from "lucide-react";
+import { ArrowLeft, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getTrackedTerm } from "@/lib/trackedTermStorage";
 
 export default function TrackedTermMatches() {
   const { id } = useParams();
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<string>("30d");
 
   const { data: term } = useQuery({
-    queryKey: ['tracked-term', id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tracked_term')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id,
-  });
-
-  const { data: matches, isLoading } = useQuery({
-    queryKey: ['term-matches', id, typeFilter, dateFilter],
-    queryFn: async () => {
-      let query = supabase
-        .from('term_match')
-        .select(`
-          *,
-          legislation:item_id (
-            id,
-            title,
-            jurisdiction_id,
-            introduced_at,
-            ai_summary
-          ),
-          meeting:item_id (
-            id,
-            title,
-            jurisdiction_id,
-            starts_at,
-            ai_summary
-          )
-        `)
-        .eq('tracked_term_id', id)
-        .order('matched_at', { ascending: false });
-
-      if (typeFilter !== 'all') {
-        query = query.eq('item_type', typeFilter);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      // Filter by date
-      if (dateFilter !== 'all') {
-        const now = new Date();
-        let cutoffDate = new Date();
-        
-        switch (dateFilter) {
-          case '7d':
-            cutoffDate.setDate(now.getDate() - 7);
-            break;
-          case '30d':
-            cutoffDate.setDate(now.getDate() - 30);
-            break;
-          case '6m':
-            cutoffDate.setMonth(now.getMonth() - 6);
-            break;
-        }
-
-        return data.filter(match => {
-          const matchDate = new Date(match.matched_at);
-          return matchDate >= cutoffDate;
-        });
-      }
-
-      return data;
-    },
+    queryKey: ['tracked-term-session', id],
+    queryFn: () => id ? getTrackedTerm(id) : null,
     enabled: !!id,
   });
 
@@ -111,113 +32,32 @@ export default function TrackedTermMatches() {
           <div className="space-y-2">
             <h1 className="text-2xl md:text-3xl font-bold">{term.name}</h1>
             <p className="text-muted-foreground">
-              {matches?.length || 0} matches found
+              Monitoring for: {term.keywords.join(", ")}
             </p>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2">
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[180px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="legislation">Legislation</SelectItem>
-              <SelectItem value="meeting">Meetings</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Demo Mode Notice */}
+        <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20">
+          <Info className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
+          <AlertTitle className="text-yellow-900 dark:text-yellow-100">Demo Mode</AlertTitle>
+          <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+            Keyword matching requires saving your tracked terms permanently. Click "Save Permanently" to enable automatic match detection.
+            <Button variant="link" className="p-0 h-auto ml-2 text-yellow-900 dark:text-yellow-100">
+              Save Permanently
+            </Button>
+          </AlertDescription>
+        </Alert>
 
-          <Select value={dateFilter} onValueChange={setDateFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Date range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="6m">Last 6 months</SelectItem>
-              <SelectItem value="all">All time</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Matches List */}
-        {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="p-4 animate-pulse">
-                <div className="h-6 bg-muted rounded w-2/3 mb-2"></div>
-                <div className="h-4 bg-muted rounded w-full"></div>
-              </Card>
-            ))}
+        {/* Placeholder */}
+        <Card className="p-8 text-center">
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Matches will appear here</h3>
+            <p className="text-sm text-muted-foreground">
+              Save your tracked terms permanently to enable automatic keyword matching across new legislation and meetings
+            </p>
           </div>
-        ) : matches && matches.length > 0 ? (
-          <div className="space-y-4">
-            {matches.map((match) => {
-              const item = match.item_type === 'legislation' 
-                ? (match as any).legislation 
-                : (match as any).meeting;
-              
-              if (!item) return null;
-
-              const date = match.item_type === 'legislation'
-                ? item.introduced_at
-                : item.starts_at;
-
-              return (
-                <Card key={match.id} className="p-4 md:p-6 hover:bg-muted/50 transition-colors">
-                  <Link 
-                    to={`/${match.item_type === 'legislation' ? 'legislation' : 'meeting'}/${item.id}`}
-                    className="space-y-3 block"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-2 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant={match.item_type === 'legislation' ? 'default' : 'secondary'}>
-                            {match.item_type === 'legislation' ? 'Legislation' : 'Meeting'}
-                          </Badge>
-                          {date && (
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(date).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
-                        <h3 className="font-semibold hover:text-primary transition-colors">
-                          {item.title}
-                        </h3>
-                        {item.ai_summary && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {item.ai_summary}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5">
-                      <span className="text-xs text-muted-foreground">Matched:</span>
-                      {(match.matched_keywords as string[]).map((keyword, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {keyword}
-                        </Badge>
-                      ))}
-                    </div>
-                  </Link>
-                </Card>
-              );
-            })}
-          </div>
-        ) : (
-          <Card className="p-8 text-center">
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">No matches yet</h3>
-              <p className="text-sm text-muted-foreground">
-                We'll notify you when new legislation or meetings mention your keywords
-              </p>
-            </div>
-          </Card>
-        )}
+        </Card>
       </div>
     </div>
   );
