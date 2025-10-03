@@ -117,6 +117,67 @@
   .loose-spacing { @apply space-y-4; }      /* 16px between elements */
   .section-spacing { @apply space-y-6; }    /* 24px between sections */
   
+  /* Document search highlighting */
+  .search-highlight {
+    background-color: rgb(254 240 138);
+    color: rgb(133 77 14);
+    padding: 1px 2px;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+  }
+
+  .dark .search-highlight {
+    background-color: rgb(133 77 14);
+    color: rgb(254 240 138);
+  }
+
+  .search-current {
+    background-color: rgb(250 204 21);
+    color: rgb(92 57 8);
+    box-shadow: 0 0 0 2px rgb(202 138 4);
+    font-weight: 600;
+  }
+
+  .dark .search-current {
+    background-color: rgb(202 138 4);
+    color: rgb(254 240 138);
+    box-shadow: 0 0 0 2px rgb(250 204 21);
+  }
+
+  .search-flash {
+    animation: searchFlash 1s ease-out;
+  }
+
+  @keyframes searchFlash {
+    0% {
+      background-color: rgb(59 130 246);
+      color: white;
+    }
+    100% {
+      background-color: rgb(250 204 21);
+      color: rgb(92 57 8);
+    }
+  }
+
+  .dark .search-flash {
+    animation: searchFlashDark 1s ease-out;
+  }
+
+  @keyframes searchFlashDark {
+    0% {
+      background-color: rgb(59 130 246);
+      color: white;
+    }
+    100% {
+      background-color: rgb(202 138 4);
+      color: rgb(254 240 138);
+    }
+  }
+
+  .document-content {
+    scroll-behavior: smooth;
+  }
+  
   /* Status Pills */
   .status-pill {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
