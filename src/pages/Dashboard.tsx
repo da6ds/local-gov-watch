@@ -135,12 +135,12 @@ export default function Dashboard() {
   return (
     <TooltipProvider>
       <Layout>
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {/* Header - visible on mobile only */}
           <div className="md:hidden">
-            <h1 className="text-3xl font-bold mb-1">Dashboard</h1>
+            <h1 className="text-2xl md:text-3xl font-bold mb-1">Dashboard</h1>
             {/* Subtle status line */}
-            <div className="text-sm text-muted-foreground" aria-live="polite">
+            <div className="text-xs md:text-sm text-muted-foreground" aria-live="polite">
               {isAutoRefreshing ? (
                 <span>Updating... ~{Math.round((autoRefreshEta || 120000) / 1000 / 60)}m remaining</span>
               ) : dataStatus?.mode === 'live' && dataStatus.lastRunAt ? (
@@ -153,37 +153,37 @@ export default function Dashboard() {
           </div>
 
           {/* Snapshot Cards */}
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-3 gap-3 md:gap-4">
             {/* Recent Legislation */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <Link to="/browse/legislation" className="group" aria-label="View all recent legislation updates">
-                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
-                    <Scale className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-base md:text-lg flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
+                    <Scale className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     Recent Updates
                     <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
-                <CardDescription>New bills and ordinances</CardDescription>
+                <CardDescription className="text-xs md:text-sm">New bills and ordinances</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold mb-2">{recentLegislation.length}</p>
+                <p className="text-2xl md:text-3xl font-bold mb-2">{recentLegislation.length}</p>
                 {recentLegislation.length > 0 ? (
-                  <div className="space-y-2 mb-3">
+                  <div className="space-y-1.5 md:space-y-2 mb-3">
                     {recentLegislation.slice(0, 3).map((item: any) => (
                       <Link 
                         key={item.id} 
                         to={`/legislation/${item.id}`}
-                        className="block text-sm text-foreground hover:text-primary line-clamp-1"
+                        className="block text-xs md:text-sm text-foreground hover:text-primary line-clamp-1"
                       >
                         • {item.title}
                       </Link>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground mb-3">No recent updates</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-3">No recent updates</p>
                 )}
-                <Button variant="link" asChild className="p-0 h-auto">
+                <Button variant="link" asChild className="p-0 h-auto text-xs md:text-sm">
                   <Link to="/browse/legislation">View all →</Link>
                 </Button>
               </CardContent>
@@ -193,37 +193,37 @@ export default function Dashboard() {
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <Link to="/browse/meetings" className="group" aria-label="View all upcoming meetings">
-                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
-                    <Calendar className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-base md:text-lg flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
+                    <Calendar className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     Upcoming Meetings
                     <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
-                <CardDescription>City & county sessions</CardDescription>
+                <CardDescription className="text-xs md:text-sm">City & county sessions</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold mb-2">{upcomingMeetings.length}</p>
+                <p className="text-2xl md:text-3xl font-bold mb-2">{upcomingMeetings.length}</p>
                 {upcomingMeetings.length > 0 ? (
-                  <div className="space-y-2 mb-3">
+                  <div className="space-y-1.5 md:space-y-2 mb-3">
                     {upcomingMeetings.slice(0, 3).map((meeting: any) => (
                       <Link
                         key={meeting.id}
                         to={`/meeting/${meeting.id}`}
-                        className="block text-sm"
+                        className="block text-xs md:text-sm"
                       >
                         <p className="text-foreground hover:text-primary line-clamp-1">
                           • {meeting.title || meeting.body_name}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] md:text-xs text-muted-foreground">
                           {meeting.starts_at && format(new Date(meeting.starts_at), 'MMM d, h:mm a')}
                         </p>
                       </Link>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground mb-3">No meetings scheduled</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-3">No meetings scheduled</p>
                 )}
-                <Button variant="link" asChild className="p-0 h-auto">
+                <Button variant="link" asChild className="p-0 h-auto text-xs md:text-sm">
                   <Link to="/calendar">View calendar →</Link>
                 </Button>
               </CardContent>
@@ -233,18 +233,18 @@ export default function Dashboard() {
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <Link to="/browse/elections" className="group" aria-label="View all upcoming elections">
-                  <CardTitle className="text-lg flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
-                    <Vote className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-base md:text-lg flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
+                    <Vote className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     Upcoming Elections
                     <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
-                <CardDescription>Register and vote</CardDescription>
+                <CardDescription className="text-xs md:text-sm">Register and vote</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold mb-2">{upcomingElections.length}</p>
+                <p className="text-2xl md:text-3xl font-bold mb-2">{upcomingElections.length}</p>
                 {upcomingElections.length > 0 ? (
-                  <div className="space-y-2 mb-3">
+                  <div className="space-y-1.5 md:space-y-2 mb-3">
                     {upcomingElections.map((election: any) => (
                       <Link
                         key={election.id}

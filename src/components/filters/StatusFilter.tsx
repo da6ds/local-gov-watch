@@ -47,7 +47,7 @@ export function StatusFilter({ value, onChange, count }: StatusFilterProps) {
   return (
     <div className="flex items-center gap-2">
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-[140px] h-8 text-xs md:w-[180px] md:h-10 md:text-sm">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent className="bg-background">
@@ -59,7 +59,7 @@ export function StatusFilter({ value, onChange, count }: StatusFilterProps) {
         </SelectContent>
       </Select>
       {showCount && (
-        <Badge variant="secondary" className="ml-1">
+        <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">
           {count}
         </Badge>
       )}

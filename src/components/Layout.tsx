@@ -12,6 +12,7 @@ import { BrowseDropdown } from "@/components/nav/BrowseDropdown";
 import { MyWorkspaceDropdown } from "@/components/nav/MyWorkspaceDropdown";
 import { SearchIconButton } from "@/components/nav/SearchIconButton";
 import { OmniFiltersBar } from "@/components/nav/OmniFiltersBar";
+import { MobileBottomNav } from "@/components/nav/MobileBottomNav";
 import { useDemoUser } from "@/hooks/useDemoUser";
 import {
   Tooltip,
@@ -70,11 +71,11 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-background">
       {/* Primary Navigation */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center">
+        <div className="container flex h-12 md:h-14 items-center">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="md:hidden h-9 w-9">
+                <Menu className="h-4 w-4" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64">
@@ -102,9 +103,9 @@ export function Layout({ children }: LayoutProps) {
             </SheetContent>
           </Sheet>
 
-          <Link to="/" className="flex items-center gap-2 ml-4 md:ml-0">
-            <Scale className="h-5 w-5 text-primary" />
-            <span className="font-semibold hidden sm:inline-block">Local Gov Watch</span>
+          <Link to="/" className="flex items-center gap-2 ml-3 md:ml-0">
+            <Scale className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+            <span className="font-semibold text-sm md:text-base hidden sm:inline-block">Local Gov Watch</span>
           </Link>
 
           {/* Desktop Primary Nav */}
@@ -125,12 +126,12 @@ export function Layout({ children }: LayoutProps) {
           </nav>
 
           {/* Right Side Actions */}
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
             {isLoggedIn && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 hidden sm:flex">
-                    Demo Mode
+                  <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 hidden sm:flex text-xs px-2 py-0.5">
+                    Demo
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -157,13 +158,16 @@ export function Layout({ children }: LayoutProps) {
         showClearAll={hasActiveFilters}
       />
 
-      <main className="container py-6 mt-12">{children}</main>
+      <main className="container py-4 md:py-6 mt-10 md:mt-12 pb-20 md:pb-6">{children}</main>
 
-      <footer className="border-t py-4 md:py-6">
+      <footer className="border-t py-4 md:py-6 mb-16 md:mb-0">
         <div className="container text-center text-sm text-muted-foreground">
           <p>Local Gov Watch</p>
         </div>
       </footer>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   );
 }

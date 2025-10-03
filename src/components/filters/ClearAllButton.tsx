@@ -14,10 +14,11 @@ export function ClearAllButton({ onClear, show }: ClearAllButtonProps) {
       variant="destructive"
       size="sm"
       onClick={onClear}
-      className="gap-1"
+      className="h-8 gap-1 px-2.5 text-xs md:h-9 md:gap-1.5 md:px-3 md:text-sm"
     >
-      <X className="h-4 w-4" />
-      Clear All
+      <X className="h-3.5 w-3.5 md:h-4 md:w-4" />
+      <span className="hidden sm:inline">Clear All</span>
+      <span className="sm:hidden">Clear</span>
     </Button>
   );
 }

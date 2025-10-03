@@ -13,7 +13,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   }
 
   return (
-    <Badge className={`status-pill status-${statusConfig.value}`}>
+    <Badge className={`status-pill status-${statusConfig.value} py-0.5 px-2 text-[10px] md:py-1 md:px-2.5 md:text-xs`}>
       {statusConfig.label}
     </Badge>
   );

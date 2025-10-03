@@ -35,7 +35,7 @@ export function InteractiveTopicChips({
           >
             <Badge
               variant={isSelected ? "default" : "outline"}
-              className={`cursor-pointer hover:scale-105 transition-transform ${
+              className={`cursor-pointer hover:scale-105 transition-transform py-1 px-2 text-xs md:py-1.5 md:px-3 md:text-sm ${
                 isSelected ? "bg-primary text-primary-foreground" : "hover:bg-muted"
               }`}
             >

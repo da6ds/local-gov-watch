@@ -96,9 +96,9 @@ export function LocationSelector({
         <Button
           variant={selectedJurisdictions.length > 0 ? "default" : "outline"}
           size="sm"
-          className="h-10 gap-2"
+          className="h-8 gap-1.5 px-2.5 text-xs md:h-10 md:gap-2 md:px-4 md:text-sm"
         >
-          <MapPin className="h-4 w-4" />
+          <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
           <span className="hidden sm:inline">
             {selectedJurisdictions.length === 0 
               ? "Location" 
@@ -107,7 +107,7 @@ export function LocationSelector({
               : `${selectedJurisdictions.length} Locations`
             }
           </span>
-          <ChevronDown className="h-4 w-4" />
+          <ChevronDown className="h-3.5 w-3.5 md:h-4 md:w-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[360px] p-4" align="start">

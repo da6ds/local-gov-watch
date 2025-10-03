@@ -140,22 +140,22 @@ export default function LegislationDetail() {
         <meta property="og:type" content="article" />
       </Helmet>
 
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto py-4 md:py-8">
         {/* Back Button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate(-1)}
-          className="mb-4"
+          className="mb-3 md:mb-4 h-8 md:h-9"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="h-3.5 w-3.5 md:h-4 md:w-4 mr-2" />
           Back
         </Button>
 
         {/* Breadcrumbs */}
-        <div className="mb-6">
+        <div className="mb-4 md:mb-6">
           <Breadcrumb>
-            <BreadcrumbList>
+            <BreadcrumbList className="text-xs md:text-sm">
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
                   <Link to="/" className="flex items-center gap-1">
@@ -179,16 +179,16 @@ export default function LegislationDetail() {
         </div>
 
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* LEFT COLUMN - Main Content (2/3 width) */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 md:space-y-6">
             {/* Header */}
-            <div className="space-y-4">
-              <h1 className="text-3xl font-bold">{legislation.title}</h1>
+            <div className="space-y-3 md:space-y-4">
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight">{legislation.title}</h1>
               
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
                 {legislation.jurisdiction && (
-                  <Badge variant="secondary">
+                  <Badge variant="secondary" className="text-xs">
                     {legislation.jurisdiction.name}
                   </Badge>
                 )}
@@ -196,7 +196,7 @@ export default function LegislationDetail() {
               </div>
 
               {/* Dates */}
-              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm text-muted-foreground">
                 {legislation.introduced_at && (
                   <div>
                     <span className="font-medium">Introduced:</span>{" "}
