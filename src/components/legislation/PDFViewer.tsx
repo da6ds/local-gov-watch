@@ -90,52 +90,35 @@ export function PDFViewer({ pdfUrl, extractedText, docUrl, title }: PDFViewerPro
 
   if ((pdfUrl || currentUrl) && !showExtractedText) {
     const displayUrl = currentUrl || pdfUrl;
+    
+    // Show only loading spinner during initial load
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading document...</p>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>Full Document</CardTitle>
-          <div className="flex gap-2">
-            {extractedText && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowExtractedText(true)}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                View Text
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-            >
-              <a href={displayUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open in new tab
-              </a>
-            </Button>
-          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {pdfError && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                PDF preview unavailable - the document cannot be embedded. Click "Open in new tab" above to view the PDF.
+                PDF preview unavailable - the document cannot be embedded.
               </AlertDescription>
             </Alert>
           )}
           
           <div className="relative">
-            {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded z-10">
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">Loading document...</p>
-                </div>
-              </div>
-            )}
             <object
               data={displayUrl}
               type="application/pdf"
@@ -167,42 +150,19 @@ export function PDFViewer({ pdfUrl, extractedText, docUrl, title }: PDFViewerPro
 
   if (extractedText) {
     return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Full Document Text</CardTitle>
-          {(pdfUrl || docUrl) && (
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-            >
-              <a href={pdfUrl || docUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open Original PDF
-              </a>
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              The PDF cannot be displayed inline due to security settings on the source website. 
-              We've extracted the text below for easy reading, or you can{' '}
-              <Button
-                variant="link"
-                className="p-0 h-auto font-semibold"
-                asChild
-              >
-                <a href={pdfUrl || docUrl} target="_blank" rel="noopener noreferrer">
-                  open the original PDF in a new tab <ExternalLink className="h-3 w-3 ml-1 inline" />
-                </a>
-              </Button>.
-            </AlertDescription>
-          </Alert>
-          <DocumentPreview text={extractedText} maxChars={2000} />
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            The PDF cannot be displayed inline due to security settings on the source website. We've extracted the text below for easy reading.
+          </AlertDescription>
+        </Alert>
+        <DocumentPreview 
+          text={extractedText} 
+          maxChars={2000}
+          pdfUrl={pdfUrl || docUrl || undefined}
+        />
+      </div>
     );
   }
 
