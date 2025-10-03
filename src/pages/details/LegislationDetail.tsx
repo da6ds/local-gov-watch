@@ -394,8 +394,8 @@ export default function LegislationDetail() {
           {/* LEFT COLUMN - Main Content (2/3 width) */}
           <div className="col-span-2 space-y-6">
             {/* Header */}
-            <div className="space-y-4">
-              <h1 className="text-3xl font-bold leading-tight">{legislation.title}</h1>
+            <div className="space-y-3">
+              <h1 className="text-2xl font-bold leading-tight">{legislation.title}</h1>
               
               <div className="flex flex-wrap items-center gap-2">
                 {legislation.jurisdiction && (
@@ -407,7 +407,7 @@ export default function LegislationDetail() {
               </div>
 
               {/* Dates */}
-              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                 {legislation.introduced_at && (
                   <div>
                     <span className="font-medium">Introduced:</span>{" "}
@@ -432,9 +432,9 @@ export default function LegislationDetail() {
             {/* AI Summary - only show if meaningful content exists */}
             {hasMeaningfulSummary && (
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">
+                    <h2 className="text-base font-semibold">
                       {legislation.ai_summary ? "AI Summary" : "Summary"}
                     </h2>
                     <Button

@@ -72,10 +72,10 @@ export function Layout({ children }: LayoutProps) {
       {/* Primary Navigation */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-12 md:h-14 items-center">
-          {/* Desktop: Hamburger menu + Logo */}
+          {/* Mobile: Hamburger menu */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="hidden md:flex h-9 w-9">
+              <Button variant="ghost" size="icon" className="md:hidden h-9 w-9">
                 <Menu className="h-4 w-4" />
               </Button>
             </SheetTrigger>
@@ -104,16 +104,17 @@ export function Layout({ children }: LayoutProps) {
             </SheetContent>
           </Sheet>
 
-          {/* Logo - Desktop only */}
-          <Link to="/" className="hidden md:flex items-center gap-2 ml-3 md:ml-0">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 ml-2 md:ml-0">
             <Scale className="h-5 w-5 text-primary" />
-            <span className="font-semibold text-base">Local Gov Watch</span>
+            <span className="font-semibold text-sm md:text-base">Local Gov Watch</span>
           </Link>
 
           {/* Desktop Primary Nav */}
-          <nav className="hidden md:flex items-center gap-2 ml-8">
+          <nav className="hidden md:flex items-center gap-2 ml-6 lg:ml-8">
             <Button
               variant={location.pathname === "/dashboard" ? "secondary" : "ghost"}
+              size="sm"
               asChild
             >
               <Link to="/dashboard">Dashboard</Link>
@@ -121,6 +122,7 @@ export function Layout({ children }: LayoutProps) {
             <BrowseDropdown />
             <Button
               variant={location.pathname === "/digest" ? "secondary" : "ghost"}
+              size="sm"
               asChild
             >
               <Link to="/digest">Digest</Link>

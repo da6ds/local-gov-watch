@@ -166,6 +166,31 @@
   .touch-target {
     @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
   }
+  
+  /* Desktop Optimizations */
+  @media (min-width: 768px) {
+    .dashboard-card {
+      @apply p-4 space-y-2.5;
+    }
+    
+    .detail-layout {
+      @apply grid grid-cols-3 gap-6;
+    }
+    
+    .desktop-table-row {
+      @apply hover:bg-accent/50 transition-colors;
+    }
+    
+    /* Compact desktop typography */
+    .dashboard-card h2 {
+      @apply text-lg;
+    }
+    
+    /* Desktop hover states */
+    .card-hover {
+      @apply hover:shadow-md transition-shadow;
+    }
+  }
 }
 
 @layer utilities {

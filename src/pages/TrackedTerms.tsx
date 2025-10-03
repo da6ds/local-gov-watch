@@ -13,8 +13,8 @@ export default function TrackedTerms() {
       <div className="space-y-6">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-2xl md:text-3xl font-bold">My Tracked Terms</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold">My Tracked Terms</h1>
+          <p className="text-sm text-muted-foreground">
             Monitor specific keywords in new legislation and meetings
           </p>
         </div>
