@@ -7,18 +7,18 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { LocationSelector } from "@/components/LocationSelector";
 import { InteractiveTopicChips } from "@/components/InteractiveTopicChips";
 import { EmailPreviewDialog } from "@/components/EmailPreviewDialog";
-import { TrackedTermsList } from "@/components/tracked-terms/TrackedTermsList";
+import { TrackedTermsSummary } from "@/components/tracked-terms/TrackedTermsSummary";
 import { CreateTrackedTermDialog } from "@/components/tracked-terms/CreateTrackedTermDialog";
 import { useTopics } from "@/hooks/useTopics";
 import { useState } from "react";
 import { z } from "zod";
-import { Loader2, Bell, Plus, Info } from "lucide-react";
+import { Loader2, Bell, Plus, AlertCircle, Mail, Target, TestTube, Eye, ChevronDown } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useNavigate } from "react-router-dom";
 
 const digestFormSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -70,10 +70,12 @@ const ERROR_MESSAGES: Record<string, { title: string; description: string }> = {
 };
 
 export default function Alerts() {
+  const navigate = useNavigate();
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isDigestOpen, setIsDigestOpen] = useState(false);
   const { data: topicsData = [] } = useTopics();
 
   const {
@@ -176,201 +178,216 @@ export default function Alerts() {
 
   return (
     <Layout>
-      <div className="space-y-5">
-        {/* Header */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold">Alert Settings</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage instant alerts and email digest preferences
-          </p>
+      <div className="space-y-4">
+        {/* Compact Demo Mode Banner */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <AlertCircle className="w-4 h-4" />
+          Demo Mode - Settings saved for this session only
+          <Button variant="link" size="sm" className="p-0 h-auto text-primary">
+            Save Permanently
+          </Button>
         </div>
 
-        {/* Demo Mode Banner */}
-        <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20">
-          <Info className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-          <AlertTitle className="text-yellow-900 dark:text-yellow-100">Demo Mode</AlertTitle>
-          <AlertDescription className="text-yellow-800 dark:text-yellow-200">
-            Your alert settings are saved for this browser session only.
-            <Button variant="link" className="p-0 h-auto ml-2 text-yellow-900 dark:text-yellow-100">
-              Save Permanently
-            </Button>
-          </AlertDescription>
-        </Alert>
-
-        {/* Email Setup */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Email Delivery
-            </CardTitle>
-            <CardDescription>
-              Where should we send your alerts and digests?
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  {...register('email')}
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">Your Name</Label>
-                <Input
-                  id="name"
-                  placeholder="Rob Miller"
-                  {...register('name')}
-                />
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name.message}</p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Instant Alerts Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Instant Alerts
-            </CardTitle>
-            <CardDescription>
-              Get notified immediately when keywords match in new legislation or meetings
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <TrackedTermsList />
-            <Button onClick={() => setIsCreateDialogOpen(true)} variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Tracked Term
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Weekly Digest Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Weekly Digest</CardTitle>
-            <CardDescription>
-              Summary of activity in your selected areas
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Locations</Label>
+        {/* Header with Filters */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+            <h1 className="text-2xl font-bold">Alert Settings</h1>
+            <div className="flex items-center gap-2">
               <LocationSelector
                 value={selectedLocations}
                 onChange={handleLocationChange}
               />
-              {errors.locations && (
-                <p className="text-sm text-destructive">{errors.locations.message}</p>
-              )}
             </div>
-
-            <div className="space-y-2">
-              <Label>Topics of Interest (Optional)</Label>
-              <InteractiveTopicChips
-                topics={topicsData}
-                selectedTopics={selectedTopics}
-                onToggle={handleToggleTopic}
-                onClear={handleClearTopics}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Delivery Frequency</Label>
-              <RadioGroup
-                value={watchedCadence}
-                onValueChange={(value) => setValue('cadence', value as 'daily' | 'weekly' | 'biweekly')}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="daily" id="daily" />
-                  <Label htmlFor="daily" className="font-normal cursor-pointer">
-                    Daily
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="weekly" id="weekly" />
-                  <Label htmlFor="weekly" className="font-normal cursor-pointer">
-                    Weekly (Recommended)
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="biweekly" id="biweekly" />
-                  <Label htmlFor="biweekly" className="font-normal cursor-pointer">
-                    Bi-weekly
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Test & Preview */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Test & Preview</CardTitle>
-            <CardDescription>
-              See what your emails will look like before subscribing
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                onClick={handleSendTest}
-                disabled={isSendingTest || !isValid}
-                variant="outline"
-              >
-                {isSendingTest ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send Test Alert
-                  </>
-                )}
-              </Button>
-              <EmailPreviewDialog
-                name={watchedName}
-                locations={selectedLocations}
-                topics={selectedTopics}
-                cadence={watchedCadence}
-                disabled={!isValid}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Subscribe Button */}
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting || !isValid}
-            size="lg"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Subscribing...
-              </>
-            ) : (
-              'Subscribe to Digest'
-            )}
+          </div>
+          <Button onClick={() => setIsCreateDialogOpen(true)} className="md:ml-auto">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Tracked Term
           </Button>
         </div>
+
+        {/* Email Setup (if not filled) */}
+        {!watchedEmail && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Get Started with Alerts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Input
+                  placeholder="your.email@example.com"
+                  {...register('email')}
+                />
+                <Input
+                  placeholder="Your name"
+                  {...register('name')}
+                />
+              </div>
+              {(errors.email || errors.name) && (
+                <p className="text-sm text-destructive mt-2">
+                  {errors.email?.message || errors.name?.message}
+                </p>
+              )}
+              <p className="text-sm text-muted-foreground mt-2">
+                Required for email alerts and digest delivery
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <Button
+            size="lg"
+            variant="outline"
+            className="h-20 flex-col gap-2"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
+            <Target className="w-6 h-6" />
+            <span className="text-sm">Add Tracked Term</span>
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="h-20 flex-col gap-2"
+            onClick={() => setIsDigestOpen(!isDigestOpen)}
+          >
+            <Mail className="w-6 h-6" />
+            <span className="text-sm">Setup Digest</span>
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="h-20 flex-col gap-2"
+            onClick={handleSendTest}
+            disabled={isSendingTest || !isValid}
+          >
+            {isSendingTest ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : (
+              <TestTube className="w-6 h-6" />
+            )}
+            <span className="text-sm">Send Test Alert</span>
+          </Button>
+        </div>
+
+        {/* Instant Alerts Overview */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <div>
+              <CardTitle className="text-lg">Instant Alerts</CardTitle>
+              <CardDescription className="text-sm mt-1">
+                Immediate notifications when keywords match
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/tracked-terms')}
+            >
+              Manage Terms
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <TrackedTermsSummary
+              onManageTerms={() => navigate('/tracked-terms')}
+              onAddTerm={() => setIsCreateDialogOpen(true)}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Digest Settings (Collapsed) */}
+        <Collapsible open={isDigestOpen} onOpenChange={setIsDigestOpen}>
+          <CollapsibleTrigger asChild>
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <div>
+                  <CardTitle className="text-lg">Weekly Digest</CardTitle>
+                  <CardDescription className="text-sm mt-1">
+                    Summary emails of activity in your areas
+                  </CardDescription>
+                </div>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isDigestOpen ? 'rotate-180' : ''}`} />
+              </CardHeader>
+            </Card>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <Card className="border-t-0 rounded-t-none">
+              <CardContent className="pt-6 space-y-4">
+                {/* Locations */}
+                <div className="space-y-2">
+                  <Label>Locations</Label>
+                  <LocationSelector
+                    value={selectedLocations}
+                    onChange={handleLocationChange}
+                  />
+                  {errors.locations && (
+                    <p className="text-sm text-destructive">{errors.locations.message}</p>
+                  )}
+                </div>
+
+                {/* Topics */}
+                <div className="space-y-2">
+                  <Label>Topics of Interest (Optional)</Label>
+                  <InteractiveTopicChips
+                    topics={topicsData}
+                    selectedTopics={selectedTopics}
+                    onToggle={handleToggleTopic}
+                    onClear={handleClearTopics}
+                  />
+                </div>
+
+                {/* Frequency */}
+                <div className="space-y-2">
+                  <Label>Delivery Frequency</Label>
+                  <RadioGroup
+                    value={watchedCadence}
+                    onValueChange={(value) => setValue('cadence', value as 'daily' | 'weekly' | 'biweekly')}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="weekly" id="weekly" />
+                      <Label htmlFor="weekly" className="font-normal cursor-pointer">
+                        Weekly (Recommended)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="daily" id="daily" />
+                      <Label htmlFor="daily" className="font-normal cursor-pointer">
+                        Daily
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="biweekly" id="biweekly" />
+                      <Label htmlFor="biweekly" className="font-normal cursor-pointer">
+                        Bi-weekly
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting || !isValid}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Subscribing...
+                      </>
+                    ) : (
+                      'Subscribe to Digest'
+                    )}
+                  </Button>
+                  <EmailPreviewDialog
+                    name={watchedName}
+                    locations={selectedLocations}
+                    topics={selectedTopics}
+                    cadence={watchedCadence}
+                    disabled={!isValid}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Dialogs */}
