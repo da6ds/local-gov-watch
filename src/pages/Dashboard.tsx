@@ -134,10 +134,10 @@ export default function Dashboard() {
   return (
     <TooltipProvider>
       <Layout>
-        <div className="space-y-4 md:space-y-5">
+        <div className="space-y-3">
           {/* Header */}
           <div>
-            <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
+            <h1 className="text-2xl font-bold mb-0.5">Dashboard</h1>
             {/* Subtle status line */}
             <div className="text-xs md:text-sm text-muted-foreground" aria-live="polite">
               {isAutoRefreshing ? (
@@ -173,7 +173,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Snapshot Cards */}
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-3 gap-3">
             {/* Recent Legislation */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
@@ -291,11 +291,11 @@ export default function Dashboard() {
           </div>
 
           {/* Bottom Grid: Calendar & Trends */}
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid lg:grid-cols-2 gap-4">
             {/* Calendar Card */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-semibold flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
                   Calendar
                 </h2>

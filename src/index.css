@@ -111,6 +111,12 @@
 }
 
 @layer components {
+  /* Spacing Scale */
+  .tight-spacing { @apply space-y-2; }      /* 8px between elements */
+  .normal-spacing { @apply space-y-3; }     /* 12px between elements */
+  .loose-spacing { @apply space-y-4; }      /* 16px between elements */
+  .section-spacing { @apply space-y-6; }    /* 24px between sections */
+  
   /* Status Pills */
   .status-pill {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
@@ -170,11 +176,11 @@
   /* Desktop Optimizations */
   @media (min-width: 768px) {
     .dashboard-card {
-      @apply p-4 space-y-2.5;
+      @apply p-3 space-y-2;
     }
     
     .detail-layout {
-      @apply grid grid-cols-3 gap-6;
+      @apply grid grid-cols-3 gap-4;
     }
     
     .desktop-table-row {
@@ -183,12 +189,28 @@
     
     /* Compact desktop typography */
     .dashboard-card h2 {
-      @apply text-lg;
+      @apply text-base leading-snug;
     }
     
     /* Desktop hover states */
     .card-hover {
       @apply hover:shadow-md transition-shadow;
+    }
+    
+    /* Page containers */
+    .page-container {
+      @apply pt-4 px-4;
+    }
+  }
+  
+  /* Mobile Optimizations */
+  @media (max-width: 767px) {
+    .page-container {
+      @apply pt-3 px-3;
+    }
+    
+    .dashboard-card {
+      @apply p-3 space-y-2;
     }
   }
 }

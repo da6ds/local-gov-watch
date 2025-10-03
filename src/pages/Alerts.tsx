@@ -178,7 +178,7 @@ export default function Alerts() {
 
   return (
     <Layout>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {/* Compact Demo Mode Banner */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <AlertCircle className="w-4 h-4" />
@@ -189,8 +189,8 @@ export default function Alerts() {
         </div>
 
         {/* Header with Filters */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
             <h1 className="text-2xl font-bold">Alert Settings</h1>
             <div className="flex items-center gap-2">
               <LocationSelector

@@ -71,7 +71,7 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-background">
       {/* Primary Navigation */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-12 md:h-14 items-center">
+        <div className="container flex h-12 items-center">
           {/* Mobile: Hamburger menu */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -162,9 +162,9 @@ export function Layout({ children }: LayoutProps) {
         showClearAll={hasActiveFilters}
       />
 
-      <main className="container py-4 md:py-6 mt-10 md:mt-12 pb-20 md:pb-6">{children}</main>
+      <main className="container py-3 md:py-4 mt-8 md:mt-10 pb-20 md:pb-4">{children}</main>
 
-      <footer className="border-t py-4 md:py-6 mb-16 md:mb-0">
+      <footer className="border-t py-3 md:py-4 mb-16 md:mb-0">
         <div className="container text-center text-sm text-muted-foreground">
           <p>Local Gov Watch</p>
         </div>

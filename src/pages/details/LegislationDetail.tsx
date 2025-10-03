@@ -149,7 +149,7 @@ export default function LegislationDetail() {
         <meta property="og:type" content="article" />
       </Helmet>
 
-      <div className="container mx-auto py-3 md:py-8 pb-32 md:pb-8">
+      <div className="container mx-auto py-3 md:py-4 pb-32 md:pb-4">
         {/* Back Button - Desktop only */}
         <Button
           variant="ghost"
@@ -390,12 +390,12 @@ export default function LegislationDetail() {
         </div>
 
         {/* Desktop Layout - Two Column */}
-        <div className="hidden lg:grid grid-cols-3 gap-6">
+        <div className="hidden lg:grid grid-cols-3 gap-4">
           {/* LEFT COLUMN - Main Content (2/3 width) */}
-          <div className="col-span-2 space-y-6">
+          <div className="col-span-2 space-y-3">
             {/* Header */}
-            <div className="space-y-3">
-              <h1 className="text-2xl font-bold leading-tight">{legislation.title}</h1>
+            <div className="space-y-2">
+              <h1 className="text-xl font-bold leading-tight">{legislation.title}</h1>
               
               <div className="flex flex-wrap items-center gap-2">
                 {legislation.jurisdiction && (
