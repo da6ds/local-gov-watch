@@ -691,7 +691,6 @@ export type Database = {
           default_scope: string | null
           email: string
           id: string
-          is_admin: boolean | null
           name: string | null
           onboarding_completed: boolean | null
           selected_jurisdiction_id: string | null
@@ -704,7 +703,6 @@ export type Database = {
           default_scope?: string | null
           email: string
           id: string
-          is_admin?: boolean | null
           name?: string | null
           onboarding_completed?: boolean | null
           selected_jurisdiction_id?: string | null
@@ -717,7 +715,6 @@ export type Database = {
           default_scope?: string | null
           email?: string
           id?: string
-          is_admin?: boolean | null
           name?: string | null
           onboarding_completed?: boolean | null
           selected_jurisdiction_id?: string | null
@@ -961,6 +958,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       watchlist: {
         Row: {
           created_at: string | null
@@ -1093,6 +1111,13 @@ export type Database = {
         Args: { "": unknown[] }
         Returns: number
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       hnsw_bit_support: {
         Args: { "": unknown }
         Returns: unknown
@@ -1201,6 +1226,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       user_role: "activist" | "government" | "nonprofit"
     }
     CompositeTypes: {
@@ -1329,6 +1355,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       user_role: ["activist", "government", "nonprofit"],
     },
   },
