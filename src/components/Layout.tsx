@@ -166,10 +166,10 @@ export function Layout({ children }: LayoutProps) {
         showClearAll={hasActiveFilters}
       />
 
-      <main className="container py-3 md:py-4 mt-8 md:mt-10 pb-20 md:pb-4">{children}</main>
+      <main className="container py-3 mt-8 md:mt-10 pb-20 md:pb-4">{children}</main>
 
-      <footer className="border-t py-3 md:py-4 mb-16 md:mb-0">
-        <div className="container text-center text-sm text-muted-foreground">
+      <footer className="border-t py-2 md:py-3 mb-16 md:mb-0">
+        <div className="container text-center text-xs md:text-sm text-muted-foreground">
           <p>Local Gov Watch</p>
         </div>
       </footer>

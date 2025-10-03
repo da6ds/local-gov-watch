@@ -137,7 +137,7 @@ export default function Dashboard() {
         <div className="space-y-3">
           {/* Header */}
           <div>
-            <h1 className="text-2xl font-bold mb-0.5">Dashboard</h1>
+            <h1 className="text-xl font-bold mb-0.5">Dashboard</h1>
             {/* Subtle status line */}
             <div className="text-xs md:text-sm text-muted-foreground" aria-live="polite">
               {isAutoRefreshing ? (
@@ -153,20 +153,20 @@ export default function Dashboard() {
 
           {/* Alert Summary Card */}
           <Card className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Bell className="h-4 w-4" />
                 Alert Activity
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl font-bold">{recentLegislation.length}</div>
+                  <div className="text-2xl font-bold">{recentLegislation.length}</div>
                   <p className="text-sm text-muted-foreground">new matches today</p>
                 </div>
                 <Button variant="outline" size="sm" asChild>
-                  <Link to="/alerts">View All Alerts</Link>
+                  <Link to="/alerts">View All</Link>
                 </Button>
               </div>
             </CardContent>
@@ -176,17 +176,17 @@ export default function Dashboard() {
           <div className="grid md:grid-cols-3 gap-3">
             {/* Recent Legislation */}
             <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <Link to="/browse/legislation" className="group" aria-label="View all recent legislation updates">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
-                    <Scale className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors text-base" role="heading" aria-level={2}>
+                    <Scale className="h-4 w-4 text-primary" />
                     Recent Updates
                     <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
-                <CardDescription>New bills and ordinances</CardDescription>
+                <CardDescription className="text-xs">New bills and ordinances</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <p className="text-2xl font-bold mb-2">{recentLegislation.length}</p>
                 {recentLegislation.length > 0 ? (
                   <div className="space-y-2 mb-3">
@@ -211,17 +211,17 @@ export default function Dashboard() {
 
             {/* Upcoming Meetings */}
             <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <Link to="/browse/meetings" className="group" aria-label="View all upcoming meetings">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
-                    <Calendar className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors text-base" role="heading" aria-level={2}>
+                    <Calendar className="h-4 w-4 text-primary" />
                     Upcoming Meetings
                     <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
-                <CardDescription>City & county sessions</CardDescription>
+                <CardDescription className="text-xs">City & county sessions</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <p className="text-2xl font-bold mb-2">{upcomingMeetings.length}</p>
                 {upcomingMeetings.length > 0 ? (
                   <div className="space-y-2 mb-3">
@@ -251,17 +251,17 @@ export default function Dashboard() {
 
             {/* Upcoming Elections */}
             <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <Link to="/browse/elections" className="group" aria-label="View all upcoming elections">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors" role="heading" aria-level={2}>
-                    <Vote className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors text-base" role="heading" aria-level={2}>
+                    <Vote className="h-4 w-4 text-primary" />
                     Upcoming Elections
                     <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
-                <CardDescription>Register and vote</CardDescription>
+                <CardDescription className="text-xs">Register and vote</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <p className="text-2xl font-bold mb-2">{upcomingElections.length}</p>
                 {upcomingElections.length > 0 ? (
                   <div className="space-y-2 mb-3">
@@ -291,18 +291,18 @@ export default function Dashboard() {
           </div>
 
           {/* Bottom Grid: Calendar & Trends */}
-          <div className="grid lg:grid-cols-2 gap-4">
+          <div className="grid lg:grid-cols-2 gap-3">
             {/* Calendar Card */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <h2 className="text-base font-semibold flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
+                  <Calendar className="h-4 w-4" />
                   Calendar
                 </h2>
                 <Link to="/calendar">
-                  <Button variant="ghost" size="sm" className="gap-2">
+                  <Button variant="ghost" size="sm" className="gap-1 h-8">
                     View all
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-3 w-3" />
                   </Button>
                 </Link>
               </div>
@@ -311,16 +311,16 @@ export default function Dashboard() {
 
             {/* Trends Card */}
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <Link to="/browse/trends" className="group" aria-label="View all trends">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer" role="heading" aria-level={2}>
-                    <TrendingUp className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer text-base" role="heading" aria-level={2}>
+                    <TrendingUp className="h-4 w-4" />
                     Trending Topics
                     <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                   </CardTitle>
                 </Link>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <TrendsPlaceholder />
               </CardContent>
             </Card>

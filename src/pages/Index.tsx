@@ -14,13 +14,13 @@ export default function Index() {
 
   return (
     <Layout>
-      <div className="min-h-[80vh] flex flex-col items-center justify-center text-center px-4 py-16">
-        <div className="space-y-8 max-w-2xl mx-auto">
-          <div className="space-y-4">
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
+      <div className="flex flex-col items-center justify-center text-center px-4 py-8 md:py-12">
+        <div className="space-y-4 max-w-2xl mx-auto">
+          <div className="space-y-3">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
               Local Government at a Glance
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground">
+            <p className="text-base md:text-lg text-muted-foreground">
               Stay updated on legislation near you—or anywhere—and get news delivered weekly.
             </p>
           </div>
@@ -28,7 +28,7 @@ export default function Index() {
           {/* Primary CTA */}
           <Button 
             size="lg" 
-            className="text-lg px-8 py-6 h-auto"
+            className="text-base px-6 py-5 h-auto"
             onClick={handleTryDemo}
           >
             Try Demo

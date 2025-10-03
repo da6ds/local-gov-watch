@@ -180,18 +180,15 @@ export default function Alerts() {
     <Layout>
       <div className="space-y-3">
         {/* Compact Demo Mode Banner */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <AlertCircle className="w-4 h-4" />
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <AlertCircle className="w-3 h-3" />
           Demo Mode - Settings saved for this session only
-          <Button variant="link" size="sm" className="p-0 h-auto text-primary">
-            Save Permanently
-          </Button>
         </div>
 
         {/* Header with Filters */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-            <h1 className="text-2xl font-bold">Alert Settings</h1>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div className="flex flex-col md:flex-row md:items-center gap-2">
+            <h1 className="text-xl font-bold">Alert Settings</h1>
             <div className="flex items-center gap-2">
               <LocationSelector
                 value={selectedLocations}
@@ -199,7 +196,7 @@ export default function Alerts() {
               />
             </div>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)} className="md:ml-auto">
+          <Button onClick={() => setIsCreateDialogOpen(true)} className="md:ml-auto" size="sm">
             <Plus className="w-4 h-4 mr-2" />
             Add Tracked Term
           </Button>
@@ -208,10 +205,10 @@ export default function Alerts() {
         {/* Email Setup (if not filled) */}
         {!watchedEmail && (
           <Card className="border-primary/20 bg-primary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Get Started with Alerts</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Get Started with Alerts</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               <div className="grid gap-3 md:grid-cols-2">
                 <Input
                   placeholder="your.email@example.com"
@@ -272,10 +269,10 @@ export default function Alerts() {
 
         {/* Instant Alerts Overview */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle className="text-lg">Instant Alerts</CardTitle>
-              <CardDescription className="text-sm mt-1">
+              <CardTitle className="text-base">Instant Alerts</CardTitle>
+              <CardDescription className="text-xs mt-0.5">
                 Immediate notifications when keywords match
               </CardDescription>
             </div>
@@ -287,7 +284,7 @@ export default function Alerts() {
               Manage Terms
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <TrackedTermsSummary
               onManageTerms={() => navigate('/tracked-terms')}
               onAddTerm={() => setIsCreateDialogOpen(true)}
@@ -299,10 +296,10 @@ export default function Alerts() {
         <Collapsible open={isDigestOpen} onOpenChange={setIsDigestOpen}>
           <CollapsibleTrigger asChild>
             <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <div>
-                  <CardTitle className="text-lg">Weekly Digest</CardTitle>
-                  <CardDescription className="text-sm mt-1">
+                  <CardTitle className="text-base">Weekly Digest</CardTitle>
+                  <CardDescription className="text-xs mt-0.5">
                     Summary emails of activity in your areas
                   </CardDescription>
                 </div>
@@ -312,7 +309,7 @@ export default function Alerts() {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <Card className="border-t-0 rounded-t-none">
-              <CardContent className="pt-6 space-y-4">
+              <CardContent className="pt-4 space-y-3">
                 {/* Locations */}
                 <div className="space-y-2">
                   <Label>Locations</Label>
