@@ -3,6 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { OnboardingDialog } from "@/components/OnboardingDialog";
+import { WalkthroughProvider } from "@/components/WalkthroughProvider";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { GlobalBanner } from "@/components/GlobalBanner";
@@ -31,6 +34,57 @@ import TrackedTermMatches from "./pages/TrackedTermMatches";
 
 const queryClient = new QueryClient();
 
+function AppContent() {
+  const {
+    showOnboarding,
+    showWalkthrough,
+    setShowWalkthrough,
+    completeOnboarding,
+    skipOnboarding,
+  } = useOnboarding();
+
+  return (
+    <>
+      <OnboardingDialog
+        open={showOnboarding}
+        onComplete={completeOnboarding}
+        onSkip={skipOnboarding}
+      />
+      <WalkthroughProvider
+        run={showWalkthrough}
+        onComplete={() => setShowWalkthrough(false)}
+      />
+      <GlobalBanner />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/digest-preview" element={<DigestPreview />} />
+        <Route path="/admin/connectors" element={<Connectors />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/browse/legislation" element={<BrowseLegislation />} />
+        <Route path="/browse/meetings" element={<BrowseMeetings />} />
+        <Route path="/browse/elections" element={<BrowseElections />} />
+        <Route path="/browse/trends" element={<Trends />} />
+        <Route path="/legislation/:id" element={<LegislationDetail />} />
+        <Route path="/meetings/:id" element={<MeetingDetail />} />
+        <Route path="/elections/:id" element={<ElectionDetail />} />
+        <Route path="/calendar" element={<Calendar />} />
+        <Route path="/alerts" element={<Alerts />} />
+        <Route path="/digest" element={<Navigate to="/alerts" replace />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/stances" element={<Stances />} />
+        <Route path="/tracked-terms" element={<TrackedTerms />} />
+        <Route path="/tracked-terms/:id/matches" element={<TrackedTermMatches />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
+        <Route path="/unsubscribe" element={<Unsubscribe />} />
+        <Route path="/watchlists" element={<Watchlists />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -40,33 +94,7 @@ function App() {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <GlobalBanner />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/digest-preview" element={<DigestPreview />} />
-                <Route path="/admin/connectors" element={<Connectors />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/browse/legislation" element={<BrowseLegislation />} />
-                <Route path="/browse/meetings" element={<BrowseMeetings />} />
-                <Route path="/browse/elections" element={<BrowseElections />} />
-                <Route path="/browse/trends" element={<Trends />} />
-                <Route path="/legislation/:id" element={<LegislationDetail />} />
-                <Route path="/meetings/:id" element={<MeetingDetail />} />
-                <Route path="/elections/:id" element={<ElectionDetail />} />
-                <Route path="/calendar" element={<Calendar />} />
-                <Route path="/alerts" element={<Alerts />} />
-                <Route path="/digest" element={<Navigate to="/alerts" replace />} />
-                <Route path="/search" element={<Search />} />
-                <Route path="/stances" element={<Stances />} />
-                <Route path="/tracked-terms" element={<TrackedTerms />} />
-                <Route path="/tracked-terms/:id/matches" element={<TrackedTermMatches />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
-                <Route path="/unsubscribe" element={<Unsubscribe />} />
-                <Route path="/watchlists" element={<Watchlists />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AppContent />
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>

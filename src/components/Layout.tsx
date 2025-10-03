@@ -116,14 +116,18 @@ export function Layout({ children }: LayoutProps) {
               variant={location.pathname === "/dashboard" ? "secondary" : "ghost"}
               size="sm"
               asChild
+              data-tour="dashboard"
             >
               <Link to="/dashboard">Dashboard</Link>
             </Button>
-            <BrowseDropdown />
+            <div data-tour="browse">
+              <BrowseDropdown />
+            </div>
             <Button
               variant={location.pathname === "/alerts" ? "secondary" : "ghost"}
               size="sm"
               asChild
+              data-tour="alerts"
             >
               <Link to="/alerts">Alerts</Link>
             </Button>
@@ -144,7 +148,7 @@ export function Layout({ children }: LayoutProps) {
               </Tooltip>
             )}
             <SearchIconButton />
-            <div className="hidden md:flex">
+            <div className="hidden md:flex" data-tour="my-workspace">
               <MyWorkspaceDropdown />
             </div>
             <div className="hidden md:flex">

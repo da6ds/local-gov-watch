@@ -42,6 +42,7 @@ export function MobileBottomNav() {
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
+            data-tour="dashboard"
           >
             <Home className="h-5 w-5" />
             <span className="text-xs font-medium">Home</span>
@@ -55,6 +56,7 @@ export function MobileBottomNav() {
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
+            data-tour="browse"
           >
             <FileText className="h-5 w-5" />
             <span className="text-xs font-medium">Browse</span>
@@ -68,6 +70,7 @@ export function MobileBottomNav() {
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
+            data-tour="alerts"
           >
             <Bell className="h-5 w-5" />
             <span className="text-xs font-medium">Alerts</span>
@@ -81,6 +84,7 @@ export function MobileBottomNav() {
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
+            data-tour="my-workspace"
           >
             <User className="h-5 w-5" />
             <span className="text-xs font-medium">My Work</span>
