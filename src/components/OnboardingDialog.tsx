@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -27,6 +28,7 @@ const CATEGORIES = [
 ];
 
 export function OnboardingDialog({ open, onComplete, onSkip }: OnboardingDialogProps) {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -76,6 +78,7 @@ export function OnboardingDialog({ open, onComplete, onSkip }: OnboardingDialogP
     }
 
     onComplete();
+    navigate('/dashboard');
   };
 
   return (
@@ -185,7 +188,7 @@ export function OnboardingDialog({ open, onComplete, onSkip }: OnboardingDialogP
         )}
 
         <DialogFooter className="flex justify-between sm:justify-between">
-          <Button variant="ghost" onClick={onSkip}>
+          <Button variant="ghost" onClick={() => { onSkip(); navigate('/dashboard'); }}>
             Skip for now
           </Button>
           <div className="flex gap-2">

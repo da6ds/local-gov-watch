@@ -2,14 +2,28 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
+import { OnboardingDialog } from "@/components/OnboardingDialog";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 export default function Index() {
   const { startGuestSession } = useAuth();
   const navigate = useNavigate();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const { completeOnboarding, skipOnboarding } = useOnboarding();
 
   const handleTryDemo = async () => {
+    const hasSeenOnboarding = sessionStorage.getItem('hasSeenOnboarding');
+    
     await startGuestSession();
-    navigate('/dashboard');
+    
+    if (hasSeenOnboarding) {
+      // Returning user, go straight to dashboard
+      navigate('/dashboard');
+    } else {
+      // New user, show onboarding
+      setShowOnboarding(true);
+    }
   };
 
   return (
@@ -35,6 +49,12 @@ export default function Index() {
           </Button>
         </div>
       </div>
+
+      <OnboardingDialog
+        open={showOnboarding}
+        onComplete={completeOnboarding}
+        onSkip={skipOnboarding}
+      />
     </Layout>
   );
 }

@@ -60,9 +60,8 @@ export function WalkthroughProvider({ run, onComplete }: WalkthroughProviderProp
     }
   }, [run]);
 
-  // Only show on main pages
-  const validPages = ['/', '/dashboard', '/alerts'];
-  if (!validPages.includes(location.pathname)) {
+  // Only show on dashboard page
+  if (location.pathname !== '/dashboard') {
     return null;
   }
 

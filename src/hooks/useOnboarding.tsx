@@ -1,32 +1,42 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 export function useOnboarding() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
+  const location = useLocation();
 
+  // Only show onboarding on landing page for new users
   useEffect(() => {
     const hasSeenOnboarding = sessionStorage.getItem('hasSeenOnboarding');
-    const hasLocation = sessionStorage.getItem('userLocation');
-    const hasTrackedTerms = sessionStorage.getItem('trackedTerms');
+    const isLandingPage = location.pathname === '/';
     
-    const isNewUser = !hasSeenOnboarding && !hasLocation && !hasTrackedTerms;
-    
-    if (isNewUser) {
+    if (!hasSeenOnboarding && isLandingPage) {
       const timer = setTimeout(() => setShowOnboarding(true), 2000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [location.pathname]);
+
+  // Only show walkthrough on dashboard after onboarding
+  useEffect(() => {
+    const hasSeenOnboarding = sessionStorage.getItem('hasSeenOnboarding');
+    const hasSeenWalkthrough = sessionStorage.getItem('hasSeenWalkthrough');
+    const isDashboard = location.pathname === '/dashboard';
+    
+    if (hasSeenOnboarding && !hasSeenWalkthrough && isDashboard) {
+      const timer = setTimeout(() => setShowWalkthrough(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname]);
 
   const completeOnboarding = () => {
     sessionStorage.setItem('hasSeenOnboarding', 'true');
     setShowOnboarding(false);
-    setTimeout(() => setShowWalkthrough(true), 1000);
   };
 
   const skipOnboarding = () => {
     sessionStorage.setItem('hasSeenOnboarding', 'true');
     setShowOnboarding(false);
-    setTimeout(() => setShowWalkthrough(true), 500);
   };
 
   return {

@@ -19,6 +19,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ResetButton } from "@/components/ResetButton";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -136,16 +137,19 @@ export function Layout({ children }: LayoutProps) {
           {/* Right Side Actions */}
           <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
             {isLoggedIn && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 hidden sm:flex text-xs px-2 py-0.5">
-                    Demo
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Your data is temporary and will clear when you close this tab
-                </TooltipContent>
-              </Tooltip>
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 hidden sm:flex text-xs px-2 py-0.5">
+                      Demo
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Your data is temporary and will clear when you close this tab
+                  </TooltipContent>
+                </Tooltip>
+                <ResetButton />
+              </>
             )}
             <SearchIconButton />
             <div className="hidden md:flex" data-tour="my-workspace">
