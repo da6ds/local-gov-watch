@@ -173,10 +173,31 @@ export async function extractPdfText(pdfUrl: string): Promise<string | null> {
       return null;
     }
 
-    // For now, return a placeholder - actual PDF parsing would require additional setup
-    // In production, you'd use a PDF parsing service or library
-    console.log(`PDF extraction not yet implemented for: ${pdfUrl}`);
-    return `[PDF content from ${pdfUrl}]`;
+    // Use Jina AI Reader to extract PDF text
+    console.log(`Extracting PDF text via Jina AI: ${pdfUrl}`);
+    const jinaUrl = `https://r.jina.ai/${pdfUrl}`;
+    
+    const response = await politeFetch(jinaUrl, {
+      headers: {
+        'Accept': 'text/plain',
+      },
+      timeout: 30000, // 30 second timeout for PDF extraction
+    });
+
+    if (!response.ok) {
+      throw new Error(`Jina AI returned ${response.status}`);
+    }
+
+    const text = await response.text();
+    
+    // Basic cleanup
+    const cleaned = text
+      .replace(/\r\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    
+    console.log(`Successfully extracted ${cleaned.length} characters from PDF`);
+    return cleaned || null;
   } catch (error) {
     console.error(`Failed to extract PDF text from ${pdfUrl}:`, error);
     return null;
