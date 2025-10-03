@@ -1,45 +1,50 @@
 import { useState } from "react";
-import { Plus, Info } from "lucide-react";
+import { Plus, ArrowLeft, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TrackedTermsList } from "@/components/tracked-terms/TrackedTermsList";
 import { CreateTrackedTermDialog } from "@/components/tracked-terms/CreateTrackedTermDialog";
+import { Layout } from "@/components/Layout";
+import { useNavigate } from "react-router-dom";
 
 export default function TrackedTerms() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
-    <div className="container max-w-5xl py-6 md:py-8">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold">My Tracked Terms</h1>
-          <p className="text-sm text-muted-foreground">
-            Monitor specific keywords in new legislation and meetings
-          </p>
-        </div>
-
-        {/* Demo Mode Banner */}
-        <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20">
-          <Info className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-          <AlertTitle className="text-yellow-900 dark:text-yellow-100">Demo Mode</AlertTitle>
-          <AlertDescription className="text-yellow-800 dark:text-yellow-200">
-            Your tracked terms are saved for this browser session only. They'll be lost when you close the tab.
-            <Button variant="link" className="p-0 h-auto ml-2 text-yellow-900 dark:text-yellow-100">
-              Save Permanently
-            </Button>
-          </AlertDescription>
-        </Alert>
-
-        {/* Main Content */}
-        <div className="flex items-center justify-between">
-          <div className="flex-1" />
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+    <Layout>
+      <div className="space-y-3">
+        {/* Header with back button */}
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+          
+          <div className="flex-1">
+            <h1 className="text-xl font-bold">My Tracked Terms</h1>
+            <p className="text-xs text-muted-foreground">
+              Monitor specific keywords in new legislation and meetings
+            </p>
+          </div>
+          
+          <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Create Tracked Term
+            Create Term
           </Button>
         </div>
 
+        {/* Demo Mode Banner */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <AlertCircle className="w-3 h-3" />
+          Demo Mode - Terms saved for this session only
+        </div>
+
+        {/* Main Content */}
         <TrackedTermsList />
       </div>
 
@@ -47,6 +52,6 @@ export default function TrackedTerms() {
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
       />
-    </div>
+    </Layout>
   );
 }
