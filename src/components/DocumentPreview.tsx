@@ -73,22 +73,6 @@ export function DocumentPreview({ text, maxChars = 1500, pdfUrl }: DocumentPrevi
         {needsExpansion && !isExpanded && (
           <div className="text-muted-foreground text-sm mt-2">... (truncated)</div>
         )}
-        
-        {pdfUrl && (
-          <div className="mt-4 pt-4 border-t flex justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 text-sm"
-              asChild
-            >
-              <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open Original PDF
-              </a>
-            </Button>
-          </div>
-        )}
       </div>
 
       {needsExpansion && (
@@ -99,6 +83,19 @@ export function DocumentPreview({ text, maxChars = 1500, pdfUrl }: DocumentPrevi
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {isExpanded ? "Show less" : "Show more"}
+        </Button>
+      )}
+
+      {pdfUrl && (
+        <Button
+          variant="outline"
+          className="w-full mt-4 h-9 text-sm"
+          asChild
+        >
+          <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Open Original PDF
+          </a>
         </Button>
       )}
     </div>
