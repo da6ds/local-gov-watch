@@ -36,11 +36,18 @@ export function WalkthroughProvider({ run, onComplete }: WalkthroughProviderProp
   const location = useLocation();
 
   const handleCallback = (data: CallBackProps) => {
-    const { action, index, type } = data;
+    const { action, index, status, type } = data;
 
-    if (type === 'step:after' || action === 'next') {
-      setStepIndex(index + 1);
-    } else if (action === 'skip' || action === 'close' || type === 'tour:end') {
+    console.log('Walkthrough Event:', { action, index, status, type, currentStepIndex: stepIndex });
+
+    if (status === 'finished' || status === 'skipped') {
+      sessionStorage.setItem('hasSeenWalkthrough', 'true');
+      setStepIndex(0);
+      onComplete();
+    } else if (type === 'step:after') {
+      const nextIndex = index + (action === 'prev' ? -1 : 1);
+      setStepIndex(nextIndex);
+    } else if (action === 'close') {
       sessionStorage.setItem('hasSeenWalkthrough', 'true');
       setStepIndex(0);
       onComplete();
