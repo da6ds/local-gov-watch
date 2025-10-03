@@ -78,19 +78,42 @@ export async function parseAustinMeetings(
       }
     });
     
-    // Add some sample meetings if parsing didn't find any (for initial testing)
+    // Add sample meetings with current dates (demo data)
     if (meetings.length === 0) {
-      const sampleDate = new Date();
-      sampleDate.setDate(sampleDate.getDate() + 7);
+      const today = new Date();
+      
+      // Upcoming meeting (next week)
+      const nextWeek = new Date(today);
+      nextWeek.setDate(today.getDate() + 7);
+      nextWeek.setHours(18, 0, 0, 0);
       
       meetings.push({
-        external_id: createExternalId(['austin-meeting', sampleDate.toISOString(), 'Regular Council Meeting']),
+        external_id: createExternalId(['austin-meeting', nextWeek.toISOString(), 'Regular Council Meeting']),
         title: 'Regular Council Meeting',
         body_name: 'City Council',
-        starts_at: sampleDate,
+        starts_at: nextWeek,
         ends_at: null,
         location: 'Austin City Hall, 301 W 2nd St',
         agenda_url: 'https://www.austintexas.gov/edims/pio/document.cfm?id=123456',
+        minutes_url: null,
+        attachments: [],
+        extracted_text: null,
+        ai_summary: null,
+      });
+      
+      // Recent meeting (last week)
+      const lastWeek = new Date(today);
+      lastWeek.setDate(today.getDate() - 7);
+      lastWeek.setHours(18, 0, 0, 0);
+      
+      meetings.push({
+        external_id: createExternalId(['austin-meeting', lastWeek.toISOString(), 'Work Session']),
+        title: 'City Council Work Session',
+        body_name: 'City Council',
+        starts_at: lastWeek,
+        ends_at: null,
+        location: 'Austin City Hall, 301 W 2nd St',
+        agenda_url: 'https://www.austintexas.gov/edims/pio/document.cfm?id=123457',
         minutes_url: null,
         attachments: [],
         extracted_text: null,
