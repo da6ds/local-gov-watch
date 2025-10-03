@@ -17,6 +17,75 @@ interface TrackedTerm {
   match_count: number;
 }
 
+interface AlertData {
+  email: string;
+  termName: string;
+  matchedKeywords: string[];
+  item: any;
+  itemType: 'legislation' | 'meeting';
+  jurisdiction: string;
+}
+
+async function sendTrackedTermAlert(data: AlertData) {
+  const resendApiKey = Deno.env.get('RESEND_API_KEY');
+  if (!resendApiKey) {
+    throw new Error('RESEND_API_KEY not configured');
+  }
+
+  const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://preview--local-gov-watch.lovable.app';
+  const itemUrl = `${frontendUrl}/${data.itemType === 'legislation' ? 'legislation' : 'meetings'}/${data.item.id}`;
+  
+  const subject = `🚨 New Match: ${data.termName}`;
+  
+  const htmlContent = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #1f2937;">🚨 Alert: New Match Found</h2>
+      
+      <p style="color: #374151; font-size: 16px;">Your tracked term "<strong>${data.termName}</strong>" has a new match:</p>
+      
+      <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; background: #f9fafb;">
+        <h3 style="margin-top: 0; color: #111827;">${data.item.title}</h3>
+        <p style="margin: 8px 0; color: #6b7280;"><strong>Type:</strong> ${data.itemType === 'legislation' ? 'Legislation' : 'Meeting'}</p>
+        <p style="margin: 8px 0; color: #6b7280;"><strong>Location:</strong> ${data.jurisdiction}</p>
+        <p style="margin: 8px 0; color: #6b7280;"><strong>Keywords matched:</strong> ${data.matchedKeywords.join(', ')}</p>
+        ${data.item.ai_summary ? `<p style="margin: 12px 0 0 0; color: #374151;"><strong>Summary:</strong> ${data.item.ai_summary}</p>` : ''}
+      </div>
+      
+      <p style="text-align: center; margin: 24px 0;">
+        <a href="${itemUrl}" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Full Document</a>
+      </p>
+      
+      <hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;">
+      <p style="color: #6b7280; font-size: 14px; text-align: center;">
+        You're receiving this because you have alerts enabled for "${data.termName}".
+        <br>
+        <a href="${frontendUrl}/tracked-terms" style="color: #2563eb; text-decoration: none;">Manage your tracked terms</a>
+      </p>
+    </div>
+  `;
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${resendApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'Local Gov Watch <onboarding@resend.dev>',
+      to: [data.email],
+      subject,
+      html: htmlContent,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Resend API error: ${error}`);
+  }
+
+  return await response.json();
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -105,6 +174,19 @@ serve(async (req) => {
       if (matchedKeywords.length > 0) {
         console.log(`Found match for term "${term.name}": ${matchedKeywords.join(', ')}`);
 
+        // Check if already sent alert for this match
+        const { data: existingMatch } = await supabase
+          .from('term_match')
+          .select('id, notified')
+          .eq('tracked_term_id', term.id)
+          .eq('item_id', itemId)
+          .single();
+
+        if (existingMatch) {
+          console.log('Match already exists, skipping');
+          continue;
+        }
+
         // Insert match (ignore if already exists due to unique constraint)
         const { error: insertError } = await supabase
           .from('term_match')
@@ -131,6 +213,45 @@ serve(async (req) => {
             console.error('Error updating match count:', updateError);
           } else {
             matchCount++;
+
+            // Send alert email if enabled
+            if (term.alert_enabled) {
+              try {
+                const item = itemType === 'legislation' 
+                  ? { id: itemId, title: content.split('\n')[0], ai_summary: null }
+                  : { id: itemId, title: content.split('\n')[0], ai_summary: null };
+
+                // Get full item details
+                const { data: fullItem } = await supabase
+                  .from(itemType)
+                  .select('id, title, ai_summary')
+                  .eq('id', itemId)
+                  .single();
+
+                if (fullItem) {
+                  await sendTrackedTermAlert({
+                    email: term.email,
+                    termName: term.name,
+                    matchedKeywords,
+                    item: fullItem,
+                    itemType,
+                    jurisdiction: jurisdictionSlug
+                  });
+
+                  // Mark as notified
+                  await supabase
+                    .from('term_match')
+                    .update({ notified: true })
+                    .eq('tracked_term_id', term.id)
+                    .eq('item_id', itemId);
+
+                  console.log(`Sent alert email to ${term.email}`);
+                }
+              } catch (alertError) {
+                console.error('Failed to send alert email:', alertError);
+                // Don't fail the match insertion if email fails
+              }
+            }
           }
         }
       }

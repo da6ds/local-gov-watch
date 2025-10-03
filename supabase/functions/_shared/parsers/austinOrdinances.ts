@@ -140,6 +140,8 @@ export async function parseAustinOrdinances(
           .eq('external_id', ordinance.external_id)
           .single();
         
+        let itemId: string | null = null;
+
         if (existing) {
           await supabase
             .from('legislation')
@@ -158,8 +160,9 @@ export async function parseAustinOrdinances(
             })
             .eq('id', existing.id);
           stats.updatedCount++;
+          itemId = existing.id;
         } else {
-          await supabase
+          const { data: newItem } = await supabase
             .from('legislation')
             .insert({
               source_id: sourceId,
@@ -175,8 +178,32 @@ export async function parseAustinOrdinances(
               full_text: ordinance.full_text,
               ai_summary: ordinance.ai_summary,
               tags: ordinance.tags,
-            });
+            })
+            .select('id')
+            .single();
           stats.newCount++;
+          itemId = newItem?.id || null;
+        }
+
+        // Check tracked terms for new items
+        if (itemId && !existing) {
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/check-tracked-terms`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseKey}`
+              },
+              body: JSON.stringify({
+                itemType: 'legislation',
+                itemId: itemId
+              })
+            });
+            console.log(`Checked tracked terms for legislation ${itemId}`);
+          } catch (error) {
+            console.error(`Failed to check tracked terms for ${itemId}:`, error);
+            // Don't fail the connector if alert checking fails
+          }
         }
       } catch (error) {
         addError(stats, `Failed to process ordinance ${ordinance.external_id}: ${error instanceof Error ? error.message : 'Unknown error'}`);

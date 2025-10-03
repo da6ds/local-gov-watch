@@ -125,6 +125,8 @@ export async function parseAustinMeetings(
           .eq('external_id', meeting.external_id)
           .single();
         
+        let itemId: string | null = null;
+
         if (existing) {
           await supabase
             .from('meeting')
@@ -142,8 +144,9 @@ export async function parseAustinMeetings(
             })
             .eq('id', existing.id);
           stats.updatedCount++;
+          itemId = existing.id;
         } else {
-          await supabase
+          const { data: newItem } = await supabase
             .from('meeting')
             .insert({
               source_id: sourceId,
@@ -158,8 +161,32 @@ export async function parseAustinMeetings(
               minutes_url: meeting.minutes_url,
               extracted_text: meeting.extracted_text,
               ai_summary: meeting.ai_summary,
-            });
+            })
+            .select('id')
+            .single();
           stats.newCount++;
+          itemId = newItem?.id || null;
+        }
+
+        // Check tracked terms for new items
+        if (itemId && !existing) {
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/check-tracked-terms`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseKey}`
+              },
+              body: JSON.stringify({
+                itemType: 'meeting',
+                itemId: itemId
+              })
+            });
+            console.log(`Checked tracked terms for meeting ${itemId}`);
+          } catch (error) {
+            console.error(`Failed to check tracked terms for ${itemId}:`, error);
+            // Don't fail the connector if alert checking fails
+          }
         }
       } catch (error) {
         addError(stats, `Failed to process meeting ${meeting.external_id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
