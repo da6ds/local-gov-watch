@@ -35,10 +35,10 @@ export default function LegislationDetail() {
         .from('legislation')
         .select(`
           *,
-          jurisdiction:jurisdiction_id (name, slug, type)
+          jurisdiction:jurisdiction_id (name, slug, type, website, phone, email)
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;

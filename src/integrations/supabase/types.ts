@@ -409,39 +409,48 @@ export type Database = {
       jurisdiction: {
         Row: {
           created_at: string | null
+          email: string | null
           fips: string | null
           geo: Json | null
           id: string
           name: string
           ocd_id: string | null
           parent_jurisdiction_id: string | null
+          phone: string | null
           slug: string
           type: string
           updated_at: string | null
+          website: string | null
         }
         Insert: {
           created_at?: string | null
+          email?: string | null
           fips?: string | null
           geo?: Json | null
           id?: string
           name: string
           ocd_id?: string | null
           parent_jurisdiction_id?: string | null
+          phone?: string | null
           slug: string
           type: string
           updated_at?: string | null
+          website?: string | null
         }
         Update: {
           created_at?: string | null
+          email?: string | null
           fips?: string | null
           geo?: Json | null
           id?: string
           name?: string
           ocd_id?: string | null
           parent_jurisdiction_id?: string | null
+          phone?: string | null
           slug?: string
           type?: string
           updated_at?: string | null
+          website?: string | null
         }
         Relationships: [
           {
