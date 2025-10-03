@@ -43,7 +43,7 @@ serve(async (req) => {
     // Get all enabled connectors for these jurisdictions
     const { data: connectors, error: connectorsError } = await supabase
       .from('connector')
-      .select('id, name, jurisdiction_slug, kind')
+      .select('id, key, jurisdiction_slug, kind')
       .eq('enabled', true)
       .in('kind', ['meetings', 'elections', 'ordinances']);
 
@@ -64,7 +64,7 @@ serve(async (req) => {
     // Run each connector
     const results = [];
     for (const connector of matchingConnectors) {
-      console.log(`Running connector: ${connector.name} (${connector.id})`);
+      console.log(`Running connector: ${connector.key} (${connector.id})`);
       
       try {
         // Call the run-connector edge function for each connector
@@ -76,24 +76,24 @@ serve(async (req) => {
         );
 
         if (runError) {
-          console.error(`Error running connector ${connector.name}:`, runError);
+          console.error(`Error running connector ${connector.key}:`, runError);
           results.push({
-            connector: connector.name,
+            connector: connector.key,
             status: 'error',
             error: runError.message
           });
         } else {
-          console.log(`Connector ${connector.name} completed:`, runResult);
+          console.log(`Connector ${connector.key} completed:`, runResult);
           results.push({
-            connector: connector.name,
+            connector: connector.key,
             status: 'success',
             stats: runResult
           });
         }
       } catch (error) {
-        console.error(`Exception running connector ${connector.name}:`, error);
+        console.error(`Exception running connector ${connector.key}:`, error);
         results.push({
-          connector: connector.name,
+          connector: connector.key,
           status: 'error',
           error: error instanceof Error ? error.message : String(error)
         });

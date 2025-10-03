@@ -4,13 +4,13 @@ project_id = "dizlzsmsfdtfubopnolf"
 auto_confirm_email = true
 
 [functions.analyze-topics]
-verify_jwt = false
+verify_jwt = true
 
 [functions.calendar-api]
 verify_jwt = false
 
 [functions.cron-connectors]
-verify_jwt = false
+verify_jwt = true
 
 [functions.dashboard-api]
 verify_jwt = false
@@ -25,10 +25,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.run-connector]
-verify_jwt = false
+verify_jwt = true
 
 [functions.run-connectors]
-verify_jwt = false
+verify_jwt = true
 
 [functions.topics]
 verify_jwt = false
