@@ -49,14 +49,12 @@ export function PDFViewer({ pdfUrl, extractedText, docUrl, title }: PDFViewerPro
         console.warn('PDF loading timeout - likely blocked by X-Frame-Options');
         setPdfError(true);
         setIsLoading(false);
-        if (extractedText) {
-          setShowExtractedText(true);
-        }
+        // Let user manually choose to view text via button
       }
     }, 5000);
 
     return () => clearTimeout(timeout);
-  }, [currentUrl, pdfUrl, isLoading, extractedText]);
+  }, [currentUrl, pdfUrl, isLoading]);
 
   if (!pdfUrl && !extractedText) {
     return (
