@@ -15,9 +15,10 @@ import { setStance, getStance, type StanceType } from "@/lib/stanceStorage";
 interface QuickActionsProps {
   legislationId: string;
   legislationTitle: string;
+  isMobile?: boolean;
 }
 
-export function QuickActions({ legislationId, legislationTitle }: QuickActionsProps) {
+export function QuickActions({ legislationId, legislationTitle, isMobile = false }: QuickActionsProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentStance, setCurrentStance] = useState<StanceType>(null);
 
@@ -48,7 +49,13 @@ export function QuickActions({ legislationId, legislationTitle }: QuickActionsPr
   };
 
   const getStanceLabel = () => {
-    if (!currentStance) return "Set Stance";
+    if (!currentStance) return isMobile ? "Set Stance" : "Set Stance";
+    if (isMobile) {
+      return currentStance === 'support' ? "Supporting"
+        : currentStance === 'oppose' ? "Opposing"
+        : currentStance === 'watching' ? "Watching"
+        : "Unimportant";
+    }
     return currentStance === 'support' ? "Stance: Support"
       : currentStance === 'oppose' ? "Stance: Oppose"
       : currentStance === 'watching' ? "Stance: Watching"
@@ -60,6 +67,113 @@ export function QuickActions({ legislationId, legislationTitle }: QuickActionsPr
     return "secondary";
   };
 
+  // Mobile version - just the button
+  if (isMobile) {
+    return (
+      <>
+        <Button 
+          variant={getStanceVariant()}
+          size="sm"
+          className="flex-1 h-9 text-sm" 
+          onClick={() => setIsDialogOpen(true)}
+        >
+          <ThumbsUp className="h-3.5 w-3.5 mr-1" />
+          {getStanceLabel()}
+        </Button>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Set Your Stance</DialogTitle>
+              <DialogDescription>
+                Choose your position on this legislation. Your stance is saved locally.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-2 py-4">
+              <Button
+                variant="outline"
+                className="w-full justify-start h-auto py-3"
+                onClick={() => handleStanceClick('support')}
+              >
+                <ThumbsUp className="h-5 w-5 mr-3 text-green-600" />
+                <div className="text-left">
+                  <div className="font-semibold">Support</div>
+                  <div className="text-xs text-muted-foreground">I'm in favor of this legislation</div>
+                </div>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full justify-start h-auto py-3"
+                onClick={() => handleStanceClick('oppose')}
+              >
+                <ThumbsDown className="h-5 w-5 mr-3 text-red-600" />
+                <div className="text-left">
+                  <div className="font-semibold">Oppose</div>
+                  <div className="text-xs text-muted-foreground">I'm against this legislation</div>
+                </div>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full justify-start h-auto py-3"
+                onClick={() => handleStanceClick('watching')}
+              >
+                <Eye className="h-5 w-5 mr-3 text-blue-600" />
+                <div className="text-left">
+                  <div className="font-semibold">Watching</div>
+                  <div className="text-xs text-muted-foreground">I want to track this without taking a position</div>
+                </div>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full justify-start h-auto py-3"
+                onClick={() => handleStanceClick('unimportant')}
+              >
+                <XCircle className="h-5 w-5 mr-3 text-gray-400" />
+                <div className="text-left">
+                  <div className="font-semibold">Unimportant</div>
+                  <div className="text-xs text-muted-foreground">This doesn't affect my interests</div>
+                </div>
+              </Button>
+
+              {currentStance && (
+                <>
+                  <div className="relative py-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">or</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    onClick={handleRemoveStance}
+                  >
+                    Remove Stance
+                  </Button>
+                </>
+              )}
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
+              <p>
+                💡 <strong>Note:</strong> Stances are saved in your browser's local storage. 
+                Create an account (coming soon) to sync across devices.
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  // Desktop version - full card
   return (
     <>
       <Card>

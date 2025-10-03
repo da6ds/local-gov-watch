@@ -12,9 +12,11 @@ import { LegislationTimeline } from "@/components/legislation/LegislationTimelin
 import { PDFViewer } from "@/components/legislation/PDFViewer";
 import { QuickActions } from "@/components/legislation/QuickActions";
 import { RelatedInfo } from "@/components/legislation/RelatedInfo";
-import { Copy, Tag, ArrowLeft, Home } from "lucide-react";
+import { Copy, Tag, ArrowLeft, Home, ChevronDown, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useState } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -27,6 +29,13 @@ import {
 export default function LegislationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  
+  // Collapsible section states
+  const [topicsOpen, setTopicsOpen] = useState(true);
+  const [documentOpen, setDocumentOpen] = useState(true);
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [relatedOpen, setRelatedOpen] = useState(false);
+  const [metadataOpen, setMetadataOpen] = useState(false);
 
   const { data: legislation, isLoading } = useQuery({
     queryKey: ['legislation', id],
@@ -140,22 +149,22 @@ export default function LegislationDetail() {
         <meta property="og:type" content="article" />
       </Helmet>
 
-      <div className="container mx-auto py-4 md:py-8">
-        {/* Back Button */}
+      <div className="container mx-auto py-3 md:py-8 pb-32 md:pb-8">
+        {/* Back Button - Desktop only */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate(-1)}
-          className="mb-3 md:mb-4 h-8 md:h-9"
+          className="hidden md:flex mb-4 h-9"
         >
-          <ArrowLeft className="h-3.5 w-3.5 md:h-4 md:w-4 mr-2" />
+          <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
 
-        {/* Breadcrumbs */}
-        <div className="mb-4 md:mb-6">
+        {/* Breadcrumbs - Desktop only */}
+        <div className="hidden md:block mb-6">
           <Breadcrumb>
-            <BreadcrumbList className="text-xs md:text-sm">
+            <BreadcrumbList className="text-sm">
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
                   <Link to="/" className="flex items-center gap-1">
@@ -178,15 +187,217 @@ export default function LegislationDetail() {
           </Breadcrumb>
         </div>
 
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        {/* Mobile Layout */}
+        <div className="lg:hidden space-y-3">
+          {/* Header - Always Visible */}
+          <div className="space-y-2">
+            <h1 className="text-xl font-bold leading-tight">{legislation.title}</h1>
+            
+            <div className="flex flex-wrap items-center gap-1.5">
+              {legislation.jurisdiction && (
+                <Badge variant="secondary" className="text-xs py-0.5 px-2">
+                  {legislation.jurisdiction.name}
+                </Badge>
+              )}
+              {legislation.status && <StatusBadge status={legislation.status} />}
+            </div>
+
+            {/* Dates */}
+            {(legislation.introduced_at || legislation.passed_at || legislation.effective_at) && (
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                {legislation.introduced_at && (
+                  <div>
+                    <span className="font-medium">Introduced:</span>{" "}
+                    {format(new Date(legislation.introduced_at), "MMM d, yyyy")}
+                  </div>
+                )}
+                {legislation.passed_at && (
+                  <div>
+                    <span className="font-medium">Passed:</span>{" "}
+                    {format(new Date(legislation.passed_at), "MMM d, yyyy")}
+                  </div>
+                )}
+                {legislation.effective_at && (
+                  <div>
+                    <span className="font-medium">Effective:</span>{" "}
+                    {format(new Date(legislation.effective_at), "MMM d, yyyy")}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* AI Summary - only show if meaningful */}
+          {hasMeaningfulSummary && (
+            <Card className="p-3">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold">
+                    {legislation.ai_summary ? "AI Summary" : "Summary"}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCopy(summary)}
+                    className="h-7 w-7 p-0"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <p className="text-sm leading-relaxed">{summary}</p>
+              </div>
+            </Card>
+          )}
+
+          {/* Topics - Collapsible */}
+          {displayTopics.length > 0 && (
+            <Collapsible open={topicsOpen} onOpenChange={setTopicsOpen}>
+              <Card className="p-3">
+                <CollapsibleTrigger className="flex items-center justify-between w-full">
+                  <h2 className="text-base font-semibold flex items-center gap-2">
+                    <Tag className="h-4 w-4" />
+                    Topics
+                  </h2>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${topicsOpen ? 'rotate-180' : ''}`} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {displayTopics.map((topic) => (
+                      <Link
+                        key={topic}
+                        to={`/browse/legislation?topic=${encodeURIComponent(topic)}`}
+                      >
+                        <Badge variant="secondary" className="text-xs py-1 px-2 hover:bg-secondary/80 cursor-pointer">
+                          {topic}
+                        </Badge>
+                      </Link>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          )}
+
+          {/* Full Document - Collapsible (Expanded by default) */}
+          <Collapsible open={documentOpen} onOpenChange={setDocumentOpen}>
+            <Card className="p-3">
+              <CollapsibleTrigger className="flex items-center justify-between w-full">
+                <h2 className="text-base font-semibold">Full Document</h2>
+                <ChevronDown className={`h-4 w-4 transition-transform ${documentOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <PDFViewer
+                  pdfUrl={legislation.pdf_url}
+                  extractedText={legislation.full_text}
+                  docUrl={legislation.doc_url}
+                  title={legislation.title}
+                />
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Status Timeline - Collapsible */}
+          <Collapsible open={timelineOpen} onOpenChange={setTimelineOpen}>
+            <Card className="p-3">
+              <CollapsibleTrigger className="flex items-center justify-between w-full">
+                <h2 className="text-base font-semibold">Status Timeline</h2>
+                <ChevronDown className={`h-4 w-4 transition-transform ${timelineOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <LegislationTimeline
+                  currentStatus={legislation.status || 'introduced'}
+                  introducedAt={legislation.introduced_at}
+                  passedAt={legislation.passed_at}
+                  effectiveAt={legislation.effective_at}
+                />
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Related Meetings - Collapsible */}
+          {relatedMeetings && relatedMeetings.length > 0 && (
+            <Collapsible open={relatedOpen} onOpenChange={setRelatedOpen}>
+              <Card className="p-3">
+                <CollapsibleTrigger className="flex items-center justify-between w-full">
+                  <h2 className="text-base font-semibold">Related Meetings</h2>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${relatedOpen ? 'rotate-180' : ''}`} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="space-y-2">
+                    {relatedMeetings.map((meeting) => (
+                      <Link
+                        key={meeting.id}
+                        to={`/meetings/${meeting.id}`}
+                        className="block p-2 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="font-medium text-sm">{meeting.title}</div>
+                        {meeting.starts_at && (
+                          <div className="text-xs text-muted-foreground">
+                            {format(new Date(meeting.starts_at), "PPP")}
+                          </div>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          )}
+
+          {/* Related Info - Collapsible */}
+          <Collapsible open={relatedOpen} onOpenChange={setRelatedOpen}>
+            <Card className="p-3">
+              <CollapsibleTrigger className="flex items-center justify-between w-full">
+                <h2 className="text-base font-semibold">Contact & Source</h2>
+                <ChevronDown className={`h-4 w-4 transition-transform ${relatedOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <RelatedInfo
+                  jurisdiction={legislation.jurisdiction}
+                  externalId={legislation.external_id}
+                  sourceUrl={legislation.source_url}
+                  docUrl={legislation.doc_url}
+                  people={legislation.people}
+                />
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Metadata - Collapsible (at bottom) */}
+          <Collapsible open={metadataOpen} onOpenChange={setMetadataOpen}>
+            <Card className="p-3">
+              <CollapsibleTrigger className="flex items-center justify-between w-full">
+                <h2 className="text-base font-semibold">Metadata</h2>
+                <ChevronDown className={`h-4 w-4 transition-transform ${metadataOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="text-xs space-y-1 text-muted-foreground">
+                  {legislation.external_id && (
+                    <div>
+                      <span className="font-medium">External ID:</span> {legislation.external_id}
+                    </div>
+                  )}
+                  {legislation.updated_at && (
+                    <div>
+                      <span className="font-medium">Last Updated:</span>{" "}
+                      {format(new Date(legislation.updated_at), "PPP")}
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        </div>
+
+        {/* Desktop Layout - Two Column */}
+        <div className="hidden lg:grid grid-cols-3 gap-6">
           {/* LEFT COLUMN - Main Content (2/3 width) */}
-          <div className="lg:col-span-2 space-y-4 md:space-y-6">
+          <div className="col-span-2 space-y-6">
             {/* Header */}
-            <div className="space-y-3 md:space-y-4">
-              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight">{legislation.title}</h1>
+            <div className="space-y-4">
+              <h1 className="text-3xl font-bold leading-tight">{legislation.title}</h1>
               
-              <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {legislation.jurisdiction && (
                   <Badge variant="secondary" className="text-xs">
                     {legislation.jurisdiction.name}
@@ -196,7 +407,7 @@ export default function LegislationDetail() {
               </div>
 
               {/* Dates */}
-              <div className="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm text-muted-foreground">
+              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                 {legislation.introduced_at && (
                   <div>
                     <span className="font-medium">Introduced:</span>{" "}
@@ -324,7 +535,7 @@ export default function LegislationDetail() {
           </div>
 
           {/* RIGHT SIDEBAR (1/3 width) */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="col-span-1 space-y-6">
             <LegislationTimeline
               currentStatus={legislation.status || 'introduced'}
               introducedAt={legislation.introduced_at}
@@ -342,6 +553,27 @@ export default function LegislationDetail() {
               people={legislation.people}
             />
           </div>
+        </div>
+
+        {/* Sticky Quick Actions Bar - Mobile Only */}
+        <div className="lg:hidden fixed bottom-16 left-0 right-0 bg-background border-t p-2 flex gap-2 z-40">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1 h-9 text-sm"
+            asChild
+          >
+            <a 
+              href={legislation.doc_url || legislation.source_url || legislation.pdf_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              View Original
+            </a>
+          </Button>
+          <QuickActions legislationId={id!} legislationTitle={legislation.title} isMobile />
         </div>
       </div>
     </Layout>
