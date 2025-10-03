@@ -20,9 +20,9 @@ import { toast } from "sonner";
 
 const workspaceItems = [
   { label: "My Stances", icon: Heart, href: "/stances" },
+  { label: "My Tracked Terms", icon: Bell, href: "/tracked-terms" },
   { label: "My Lists", icon: List, href: "/watchlists" },
   { label: "Saved Searches", icon: Search, href: "#", disabled: true },
-  { label: "Notifications", icon: Bell, href: "#", disabled: true },
   { label: "Settings", icon: Settings, href: "/settings", disabled: true },
 ];
 

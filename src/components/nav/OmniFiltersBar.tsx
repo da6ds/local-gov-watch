@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { LocationSelector } from "@/components/LocationSelector";
-import { TopicsPopover } from "@/components/TopicsPopover";
+import { CategoriesPopover } from "@/components/CategoriesPopover";
 import { StatusFilter } from "@/components/filters/StatusFilter";
 
 interface OmniFiltersBarProps {
@@ -38,7 +38,7 @@ export function OmniFiltersBar({
             onChange={onJurisdictionChange}
             maxSelections={3}
           />
-          <TopicsPopover />
+          <CategoriesPopover />
           {showStatusFilter && statusValue && onStatusChange && (
             <StatusFilter 
               value={statusValue}

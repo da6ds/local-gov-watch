@@ -857,6 +857,44 @@ export type Database = {
         }
         Relationships: []
       }
+      term_match: {
+        Row: {
+          id: string
+          item_id: string
+          item_type: string
+          matched_at: string | null
+          matched_keywords: string[] | null
+          notified: boolean | null
+          tracked_term_id: string | null
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          item_type: string
+          matched_at?: string | null
+          matched_keywords?: string[] | null
+          notified?: boolean | null
+          tracked_term_id?: string | null
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          item_type?: string
+          matched_at?: string | null
+          matched_keywords?: string[] | null
+          notified?: boolean | null
+          tracked_term_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "term_match_tracked_term_id_fkey"
+            columns: ["tracked_term_id"]
+            isOneToOne: false
+            referencedRelation: "tracked_term"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       topic_trend: {
         Row: {
           ai_summary: string | null
@@ -924,6 +962,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tracked_term: {
+        Row: {
+          active: boolean | null
+          alert_enabled: boolean | null
+          created_at: string | null
+          email: string
+          id: string
+          jurisdictions: Json
+          keywords: string[]
+          last_checked_at: string | null
+          match_count: number | null
+          name: string
+        }
+        Insert: {
+          active?: boolean | null
+          alert_enabled?: boolean | null
+          created_at?: string | null
+          email: string
+          id?: string
+          jurisdictions: Json
+          keywords: string[]
+          last_checked_at?: string | null
+          match_count?: number | null
+          name: string
+        }
+        Update: {
+          active?: boolean | null
+          alert_enabled?: boolean | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          jurisdictions?: Json
+          keywords?: string[]
+          last_checked_at?: string | null
+          match_count?: number | null
+          name?: string
+        }
+        Relationships: []
       }
       trend_aggregate: {
         Row: {
@@ -1133,6 +1210,10 @@ export type Database = {
       hnswhandler: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      increment_match_count: {
+        Args: { term_id: string }
+        Returns: undefined
       }
       ivfflat_bit_support: {
         Args: { "": unknown }

@@ -14,7 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-export function TopicsPopover() {
+export function CategoriesPopover() {
   const queryClient = useQueryClient();
   const { data: availableTopics = [] } = useTopics();
   const [selectedTopics, setSelectedTopicsState] = useState<string[]>([]);
@@ -69,7 +69,7 @@ export function TopicsPopover() {
   };
 
   const getTooltipText = () => {
-    if (isAllSelected) return "All topics";
+    if (isAllSelected) return "All categories";
     const preview = selectedTopics
       .slice(0, 3)
       .map((slug) => availableTopics.find((t) => t.slug === slug)?.label)
@@ -91,10 +91,10 @@ export function TopicsPopover() {
                 size="sm"
                 className="h-8 gap-1.5 px-2.5 text-xs md:h-10 md:gap-2 md:px-4 md:text-sm"
                 aria-expanded={open}
-                aria-controls="topics-popover"
+                aria-controls="categories-popover"
               >
                 <Filter className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                <span className="hidden sm:inline">Topics</span>
+                <span className="hidden sm:inline">Categories</span>
                 <Badge variant="secondary" className="px-1.5 py-0 text-xs">
                   {getBadgeText()}
                 </Badge>
@@ -105,7 +105,7 @@ export function TopicsPopover() {
             <p className="text-sm">{getTooltipText()}</p>
           </TooltipContent>
           <PopoverContent
-            id="topics-popover"
+            id="categories-popover"
             className="w-80 p-4"
             align="end"
             onOpenAutoFocus={(e) => {
@@ -125,9 +125,9 @@ export function TopicsPopover() {
           >
             <div className="space-y-4">
               <div className="space-y-2">
-                <h4 className="font-medium text-sm">Filter by Topics</h4>
+                <h4 className="font-medium text-sm">Filter by Categories</h4>
                 <Input
-                  placeholder="Search topics..."
+                  placeholder="Search categories..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="h-8"
@@ -148,7 +148,7 @@ export function TopicsPopover() {
                       isAllSelected ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                     }`}
                   >
-                    All Topics
+                    All Categories
                   </Badge>
                 </button>
 
@@ -178,7 +178,7 @@ export function TopicsPopover() {
 
                 {filteredTopics.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No topics found
+                    No categories found
                   </p>
                 )}
               </div>
