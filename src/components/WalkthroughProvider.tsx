@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Joyride, { CallBackProps, Step } from 'react-joyride';
 import { useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const WALKTHROUGH_STEPS: Step[] = [
   {
@@ -40,17 +41,21 @@ export function WalkthroughProvider({ run, onComplete }: WalkthroughProviderProp
 
     console.log('Walkthrough Event:', { action, index, status, type, currentStepIndex: stepIndex });
 
-    if (status === 'finished' || status === 'skipped') {
+    if (status === 'finished') {
+      sessionStorage.setItem('hasSeenWalkthrough', 'true');
+      setStepIndex(0);
+      onComplete();
+      // Show completion message
+      setTimeout(() => {
+        toast.success('Welcome to Local Gov Watch! You\'re all set.');
+      }, 300);
+    } else if (status === 'skipped' || action === 'close') {
       sessionStorage.setItem('hasSeenWalkthrough', 'true');
       setStepIndex(0);
       onComplete();
     } else if (type === 'step:after') {
       const nextIndex = index + (action === 'prev' ? -1 : 1);
       setStepIndex(nextIndex);
-    } else if (action === 'close') {
-      sessionStorage.setItem('hasSeenWalkthrough', 'true');
-      setStepIndex(0);
-      onComplete();
     }
   };
 
