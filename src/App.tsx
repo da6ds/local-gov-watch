@@ -31,6 +31,7 @@ import Stances from "./pages/Stances";
 import Auth from "./pages/Auth";
 import TrackedTerms from "./pages/TrackedTerms";
 import TrackedTermMatches from "./pages/TrackedTermMatches";
+import MyLists from "./pages/MyLists";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ function AppContent() {
         <Route path="/stances" element={<Stances />} />
         <Route path="/tracked-terms" element={<TrackedTerms />} />
         <Route path="/tracked-terms/:id/matches" element={<TrackedTermMatches />} />
+        <Route path="/lists" element={<MyLists />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
         <Route path="/unsubscribe" element={<Unsubscribe />} />

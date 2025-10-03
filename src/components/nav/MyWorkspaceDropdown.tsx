@@ -1,4 +1,4 @@
-import { ChevronDown, Hash, List, Bell, LogOut, Sparkles, Scale } from "lucide-react";
+import { ChevronDown, Hash, List, Bell, LogOut, Sparkles, Scale, FolderOpen } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
@@ -20,8 +20,9 @@ import { toast } from "sonner";
 
 const workspaceItems = [
   { label: "My Tracked Terms", icon: Hash, href: "/tracked-terms" },
-  { label: "My Followed Items", icon: List, href: "/watchlists", disabled: true },
+  { label: "My Lists", icon: FolderOpen, href: "/lists" },
   { label: "My Stances", icon: Scale, href: "/stances" },
+  { label: "My Followed Items", icon: List, href: "/watchlists", disabled: true },
   { label: "Alert Settings", icon: Bell, href: "/alerts" },
 ];
 

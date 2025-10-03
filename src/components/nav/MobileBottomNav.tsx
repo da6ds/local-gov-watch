@@ -24,8 +24,9 @@ export function MobileBottomNav() {
 
   const workspaceItems = [
     { href: "/tracked-terms", label: "My Tracked Terms", enabled: true },
-    { href: "/watchlists", label: "My Followed Items", enabled: false },
+    { href: "/lists", label: "My Lists", enabled: true },
     { href: "/stances", label: "My Stances", enabled: true },
+    { href: "/watchlists", label: "My Followed Items", enabled: false },
     { href: "/alerts", label: "Alert Settings", enabled: true },
   ];
 
@@ -80,7 +81,7 @@ export function MobileBottomNav() {
             onClick={() => setWorkspaceOpen(true)}
             className={cn(
               "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
-              isActive("/stances") || isActive("/watchlists") || isActive("/tracked-terms") || isActive("/alerts")
+              isActive("/stances") || isActive("/watchlists") || isActive("/tracked-terms") || isActive("/alerts") || isActive("/lists")
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
@@ -142,7 +143,7 @@ export function MobileBottomNav() {
           <div className="grid gap-2 py-4">
             {workspaceItems.map((item, index) => (
               <div key={item.href}>
-                {index === 3 && <Separator className="my-2" />}
+                {index === 4 && <Separator className="my-2" />}
                 <Button
                   variant={isActive(item.href) ? "secondary" : "ghost"}
                   className="justify-start h-12 w-full"
