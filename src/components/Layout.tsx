@@ -57,7 +57,7 @@ export function Layout({ children }: LayoutProps) {
     { href: "/browse/elections", label: "Elections" },
     { href: "/browse/trends", label: "Trends" },
     { href: "/calendar", label: "Calendar" },
-    { href: "/digest", label: "Digest" },
+    { href: "/alerts", label: "Alerts" },
   ];
 
   const hasActiveFilters = selectedJurisdictions.length > 0;
@@ -121,11 +121,11 @@ export function Layout({ children }: LayoutProps) {
             </Button>
             <BrowseDropdown />
             <Button
-              variant={location.pathname === "/digest" ? "secondary" : "ghost"}
+              variant={location.pathname === "/alerts" ? "secondary" : "ghost"}
               size="sm"
               asChild
             >
-              <Link to="/digest">Digest</Link>
+              <Link to="/alerts">Alerts</Link>
             </Button>
           </nav>
 

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, FileText, Mail, User, Search } from "lucide-react";
+import { Home, FileText, Bell, User, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -23,12 +23,10 @@ export function MobileBottomNav() {
   ];
 
   const workspaceItems = [
-    { href: "/stances", label: "My Stances", enabled: true },
     { href: "/tracked-terms", label: "My Tracked Terms", enabled: true },
-    { href: "/digest", label: "Digest Settings", enabled: true },
-    { href: "/watchlists", label: "My Lists", enabled: false },
-    { href: "#", label: "Saved Searches", enabled: false },
-    { href: "#", label: "Alert Settings", enabled: false },
+    { href: "/watchlists", label: "My Followed Items", enabled: false },
+    { href: "/stances", label: "My Stances", enabled: true },
+    { href: "/alerts", label: "Alert Settings", enabled: true },
   ];
 
   return (
@@ -63,29 +61,29 @@ export function MobileBottomNav() {
           </button>
 
           <Link
-            to="/digest"
+            to="/alerts"
             className={cn(
               "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
-              isActive("/digest")
+              isActive("/alerts")
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Mail className="h-5 w-5" />
-            <span className="text-xs font-medium">Digest</span>
+            <Bell className="h-5 w-5" />
+            <span className="text-xs font-medium">Alerts</span>
           </Link>
 
           <button
             onClick={() => setWorkspaceOpen(true)}
             className={cn(
               "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
-              isActive("/stances") || isActive("/watchlists") || isActive("/tracked-terms")
+              isActive("/stances") || isActive("/watchlists") || isActive("/tracked-terms") || isActive("/alerts")
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
             <User className="h-5 w-5" />
-            <span className="text-xs font-medium">My Workspace</span>
+            <span className="text-xs font-medium">My Work</span>
           </button>
 
           <Link

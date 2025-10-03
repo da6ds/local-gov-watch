@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
-import { TrendingUp, Calendar, FileText, Scale, Vote } from "lucide-react";
+import { TrendingUp, Calendar, FileText, Scale, Vote, Bell, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,6 @@ import { toast } from "sonner";
 import React, { useState, useEffect } from "react";
 import { LocationSelector } from "@/components/LocationSelector";
 import { Calendar as CalendarComponent } from "@/components/calendar/Calendar";
-import { ArrowRight } from "lucide-react";
 import { getGuestScope, setGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 import { Button } from "@/components/ui/button";
 
@@ -151,6 +150,27 @@ export default function Dashboard() {
               ) : null}
             </div>
           </div>
+
+          {/* Alert Summary Card */}
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Alert Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-3xl font-bold">{recentLegislation.length}</div>
+                  <p className="text-sm text-muted-foreground">new matches today</p>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/alerts">View All Alerts</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Snapshot Cards */}
           <div className="grid md:grid-cols-3 gap-4">

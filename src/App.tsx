@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { GlobalBanner } from "@/components/GlobalBanner";
@@ -21,7 +21,7 @@ import Calendar from "./pages/Calendar";
 import Watchlists from "./pages/Watchlists";
 import NotFound from "./pages/NotFound";
 import Trends from "./pages/browse/Trends";
-import Digest from "./pages/Digest";
+import Alerts from "./pages/Alerts";
 import Unsubscribe from "./pages/Unsubscribe";
 import Search from "./pages/Search";
 import Stances from "./pages/Stances";
@@ -55,7 +55,8 @@ function App() {
                 <Route path="/meetings/:id" element={<MeetingDetail />} />
                 <Route path="/elections/:id" element={<ElectionDetail />} />
                 <Route path="/calendar" element={<Calendar />} />
-                <Route path="/digest" element={<Digest />} />
+                <Route path="/alerts" element={<Alerts />} />
+                <Route path="/digest" element={<Navigate to="/alerts" replace />} />
                 <Route path="/search" element={<Search />} />
                 <Route path="/stances" element={<Stances />} />
                 <Route path="/tracked-terms" element={<TrackedTerms />} />

@@ -1,4 +1,4 @@
-import { ChevronDown, Heart, List, Search, Bell, Settings, LogOut, Sparkles } from "lucide-react";
+import { ChevronDown, Hash, List, Bell, LogOut, Sparkles, Scale } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
@@ -19,11 +19,10 @@ import { useDemoUser } from "@/hooks/useDemoUser";
 import { toast } from "sonner";
 
 const workspaceItems = [
-  { label: "My Stances", icon: Heart, href: "/stances" },
-  { label: "My Tracked Terms", icon: Bell, href: "/tracked-terms" },
-  { label: "My Lists", icon: List, href: "/watchlists" },
-  { label: "Saved Searches", icon: Search, href: "#", disabled: true },
-  { label: "Settings", icon: Settings, href: "/settings", disabled: true },
+  { label: "My Tracked Terms", icon: Hash, href: "/tracked-terms" },
+  { label: "My Followed Items", icon: List, href: "/watchlists", disabled: true },
+  { label: "My Stances", icon: Scale, href: "/stances" },
+  { label: "Alert Settings", icon: Bell, href: "/alerts" },
 ];
 
 export function MyWorkspaceDropdown() {
