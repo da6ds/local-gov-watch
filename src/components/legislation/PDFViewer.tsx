@@ -49,12 +49,15 @@ export function PDFViewer({ pdfUrl, extractedText, docUrl, title }: PDFViewerPro
         console.warn('PDF loading timeout - likely blocked by X-Frame-Options');
         setPdfError(true);
         setIsLoading(false);
-        // Let user manually choose to view text via button
+        // Automatically show extracted text if available
+        if (extractedText) {
+          setShowExtractedText(true);
+        }
       }
     }, 5000);
 
     return () => clearTimeout(timeout);
-  }, [currentUrl, pdfUrl, isLoading]);
+  }, [currentUrl, pdfUrl, isLoading, extractedText]);
 
   if (!pdfUrl && !extractedText) {
     return (
@@ -175,12 +178,28 @@ export function PDFViewer({ pdfUrl, extractedText, docUrl, title }: PDFViewerPro
             >
               <a href={pdfUrl || docUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Open PDF
+                Open Original PDF
               </a>
             </Button>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              The PDF cannot be displayed inline due to security settings on the source website. 
+              We've extracted the text below for easy reading, or you can{' '}
+              <Button
+                variant="link"
+                className="p-0 h-auto font-semibold"
+                asChild
+              >
+                <a href={pdfUrl || docUrl} target="_blank" rel="noopener noreferrer">
+                  open the original PDF in a new tab <ExternalLink className="h-3 w-3 ml-1 inline" />
+                </a>
+              </Button>.
+            </AlertDescription>
+          </Alert>
           <DocumentPreview text={extractedText} maxChars={2000} />
         </CardContent>
       </Card>
