@@ -44,23 +44,19 @@ export function extractLegislationFromAgenda(
   
   const legislation: AgendaLegislation[] = [];
   
-  // Multiple patterns to catch different formats
+  // STRICT patterns that require actual legislation numbers
   const ordinancePatterns = [
-    // "Ordinance No. 2025-001" or "Ordinance 2025-001"
-    /Ordinance\s+(?:No\.?|Number|#)?\s*(\d{4}[-_]?\d+|\d+)(?:[:\s-]+)?([^\n\r]{10,200})?/gi,
-    // "Ord. 2025-001" or "Ord 2025-001"
-    /Ord\.?\s+(?:No\.?|#)?\s*(\d{4}[-_]?\d+|\d+)(?:[:\s-]+)?([^\n\r]{10,200})?/gi,
-    // "2025-001 - Ordinance"
-    /(\d{4}[-_]?\d+|\d+)\s*[-–—]\s*Ordinance[:\s]*([^\n\r]{10,200})?/gi,
+    // Must have "Ordinance No." followed by a year-based number (2025-001)
+    /Ordinance\s+(?:No\.?|Number)\s+(\d{4}[-_]\d+)[:\s]*([^\n\r]{20,150})?/gi,
+    // Or "Ord. No. 2025-001"
+    /Ord\.\s+No\.\s+(\d{4}[-_]\d+)[:\s]*([^\n\r]{20,150})?/gi,
   ];
   
   const resolutionPatterns = [
-    // "Resolution No. 2025-R-15" or "Resolution 2025-15"
-    /Resolution\s+(?:No\.?|Number|#)?\s*([\w-]+)(?:[:\s-]+)?([^\n\r]{10,200})?/gi,
-    // "Res. 2025-15" or "Res 2025-15"
-    /Res\.?\s+(?:No\.?|#)?\s*([\w-]+)(?:[:\s-]+)?([^\n\r]{10,200})?/gi,
-    // "2025-R-15 - Resolution"
-    /([\w-]+)\s*[-–—]\s*Resolution[:\s]*([^\n\r]{10,200})?/gi,
+    // Must have "Resolution No." followed by year-number or number
+    /Resolution\s+(?:No\.?|Number)\s+(\d{4}[-_][\dA-Z]+|\d{2,4}[-_][A-Z]-\d+)[:\s]*([^\n\r]{20,150})?/gi,
+    // Or "Res. No. 2025-15"
+    /Res\.\s+No\.\s+(\d{4}[-_][\dA-Z]+|\d{2,4}[-_][A-Z]-\d+)[:\s]*([^\n\r]{20,150})?/gi,
   ];
   
   // Extract ordinances using all patterns
@@ -72,9 +68,9 @@ export function extractLegislationFromAgenda(
       const number = match[1];
       const title = match[2]?.trim() || `Ordinance ${number}`;
       
-      // Skip if title looks like noise (too many special chars)
-      if (title && title.replace(/[a-zA-Z0-9\s]/g, '').length > title.length / 3) {
-        console.log('Skipping noisy ordinance:', number, title.substring(0, 50));
+      // STRICT FILTERING to avoid false positives
+      if (!isValidLegislationTitle(title)) {
+        console.log('❌ Skipping invalid ordinance:', number, title.substring(0, 50));
         continue;
       }
       
@@ -90,7 +86,7 @@ export function extractLegislationFromAgenda(
   }
   console.log('Total ordinance pattern matches:', totalOrdinanceMatches);
   
-  // Extract resolutions using all patterns
+  // Extract resolutions using all patterns  
   let totalResolutionMatches = 0;
   for (const pattern of resolutionPatterns) {
     let match;
@@ -99,9 +95,9 @@ export function extractLegislationFromAgenda(
       const number = match[1];
       const title = match[2]?.trim() || `Resolution ${number}`;
       
-      // Skip if title looks like noise
-      if (title && title.replace(/[a-zA-Z0-9\s]/g, '').length > title.length / 3) {
-        console.log('Skipping noisy resolution:', number, title.substring(0, 50));
+      // STRICT FILTERING to avoid false positives
+      if (!isValidLegislationTitle(title)) {
+        console.log('❌ Skipping invalid resolution:', number, title.substring(0, 50));
         continue;
       }
       
@@ -125,6 +121,50 @@ export function extractLegislationFromAgenda(
   console.log('=== END AGENDA DEBUG ===');
   
   return legislation;
+}
+
+function isValidLegislationTitle(title: string): boolean {
+  if (!title) return false;
+  
+  // Must be between 20-200 characters
+  if (title.length < 20 || title.length > 200) {
+    return false;
+  }
+  
+  // Skip Spanish boilerplate keywords
+  const spanishBoilerplate = [
+    'también pueden',
+    'los miembros',
+    'siguientes',
+    'está disponible',
+    'deben usar',
+    'han adoptado',
+    'es una entidad',
+    'distritales también',
+    'del condado de',
+    'antes de la audiencia',
+    'que hayan recibido'
+  ];
+  
+  const lowerTitle = title.toLowerCase();
+  for (const phrase of spanishBoilerplate) {
+    if (lowerTitle.includes(phrase)) {
+      return false;
+    }
+  }
+  
+  // Skip if starts with common noise words
+  if (/^(with|and|or|for|to|in|on|at|by|of|the|a|an)\s/i.test(title)) {
+    return false;
+  }
+  
+  // Skip if too many special characters (noise)
+  const specialChars = title.replace(/[a-zA-Z0-9\s]/g, '');
+  if (specialChars.length > title.length / 3) {
+    return false;
+  }
+  
+  return true;
 }
 
 function cleanTitle(title: string): string {
