@@ -71,31 +71,56 @@ export function useFilteredMeetings(options?: {
 }
 
 export function useFilteredDashboardData() {
-  const { jurisdictionIds } = useLocationFilter();
-  const topicsParam = getGuestTopics().join(',');
+  const { jurisdictionIds, selectedLocationSlugs } = useLocationFilter();
+  
+  console.log('🔍 Dashboard Data Query:', {
+    selectedLocations: selectedLocationSlugs,
+    jurisdictionIds: jurisdictionIds,
+    count: jurisdictionIds.length
+  });
   
   return useQuery({
-    queryKey: ['filtered-dashboard', jurisdictionIds, topicsParam],
+    queryKey: ['filtered-dashboard', jurisdictionIds],
     queryFn: async () => {
-      // Build scope string for dashboard API
-      const { data: jurisdictionData } = await supabase
-        .from('jurisdiction')
-        .select('slug, type')
-        .in('id', jurisdictionIds);
+      console.log('📊 Fetching dashboard data for jurisdiction IDs:', jurisdictionIds);
       
-      if (!jurisdictionData) {
-        return { legislation: [], meetings: [], elections: [] };
+      // Fetch recent legislation (for "Recent Updates" section)
+      const { data: legislation, error: legError } = await supabase
+        .from('legislation')
+        .select('*, jurisdiction(*)')
+        .in('jurisdiction_id', jurisdictionIds)
+        .order('introduced_at', { ascending: false })
+        .limit(6);
+      
+      if (legError) {
+        console.error('Dashboard legislation query error:', legError);
+        throw legError;
       }
       
-      const scopeParts = jurisdictionData.map(j => `${j.type}:${j.slug}`);
-      const scopeString = scopeParts.join(',');
+      // Fetch upcoming meetings (for "Upcoming Meetings" section)
+      const { data: meetings, error: meetError } = await supabase
+        .from('meeting')
+        .select('*, jurisdiction(*)')
+        .in('jurisdiction_id', jurisdictionIds)
+        .gte('starts_at', new Date().toISOString())
+        .order('starts_at', { ascending: true })
+        .limit(5);
       
-      const { data, error } = await supabase.functions.invoke('dashboard-api', {
-        body: { scope: scopeString, topics: topicsParam }
+      if (meetError) {
+        console.error('Dashboard meetings query error:', meetError);
+        throw meetError;
+      }
+      
+      console.log('✅ Dashboard data fetched:', {
+        legislationCount: legislation?.length,
+        meetingsCount: meetings?.length
       });
-
-      if (error) throw error;
-      return data || { legislation: [], meetings: [], elections: [] };
+      
+      return {
+        legislation: legislation || [],
+        meetings: meetings || [],
+        elections: []
+      };
     },
     enabled: jurisdictionIds.length > 0,
   });
