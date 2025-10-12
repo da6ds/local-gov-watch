@@ -16,24 +16,20 @@ import { filterMeetings, getAvailableMeetingFilters } from "@/lib/meetingFilteri
 import { useTrackedTermsFilter } from "@/hooks/useTrackedTermsFilter";
 import { filterMeetingsByTrackedTerms } from "@/lib/trackedTermsFiltering";
 import { Filter } from "lucide-react";
+import { expandJurisdictionSlugs } from "@/lib/jurisdictionHelpers";
 
 export default function BrowseMeetings() {
   const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
   const { filters, setFilters } = useMeetingFilters();
   const { activeKeywords, hasActiveFilters: hasTrackedTermsFilter, activeTerms } = useTrackedTermsFilter();
 
-  // Resolve jurisdiction IDs
+  // Resolve jurisdiction IDs with hierarchical expansion
   useEffect(() => {
     const fetchIds = async () => {
       const guestScope = getGuestScope();
-      const { data } = await supabase
-        .from('jurisdiction')
-        .select('id')
-        .in('slug', guestScope);
-      
-      if (data) {
-        setJurisdictionIds(data.map(j => j.id));
-      }
+      // Expand slugs to include child jurisdictions (e.g., California -> all CA counties/cities)
+      const expandedIds = await expandJurisdictionSlugs(guestScope);
+      setJurisdictionIds(expandedIds);
     };
     fetchIds();
   }, []);

@@ -19,6 +19,7 @@ import { filterLegislation, getAvailableFilters } from "@/lib/legislationFilteri
 import { useTrackedTermsFilter } from "@/hooks/useTrackedTermsFilter";
 import { filterLegislationByTrackedTerms } from "@/lib/trackedTermsFiltering";
 import { DistrictInfo } from "@/components/DistrictInfo";
+import { expandJurisdictionSlugs } from "@/lib/jurisdictionHelpers";
 
 export default function BrowseLegislation() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,18 +29,13 @@ export default function BrowseLegislation() {
   const { filters, setFilters } = useLegislationFilters();
   const { activeKeywords, hasActiveFilters: hasTrackedTermsFilter, activeTerms } = useTrackedTermsFilter();
 
-  // Resolve jurisdiction IDs
+  // Resolve jurisdiction IDs with hierarchical expansion
   useEffect(() => {
     const fetchIds = async () => {
       const guestScope = getGuestScope();
-      const { data } = await supabase
-        .from('jurisdiction')
-        .select('id')
-        .in('slug', guestScope);
-      
-      if (data) {
-        setJurisdictionIds(data.map(j => j.id));
-      }
+      // Expand slugs to include child jurisdictions (e.g., California -> all CA counties/cities)
+      const expandedIds = await expandJurisdictionSlugs(guestScope);
+      setJurisdictionIds(expandedIds);
     };
     fetchIds();
   }, []);
