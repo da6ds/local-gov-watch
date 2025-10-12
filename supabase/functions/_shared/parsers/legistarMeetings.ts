@@ -101,8 +101,21 @@ export async function parseLegistarMeetings(
     for (const meeting of meetings.slice(0, MEETINGS_PAGE_LIMIT)) {
       try {
         // Extract PDF text from agenda if available
-        if (meeting.agenda_url && meeting.agenda_url.includes('.pdf')) {
+        // Legistar uses View.ashx handlers that serve PDFs, not direct .pdf URLs
+        if (meeting.agenda_url && 
+            (meeting.agenda_url.includes('.pdf') || 
+             meeting.agenda_url.includes('View.ashx') ||
+             meeting.agenda_url.includes('ViewReport.ashx'))) {
+          console.log(`📄 Extracting PDF: ${meeting.agenda_url}`);
           const pdfText = await extractPdfText(meeting.agenda_url);
+          
+          console.log('PDF extraction result:', {
+            url: meeting.agenda_url,
+            textExtracted: !!pdfText,
+            textLength: pdfText?.length || 0,
+            firstChars: pdfText?.substring(0, 100) || 'none'
+          });
+          
           if (pdfText) {
             meeting.extracted_text = pdfText.substring(0, 50000); // Limit text size
             stats.pdfsProcessed++;
@@ -113,15 +126,27 @@ export async function parseLegistarMeetings(
               meeting.ai_summary = summaryResult.content;
               stats.aiTokensUsed += summaryResult.tokensUsed;
             }
+          } else {
+            console.log('⚠️ PDF text extraction failed or returned empty');
           }
+        } else {
+          console.log('ℹ️ Meeting has no agenda URL or unsupported format:', meeting.agenda_url || 'none');
         }
         
         // Extract legislation from agenda text
+        console.log('🔍 Attempting legislation extraction:', {
+          meetingTitle: meeting.title,
+          hasExtractedText: !!meeting.extracted_text,
+          textLength: meeting.extracted_text?.length
+        });
+        
         if (meeting.extracted_text) {
           const agendaLegislation = extractLegislationFromAgenda(meeting.extracted_text);
           
+          console.log(`📊 Legislation extraction result: ${agendaLegislation.length} items found`);
+          
           if (agendaLegislation.length > 0) {
-            console.log(`Found ${agendaLegislation.length} legislation items in agenda`);
+            console.log(`✅ Found ${agendaLegislation.length} legislation items in agenda for "${meeting.title}"`);
             
             // Create legislation records for each extracted item
             for (const item of agendaLegislation) {
@@ -160,10 +185,14 @@ export async function parseLegistarMeetings(
                   stats.newCount++;
                 }
               } catch (error) {
-                console.error(`Failed to create legislation from agenda item:`, error);
+                console.error(`❌ Failed to create legislation from agenda item:`, error);
               }
             }
+          } else {
+            console.log('ℹ️ No legislation items found in this agenda');
           }
+        } else {
+          console.log('⚠️ No extracted text available for legislation extraction');
         }
         
         // Upsert meeting

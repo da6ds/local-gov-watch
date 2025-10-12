@@ -13,52 +13,116 @@ export interface AgendaLegislation {
 export function extractLegislationFromAgenda(
   agendaText: string
 ): AgendaLegislation[] {
-  if (!agendaText) return [];
+  if (!agendaText) {
+    console.log('⚠️ AGENDA EXTRACTION: No text provided');
+    return [];
+  }
+  
+  console.log('=== AGENDA TEXT DEBUG ===');
+  console.log('Text length:', agendaText.length);
+  console.log('First 500 chars:', agendaText.substring(0, 500));
+  console.log('Last 500 chars:', agendaText.substring(agendaText.length - 500));
+  
+  // Check if text contains any ordinance/resolution keywords
+  const hasOrdinance = agendaText.toLowerCase().includes('ordinance');
+  const hasResolution = agendaText.toLowerCase().includes('resolution');
+  console.log('Contains "ordinance":', hasOrdinance);
+  console.log('Contains "resolution":', hasResolution);
+  
+  // Show sample matches for debugging
+  const ordinanceMentions = agendaText.match(/ordinance[^\n]{0,100}/gi) || [];
+  console.log('Found ordinance mentions:', ordinanceMentions.length);
+  if (ordinanceMentions.length > 0) {
+    console.log('Sample ordinance text:', ordinanceMentions.slice(0, 3));
+  }
+  
+  const resolutionMentions = agendaText.match(/resolution[^\n]{0,100}/gi) || [];
+  console.log('Found resolution mentions:', resolutionMentions.length);
+  if (resolutionMentions.length > 0) {
+    console.log('Sample resolution text:', resolutionMentions.slice(0, 3));
+  }
   
   const legislation: AgendaLegislation[] = [];
   
-  // Pattern 1: "Ordinance No. 2025-001" or "Ordinance 2025-001" with optional title
-  const ordinancePattern = /Ordinance\s+(?:No\.?)?\s*(\d{4}[-_]\d+|\d+)(?:[:\s-]+)?([^\n\r]{10,200})?/gi;
+  // Multiple patterns to catch different formats
+  const ordinancePatterns = [
+    // "Ordinance No. 2025-001" or "Ordinance 2025-001"
+    /Ordinance\s+(?:No\.?|Number|#)?\s*(\d{4}[-_]?\d+|\d+)(?:[:\s-]+)?([^\n\r]{10,200})?/gi,
+    // "Ord. 2025-001" or "Ord 2025-001"
+    /Ord\.?\s+(?:No\.?|#)?\s*(\d{4}[-_]?\d+|\d+)(?:[:\s-]+)?([^\n\r]{10,200})?/gi,
+    // "2025-001 - Ordinance"
+    /(\d{4}[-_]?\d+|\d+)\s*[-–—]\s*Ordinance[:\s]*([^\n\r]{10,200})?/gi,
+  ];
   
-  // Pattern 2: "Resolution No. 2025-R-15" or "Resolution 2025-15"  
-  const resolutionPattern = /Resolution\s+(?:No\.?)?\s*([\w-]+)(?:[:\s-]+)?([^\n\r]{10,200})?/gi;
+  const resolutionPatterns = [
+    // "Resolution No. 2025-R-15" or "Resolution 2025-15"
+    /Resolution\s+(?:No\.?|Number|#)?\s*([\w-]+)(?:[:\s-]+)?([^\n\r]{10,200})?/gi,
+    // "Res. 2025-15" or "Res 2025-15"
+    /Res\.?\s+(?:No\.?|#)?\s*([\w-]+)(?:[:\s-]+)?([^\n\r]{10,200})?/gi,
+    // "2025-R-15 - Resolution"
+    /([\w-]+)\s*[-–—]\s*Resolution[:\s]*([^\n\r]{10,200})?/gi,
+  ];
   
-  // Extract ordinances
-  let match;
-  while ((match = ordinancePattern.exec(agendaText)) !== null) {
-    const number = match[1];
-    const title = match[2]?.trim() || `Ordinance ${number}`;
-    
-    // Skip if title looks like noise (too many special chars)
-    if (title && title.replace(/[a-zA-Z0-9\s]/g, '').length > title.length / 3) {
-      continue;
+  // Extract ordinances using all patterns
+  let totalOrdinanceMatches = 0;
+  for (const pattern of ordinancePatterns) {
+    let match;
+    while ((match = pattern.exec(agendaText)) !== null) {
+      totalOrdinanceMatches++;
+      const number = match[1];
+      const title = match[2]?.trim() || `Ordinance ${number}`;
+      
+      // Skip if title looks like noise (too many special chars)
+      if (title && title.replace(/[a-zA-Z0-9\s]/g, '').length > title.length / 3) {
+        console.log('Skipping noisy ordinance:', number, title.substring(0, 50));
+        continue;
+      }
+      
+      console.log('✓ Found ordinance:', number, title.substring(0, 50));
+      
+      legislation.push({
+        type: 'ordinance',
+        number: number,
+        title: cleanTitle(title),
+        status: deriveStatusFromContext(agendaText, match.index),
+      });
     }
-    
-    legislation.push({
-      type: 'ordinance',
-      number: number,
-      title: cleanTitle(title),
-      status: deriveStatusFromContext(agendaText, match.index),
-    });
   }
+  console.log('Total ordinance pattern matches:', totalOrdinanceMatches);
   
-  // Extract resolutions
-  while ((match = resolutionPattern.exec(agendaText)) !== null) {
-    const number = match[1];
-    const title = match[2]?.trim() || `Resolution ${number}`;
-    
-    // Skip if title looks like noise
-    if (title && title.replace(/[a-zA-Z0-9\s]/g, '').length > title.length / 3) {
-      continue;
+  // Extract resolutions using all patterns
+  let totalResolutionMatches = 0;
+  for (const pattern of resolutionPatterns) {
+    let match;
+    while ((match = pattern.exec(agendaText)) !== null) {
+      totalResolutionMatches++;
+      const number = match[1];
+      const title = match[2]?.trim() || `Resolution ${number}`;
+      
+      // Skip if title looks like noise
+      if (title && title.replace(/[a-zA-Z0-9\s]/g, '').length > title.length / 3) {
+        console.log('Skipping noisy resolution:', number, title.substring(0, 50));
+        continue;
+      }
+      
+      console.log('✓ Found resolution:', number, title.substring(0, 50));
+      
+      legislation.push({
+        type: 'resolution',
+        number: number,
+        title: cleanTitle(title),
+        status: deriveStatusFromContext(agendaText, match.index),
+      });
     }
-    
-    legislation.push({
-      type: 'resolution',
-      number: number,
-      title: cleanTitle(title),
-      status: deriveStatusFromContext(agendaText, match.index),
-    });
   }
+  console.log('Total resolution pattern matches:', totalResolutionMatches);
+  
+  console.log('=== EXTRACTION RESULTS ===');
+  console.log('Extracted legislation items:', legislation.length);
+  if (legislation.length > 0) {
+    console.log('Sample items:', JSON.stringify(legislation.slice(0, 3), null, 2));
+  }
+  console.log('=== END AGENDA DEBUG ===');
   
   return legislation;
 }
