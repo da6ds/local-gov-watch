@@ -17,6 +17,9 @@ interface LegislationData {
 /**
  * Generic Legistar legislation parser
  * Works for: Sonoma County, Napa County, Santa Rosa, Napa City
+ * 
+ * NOTE: Legistar legislation pages require search parameters to display data.
+ * This parser tries multiple URL patterns to fetch current year legislation.
  */
 export async function parseLegistarLegislation(
   supabaseUrl: string,
@@ -30,12 +33,47 @@ export async function parseLegistarLegislation(
   
   console.log(`Parsing Legistar legislation from ${baseUrl}...`);
   
-  // Legistar legislation URL
-  const legislationUrl = `${baseUrl}/Legislation.aspx`;
+  // Try multiple URL patterns - Legistar requires search to show data
+  const currentYear = new Date().getFullYear();
+  const urlsToTry = [
+    // Try getting all legislation
+    `${baseUrl}/Legislation.aspx?ShowAll=1`,
+    // Try current year only
+    `${baseUrl}/Legislation.aspx?YearId=${currentYear}`,
+    // Try view=list parameter
+    `${baseUrl}/Legislation.aspx?View=List`,
+  ];
+  
+  let html = '';
+  let successUrl = '';
+  
+  // Try each URL until we get data
+  for (const url of urlsToTry) {
+    try {
+      console.log(`Trying: ${url}`);
+      const response = await politeFetch(url);
+      const testHtml = await response.text();
+      
+      // Check if this URL returned actual data (not the empty "enter search criteria" page)
+      if (!testHtml.includes('Please enter your search criteria') && 
+          !testHtml.includes('0 records') &&
+          testHtml.includes('rgMasterTable')) {
+        html = testHtml;
+        successUrl = url;
+        console.log(`✓ Found data at: ${url}`);
+        break;
+      }
+    } catch (error) {
+      console.log(`Failed ${url}: ${error instanceof Error ? error.message : 'Unknown'}`);
+    }
+  }
+  
+  if (!html) {
+    console.log('No legislation URL returned data - site may require POST request or have no current data');
+    return;
+  }
   
   try {
-    const response = await politeFetch(legislationUrl);
-    const html = await response.text();
     const $ = await loadHTML(html);
     
     const legislation: LegislationData[] = [];
@@ -81,7 +119,15 @@ export async function parseLegistarLegislation(
       }
     });
     
-    console.log(`Found ${legislation.length} legislation items from Legistar`);
+    console.log(`Found ${legislation.length} legislation items from Legistar (from ${successUrl})`);
+    
+    if (legislation.length === 0) {
+      console.log('Note: Legistar returned 0 results. The site may:');
+      console.log('  1. Require a POST request with form data (not supported yet)');
+      console.log('  2. Have no current year legislation');
+      console.log('  3. Use a different URL pattern');
+      return;
+    }
     
     // Process legislation
     for (const item of legislation.slice(0, LEGISLATION_PAGE_LIMIT)) {

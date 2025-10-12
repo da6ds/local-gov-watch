@@ -54,10 +54,27 @@ All California locations include complete district mapping:
 
 Representative names are included where available.
 
-## Running the Connectors
+## Known Issues and Fixes
 
 ### ✅ Fixed: Jurisdiction Slug Format
 The connectors initially had incorrect jurisdiction slugs (e.g., `sonoma-county-ca`) but have been updated to the correct format with type prefixes (e.g., `county:sonoma-county-ca`). All 8 North Bay connectors are now properly configured.
+
+### ✅ Fixed: Legistar Legislation Parser
+**Issue**: Legistar legislation pages require search parameters to display data. Simply fetching `/Legislation.aspx` returns an empty page with "Please enter your search criteria."
+
+**Solution**: The parser now tries multiple URL patterns with search parameters:
+- `Legislation.aspx?ShowAll=1` - Attempts to fetch all legislation
+- `Legislation.aspx?YearId=<current_year>` - Fetches current year only
+- `Legislation.aspx?View=List` - Alternative view parameter
+
+The parser automatically detects which URL returns actual data and uses that one.
+
+**Note**: Some Legistar sites may still return 0 results if they:
+1. Require POST requests with form data (not yet supported)
+2. Have no current year legislation
+3. Use different URL patterns than tested
+
+Current status: **18 meetings imported, 0 legislation** (as of last connector run)
 
 ### Manual Trigger (Admin Only)
 1. Navigate to `/admin/connectors` in your app
