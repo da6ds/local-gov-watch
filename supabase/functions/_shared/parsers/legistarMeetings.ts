@@ -1,6 +1,7 @@
-import { politeFetch, loadHTML, safeText, normalizeDate, createExternalId, IngestStats, addError, extractPdfText } from '../helpers.ts';
+import { politeFetch, loadHTML, safeText, normalizeDate, createExternalId, IngestStats, addError, extractPdfText, extractKeywordTags } from '../helpers.ts';
 import { summarize } from '../ai.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { extractLegislationFromAgenda } from './agendaItemParser.ts';
 
 const MEETINGS_PAGE_LIMIT = parseInt(Deno.env.get('MEETINGS_PAGE_LIMIT') || '5');
 
@@ -111,6 +112,56 @@ export async function parseLegistarMeetings(
             if (summaryResult.content) {
               meeting.ai_summary = summaryResult.content;
               stats.aiTokensUsed += summaryResult.tokensUsed;
+            }
+          }
+        }
+        
+        // Extract legislation from agenda text
+        if (meeting.extracted_text) {
+          const agendaLegislation = extractLegislationFromAgenda(meeting.extracted_text);
+          
+          if (agendaLegislation.length > 0) {
+            console.log(`Found ${agendaLegislation.length} legislation items in agenda`);
+            
+            // Create legislation records for each extracted item
+            for (const item of agendaLegislation) {
+              try {
+                const legExternalId = createExternalId([baseUrl, item.number, item.type]);
+                
+                const { data: existingLeg } = await supabase
+                  .from('legislation')
+                  .select('id')
+                  .eq('external_id', legExternalId)
+                  .eq('jurisdiction_id', jurisdictionId)
+                  .maybeSingle();
+                
+                const legislationData = {
+                  jurisdiction_id: jurisdictionId,
+                  source_id: sourceId,
+                  external_id: legExternalId,
+                  title: item.title,
+                  summary: `Discussed at ${meeting.title} on ${meeting.starts_at.toLocaleDateString()}`,
+                  status: item.status,
+                  introduced_at: meeting.starts_at.toISOString(),
+                  doc_url: meeting.agenda_url, // Link to the agenda PDF
+                  tags: extractKeywordTags(item.title),
+                };
+                
+                if (existingLeg) {
+                  await supabase
+                    .from('legislation')
+                    .update(legislationData)
+                    .eq('id', existingLeg.id);
+                  stats.updatedCount++;
+                } else {
+                  await supabase
+                    .from('legislation')
+                    .insert(legislationData);
+                  stats.newCount++;
+                }
+              } catch (error) {
+                console.error(`Failed to create legislation from agenda item:`, error);
+              }
             }
           }
         }
