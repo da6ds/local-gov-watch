@@ -36,18 +36,23 @@ export default function Dashboard() {
     setScopeString(guestScope.join(','));
   }, []);
 
-  // Resolve jurisdiction IDs when scope changes
+  // Resolve jurisdiction IDs with hierarchical expansion (California -> all CA jurisdictions)
   useEffect(() => {
     if (selectedJurisdictions.length === 0) return;
     
     const fetchIds = async () => {
+      // Import expandJurisdictionSlugs dynamically
+      const { expandJurisdictionSlugs } = await import('@/lib/jurisdictionHelpers');
+      const expandedIds = await expandJurisdictionSlugs(selectedJurisdictions);
+      setJurisdictionIds(expandedIds);
+      
+      // Build scope string for the API (pass all expanded jurisdiction IDs)
       const { data } = await supabase
         .from('jurisdiction')
-        .select('id, slug, type')
-        .in('slug', selectedJurisdictions);
+        .select('slug, type')
+        .in('id', expandedIds);
       
       if (data) {
-        setJurisdictionIds(data.map(j => j.id));
         const scopeParts = data.map(j => `${j.type}:${j.slug}`);
         setScopeString(scopeParts.join(','));
       }
