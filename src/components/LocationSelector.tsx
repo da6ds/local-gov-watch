@@ -66,19 +66,43 @@ export function LocationSelector({
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        // For MVP, default to Austin
-        // In production, you'd reverse geocode the coords
-        const austinSlug = 'austin-tx';
-        const travisSlug = 'travis-county-tx';
-        const texasSlug = 'texas';
+        const { latitude, longitude } = position.coords;
         
-        const nearbyJurisdictions = [austinSlug, travisSlug, texasSlug].filter(slug => 
+        // Simple region detection based on coordinates
+        // Bay Area: roughly 37.2-38.5 N, -123.5 to -121.0 W
+        // Austin: roughly 30.0-30.5 N, -98.0 to -97.5 W
+        
+        let nearbyJurisdictionSlugs: string[] = [];
+        
+        if (latitude >= 37.2 && latitude <= 38.5 && longitude >= -123.5 && longitude <= -121.0) {
+          // Bay Area
+          nearbyJurisdictionSlugs = [
+            'marin-county-ca',
+            'sonoma-county-ca',
+            'napa-county-ca',
+            'california'
+          ];
+          toast.success("Detected North Bay Area");
+        } else if (latitude >= 30.0 && latitude <= 30.5 && longitude >= -98.0 && longitude <= -97.5) {
+          // Austin
+          nearbyJurisdictionSlugs = [
+            'austin-tx',
+            'travis-county-tx',
+            'texas'
+          ];
+          toast.success("Detected Austin area");
+        } else {
+          // Default to Austin for MVP
+          nearbyJurisdictionSlugs = ['austin-tx', 'travis-county-tx', 'texas'];
+          toast.info("Showing default locations");
+        }
+        
+        const toAdd = nearbyJurisdictionSlugs.filter(slug => 
           !value.includes(slug)
         ).slice(0, maxSelections - value.length);
         
-        if (nearbyJurisdictions.length > 0) {
-          onChange([...value, ...nearbyJurisdictions].slice(0, maxSelections));
-          toast.success("Location detected");
+        if (toAdd.length > 0) {
+          onChange([...value, ...toAdd].slice(0, maxSelections));
         } else {
           toast.info("Already showing nearby locations");
         }

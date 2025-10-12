@@ -10,11 +10,11 @@ import { CaliforniaDistrictMapping } from '@/types/districts';
  * - US Congress: https://www.house.gov/representatives
  */
 export const CALIFORNIA_DISTRICTS: CaliforniaDistrictMapping[] = [
-  // Marin County cities (for North Bay expansion)
+  // Marin County (District 3 for Senate, District 10 for Assembly, Congressional District 2)
   {
     city: 'San Rafael',
     county: 'Marin County',
-    cityDistrict: 2,
+    cityDistrict: 2, // San Rafael has 5 city council districts
     stateSenateDistrict: 3,
     stateAssemblyDistrict: 10,
     congressionalDistrict: 2,
@@ -33,11 +33,11 @@ export const CALIFORNIA_DISTRICTS: CaliforniaDistrictMapping[] = [
     congressionalRep: 'Jared Huffman'
   },
   
-  // Sonoma County cities
+  // Sonoma County
   {
     city: 'Santa Rosa',
     county: 'Sonoma County',
-    cityDistrict: 1,
+    cityDistrict: 1, // Santa Rosa has 7 city council districts
     stateSenateDistrict: 3,
     stateAssemblyDistrict: 4,
     congressionalDistrict: 2,

@@ -231,6 +231,16 @@ async function runParser(
       await parseTexasBills(supabaseUrl, supabaseKey, sourceId, jurisdictionId, stats);
       break;
     }
+    case 'legistar.meetings': {
+      const { parseLegistarMeetings } = await import('../_shared/parsers/legistarMeetings.ts');
+      await parseLegistarMeetings(supabaseUrl, supabaseKey, sourceId, jurisdictionId, connector.url, stats);
+      break;
+    }
+    case 'legistar.legislation': {
+      const { parseLegistarLegislation } = await import('../_shared/parsers/legistarLegislation.ts');
+      await parseLegistarLegislation(supabaseUrl, supabaseKey, sourceId, jurisdictionId, connector.url, stats);
+      break;
+    }
     default:
       throw new Error(`Unknown parser: ${connector.parser_key}`);
   }
