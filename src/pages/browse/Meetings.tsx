@@ -49,27 +49,27 @@ export default function BrowseMeetings() {
 
       // Apply time-based filtering based on status
       if (statusParam === "upcoming") {
-        query = query.gte('start_time', now.toISOString());
+        query = query.gte('starts_at', now.toISOString());
       } else if (statusParam === "this-week") {
         const weekStart = startOfWeek(now);
         const weekEnd = endOfWeek(now);
         query = query
-          .gte('start_time', weekStart.toISOString())
-          .lte('start_time', weekEnd.toISOString());
+          .gte('starts_at', weekStart.toISOString())
+          .lte('starts_at', weekEnd.toISOString());
       } else if (statusParam === "today") {
         const dayStart = startOfDay(now);
         const dayEnd = endOfDay(now);
         query = query
-          .gte('start_time', dayStart.toISOString())
-          .lte('start_time', dayEnd.toISOString());
+          .gte('starts_at', dayStart.toISOString())
+          .lte('starts_at', dayEnd.toISOString());
       } else if (statusParam === "past") {
-        query = query.lt('start_time', now.toISOString());
+        query = query.lt('starts_at', now.toISOString());
       }
       // "all" shows everything
 
       // Note: Topic filtering temporarily simplified to avoid TS type recursion
 
-      query = query.order('start_time', { 
+      query = query.order('starts_at', {
         ascending: statusParam === "past" ? false : true 
       });
 
@@ -114,14 +114,14 @@ export default function BrowseMeetings() {
         </div>
 
         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-          {meeting.start_time && (
+          {meeting.starts_at && (
             <>
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
-                <span>{format(new Date(meeting.start_time), 'MMM d, yyyy')}</span>
+                <span>{format(new Date(meeting.starts_at), 'MMM d, yyyy')}</span>
               </div>
               <div className="flex items-center gap-1">
-                <span>{format(new Date(meeting.start_time), 'h:mm a')}</span>
+                <span>{format(new Date(meeting.starts_at), 'h:mm a')}</span>
               </div>
             </>
           )}
