@@ -13,10 +13,14 @@ import { MeetingFilters } from "@/components/MeetingFilters";
 import { useMeetingFilters } from "@/hooks/useMeetingFilters";
 import { sortMeetings } from "@/lib/meetingSorting";
 import { filterMeetings, getAvailableMeetingFilters } from "@/lib/meetingFiltering";
+import { useTrackedTermsFilter } from "@/hooks/useTrackedTermsFilter";
+import { filterMeetingsByTrackedTerms } from "@/lib/trackedTermsFiltering";
+import { Filter } from "lucide-react";
 
 export default function BrowseMeetings() {
   const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
   const { filters, setFilters } = useMeetingFilters();
+  const { activeKeywords, hasActiveFilters: hasTrackedTermsFilter, activeTerms } = useTrackedTermsFilter();
 
   // Resolve jurisdiction IDs
   useEffect(() => {
@@ -67,11 +71,19 @@ export default function BrowseMeetings() {
   const processedMeetings = useMemo(() => {
     if (!meetings) return [];
     
-    const filtered = filterMeetings(meetings, filters);
+    // First apply standard filters
+    let filtered = filterMeetings(meetings, filters);
+    
+    // Then apply tracked terms filter
+    if (hasTrackedTermsFilter) {
+      filtered = filterMeetingsByTrackedTerms(filtered, activeKeywords);
+    }
+    
+    // Then sort
     const sorted = sortMeetings(filtered, filters.sortBy);
     
     return sorted;
-  }, [meetings, filters]);
+  }, [meetings, filters, activeKeywords, hasTrackedTermsFilter]);
 
 
   const MeetingCard = ({ meeting }: { meeting: any }) => (
@@ -135,6 +147,26 @@ export default function BrowseMeetings() {
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Browse Meetings</h1>
 
+        {/* Tracked Terms Indicator */}
+        {hasTrackedTermsFilter && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <Filter className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">
+              Filtering by {activeTerms.length} tracked topic{activeTerms.length !== 1 ? 's' : ''}:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {activeTerms.map((term) => (
+                <span 
+                  key={term.id} 
+                  className="px-2 py-0.5 bg-primary/20 text-primary text-xs font-medium rounded-full"
+                >
+                  {term.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         <MeetingFilters
           currentFilters={filters}
           onFilterChange={setFilters}
@@ -144,6 +176,7 @@ export default function BrowseMeetings() {
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm text-muted-foreground">
             Showing {processedMeetings.length} of {meetings?.length || 0} meetings
+            {hasTrackedTermsFilter && ' matching your tracked topics'}
           </p>
         </div>
         

@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, User, MapPin } from "lucide-react";
+import { Search, User, MapPin, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
@@ -16,6 +16,8 @@ import { LegislationFilters } from "@/components/LegislationFilters";
 import { useLegislationFilters } from "@/hooks/useLegislationFilters";
 import { sortLegislation } from "@/lib/legislationSorting";
 import { filterLegislation, getAvailableFilters } from "@/lib/legislationFiltering";
+import { useTrackedTermsFilter } from "@/hooks/useTrackedTermsFilter";
+import { filterLegislationByTrackedTerms } from "@/lib/trackedTermsFiltering";
 
 export default function BrowseLegislation() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,6 +25,7 @@ export default function BrowseLegislation() {
   const [searchParams, setSearchParams] = useSearchParams();
   const statusParam = searchParams.get("status") || "all";
   const { filters, setFilters } = useLegislationFilters();
+  const { activeKeywords, hasActiveFilters: hasTrackedTermsFilter, activeTerms } = useTrackedTermsFilter();
 
   // Resolve jurisdiction IDs
   useEffect(() => {
@@ -86,14 +89,19 @@ export default function BrowseLegislation() {
       status: statusParam !== "all" ? statusParam : filters.status
     };
     
-    // First filter
-    const filtered = filterLegislation(legislation, combinedFilters);
+    // First filter by standard filters
+    let filtered = filterLegislation(legislation, combinedFilters);
+    
+    // Then apply tracked terms filter
+    if (hasTrackedTermsFilter) {
+      filtered = filterLegislationByTrackedTerms(filtered, activeKeywords);
+    }
     
     // Then sort
     const sorted = sortLegislation(filtered, filters.sortBy);
     
     return sorted;
-  }, [legislation, filters, statusParam]);
+  }, [legislation, filters, statusParam, activeKeywords, hasTrackedTermsFilter]);
 
   const handleStatusChange = (value: string) => {
     if (value === "all") {
@@ -135,6 +143,26 @@ export default function BrowseLegislation() {
           </form>
         </div>
 
+        {/* Tracked Terms Indicator */}
+        {hasTrackedTermsFilter && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <Filter className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">
+              Filtering by {activeTerms.length} tracked topic{activeTerms.length !== 1 ? 's' : ''}:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {activeTerms.map((term) => (
+                <span 
+                  key={term.id} 
+                  className="px-2 py-0.5 bg-primary/20 text-primary text-xs font-medium rounded-full"
+                >
+                  {term.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Filters Component */}
         <LegislationFilters
           currentFilters={filters}
@@ -145,6 +173,7 @@ export default function BrowseLegislation() {
         {/* Results Count */}
         <div className="text-sm text-muted-foreground">
           Showing {processedLegislation.length} of {legislation?.length || 0} items
+          {hasTrackedTermsFilter && ' matching your tracked topics'}
         </div>
 
         {isLoading ? (

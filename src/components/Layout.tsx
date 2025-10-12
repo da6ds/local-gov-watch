@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ResetButton } from "@/components/ResetButton";
+import { TrackedTermsFilter } from "@/components/TrackedTermsFilter";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -151,6 +152,7 @@ export function Layout({ children }: LayoutProps) {
                 <ResetButton />
               </>
             )}
+            <TrackedTermsFilter />
             <SearchIconButton />
             <div className="hidden md:flex" data-tour="my-workspace">
               <MyWorkspaceDropdown />
