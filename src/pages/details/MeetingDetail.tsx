@@ -14,6 +14,7 @@ import { MeetingStatus } from "@/components/meeting/MeetingStatus";
 import { MeetingDocuments } from "@/components/meeting/MeetingDocuments";
 import { AgendaItems } from "@/components/meeting/AgendaItems";
 import { RelatedMeetings } from "@/components/meeting/RelatedMeetings";
+import { CityBadge } from "@/components/CityBadge";
 
 export default function MeetingDetail() {
   const { id } = useParams();
@@ -141,14 +142,14 @@ END:VCALENDAR`;
           <div className="lg:col-span-2 space-y-6">
             {/* Meeting Header */}
             <div className="space-y-4">
-              <h1 className="text-3xl md:text-4xl font-bold">{meeting.title}</h1>
+              <div className="flex flex-col gap-3">
+                <h1 className="text-3xl md:text-4xl font-bold">{meeting.title}</h1>
+                {meeting.jurisdiction && (
+                  <CityBadge city={meeting.jurisdiction.name} size="large" />
+                )}
+              </div>
               
               <div className="flex flex-wrap items-center gap-2">
-                {meeting.jurisdiction && (
-                  <Badge variant="secondary">
-                    {meeting.jurisdiction.name}
-                  </Badge>
-                )}
                 {meeting.body_name && (
                   <Badge variant="outline">{meeting.body_name}</Badge>
                 )}
@@ -166,9 +167,16 @@ END:VCALENDAR`;
                   </div>
                 )}
                 {meeting.location && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{meeting.location}</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      <span>{meeting.location}</span>
+                    </div>
+                    {meeting.jurisdiction && (
+                      <div className="ml-6 text-sm text-muted-foreground">
+                        {meeting.jurisdiction.name}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -9,6 +9,7 @@ import { MapPin, Calendar, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 import { StatusFilter } from "@/components/filters/StatusFilter";
+import { CityBadge } from "@/components/CityBadge";
 
 export default function BrowseMeetings() {
   const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
@@ -40,7 +41,10 @@ export default function BrowseMeetings() {
 
       let query = supabase
         .from('meeting')
-        .select('*')
+        .select(`
+          *,
+          jurisdiction:jurisdiction_id (name, slug, type)
+        `)
         .in('jurisdiction_id', jurisdictionIds);
 
       // Apply time-based filtering based on status
@@ -104,6 +108,9 @@ export default function BrowseMeetings() {
               <p className="text-muted-foreground text-sm">{meeting.body_name}</p>
             )}
           </div>
+          {meeting.jurisdiction?.name && (
+            <CityBadge city={meeting.jurisdiction.name} size="small" />
+          )}
         </div>
 
         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
