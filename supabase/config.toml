@@ -22,7 +22,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.digest-weekly]
-verify_jwt = false
+verify_jwt = true
 
 [functions.run-connector]
 verify_jwt = true
@@ -34,10 +34,10 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.send-digest-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.trends-api]
 verify_jwt = false
 
 [functions.preview-digest-email]
-verify_jwt = false
+verify_jwt = true
