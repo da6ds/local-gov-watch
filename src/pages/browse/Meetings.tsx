@@ -2,19 +2,21 @@ import { Layout } from "@/components/Layout";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
+import { Link } from "react-router-dom";
+import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Calendar, ExternalLink } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
-import { StatusFilter } from "@/components/filters/StatusFilter";
 import { CityBadge } from "@/components/CityBadge";
+import { MeetingFilters } from "@/components/MeetingFilters";
+import { useMeetingFilters } from "@/hooks/useMeetingFilters";
+import { sortMeetings } from "@/lib/meetingSorting";
+import { filterMeetings, getAvailableMeetingFilters } from "@/lib/meetingFiltering";
 
 export default function BrowseMeetings() {
   const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const statusParam = searchParams.get("status") || "all";
+  const { filters, setFilters } = useMeetingFilters();
 
   // Resolve jurisdiction IDs
   useEffect(() => {
@@ -32,52 +34,18 @@ export default function BrowseMeetings() {
     fetchIds();
   }, []);
 
-  // Fetch meetings based on status filter
+  // Fetch all meetings (filtering will be done client-side)
   const { data: meetings, isLoading } = useQuery({
-    queryKey: ['browse', 'meetings', jurisdictionIds, statusParam],
+    queryKey: ['browse', 'meetings', jurisdictionIds],
     queryFn: async () => {
-      const now = new Date();
-      const topicIds = getGuestTopics();
-
-      let query = supabase
+      const { data, error } = await supabase
         .from('meeting')
         .select(`
           *,
           jurisdiction:jurisdiction_id (name, slug, type)
         `)
-        .in('jurisdiction_id', jurisdictionIds);
-
-      // Apply time-based filtering based on status
-      if (statusParam === "upcoming") {
-        query = query.gte('starts_at', now.toISOString());
-      } else if (statusParam === "this-week") {
-        const weekStart = startOfWeek(now);
-        const weekEnd = endOfWeek(now);
-        query = query
-          .gte('starts_at', weekStart.toISOString())
-          .lte('starts_at', weekEnd.toISOString());
-      } else if (statusParam === "today") {
-        const dayStart = startOfDay(now);
-        const dayEnd = endOfDay(now);
-        query = query
-          .gte('starts_at', dayStart.toISOString())
-          .lte('starts_at', dayEnd.toISOString());
-      } else if (statusParam === "past") {
-        query = query.lt('starts_at', now.toISOString());
-      }
-      // "all" shows everything
-
-      // Note: Topic filtering temporarily simplified to avoid TS type recursion
-
-      query = query.order('starts_at', {
-        ascending: statusParam === "past" ? false : true 
-      });
-
-      if (statusParam === "past") {
-        query = query.limit(20);
-      }
-
-      const { data, error } = await query;
+        .in('jurisdiction_id', jurisdictionIds)
+        .order('starts_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching meetings:', error);
@@ -89,14 +57,22 @@ export default function BrowseMeetings() {
     enabled: jurisdictionIds.length > 0,
   });
 
-  const handleStatusChange = (value: string) => {
-    if (value === "all") {
-      searchParams.delete("status");
-    } else {
-      searchParams.set("status", value);
-    }
-    setSearchParams(searchParams);
-  };
+  // Get available filter options
+  const availableFilters = useMemo(() => {
+    if (!meetings) return { cities: [], bodyNames: [] };
+    return getAvailableMeetingFilters(meetings);
+  }, [meetings]);
+
+  // Apply filters and sorting
+  const processedMeetings = useMemo(() => {
+    if (!meetings) return [];
+    
+    const filtered = filterMeetings(meetings, filters);
+    const sorted = sortMeetings(filtered, filters.sortBy);
+    
+    return sorted;
+  }, [meetings, filters]);
+
 
   const MeetingCard = ({ meeting }: { meeting: any }) => (
     <Link to={`/meetings/${meeting.id}`}>
@@ -157,22 +133,27 @@ export default function BrowseMeetings() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Browse Meetings</h1>
-          <StatusFilter 
-            value={statusParam}
-            onChange={handleStatusChange}
-            count={meetings?.length}
-          />
+        <h1 className="text-3xl font-bold">Browse Meetings</h1>
+
+        <MeetingFilters
+          currentFilters={filters}
+          onFilterChange={setFilters}
+          availableFilters={availableFilters}
+        />
+
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-muted-foreground">
+            Showing {processedMeetings.length} of {meetings?.length || 0} meetings
+          </p>
         </div>
         
         <div className="space-y-4">
           {isLoading ? (
             <LoadingSkeleton />
-          ) : !meetings || meetings.length === 0 ? (
-            <p className="text-muted-foreground">No meetings found</p>
+          ) : !processedMeetings || processedMeetings.length === 0 ? (
+            <p className="text-muted-foreground">No meetings found matching your filters</p>
           ) : (
-            meetings.map((meeting) => (
+            processedMeetings.map((meeting) => (
               <MeetingCard key={meeting.id} meeting={meeting} />
             ))
           )}
