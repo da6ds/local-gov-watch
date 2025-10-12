@@ -18,6 +18,7 @@ import { sortLegislation } from "@/lib/legislationSorting";
 import { filterLegislation, getAvailableFilters } from "@/lib/legislationFiltering";
 import { useTrackedTermsFilter } from "@/hooks/useTrackedTermsFilter";
 import { filterLegislationByTrackedTerms } from "@/lib/trackedTermsFiltering";
+import { DistrictInfo } from "@/components/DistrictInfo";
 
 export default function BrowseLegislation() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -250,6 +251,15 @@ export default function BrowseLegislation() {
                       </div>
                     )}
                   </div>
+
+                  {/* District Badges */}
+                  <DistrictInfo
+                    cityDistrict={item.city_district || item.district_number}
+                    stateSenateDistrict={item.state_senate_district}
+                    congressionalDistrict={item.congressional_district}
+                    state="TX"
+                    compact={true}
+                  />
 
                   {item.tags && item.tags.length > 0 && (
                     <TagChips tags={item.tags} />

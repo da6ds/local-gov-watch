@@ -465,12 +465,17 @@ export type Database = {
       legislation: {
         Row: {
           ai_summary: string | null
+          assembly_member: string | null
           author: string | null
           author_role: string | null
           city: string | null
+          city_district: number | null
           coauthors: string[] | null
+          congressional_district: number | null
+          congressional_rep: string | null
           content_hash: string | null
           county: string | null
+          county_district: number | null
           created_at: string | null
           district: string | null
           district_number: number | null
@@ -490,6 +495,9 @@ export type Database = {
           search_vector: unknown | null
           source_id: string | null
           source_url: string | null
+          state_assembly_district: number | null
+          state_senate_district: number | null
+          state_senator: string | null
           status: string | null
           summary: string | null
           tags: string[] | null
@@ -498,12 +506,17 @@ export type Database = {
         }
         Insert: {
           ai_summary?: string | null
+          assembly_member?: string | null
           author?: string | null
           author_role?: string | null
           city?: string | null
+          city_district?: number | null
           coauthors?: string[] | null
+          congressional_district?: number | null
+          congressional_rep?: string | null
           content_hash?: string | null
           county?: string | null
+          county_district?: number | null
           created_at?: string | null
           district?: string | null
           district_number?: number | null
@@ -523,6 +536,9 @@ export type Database = {
           search_vector?: unknown | null
           source_id?: string | null
           source_url?: string | null
+          state_assembly_district?: number | null
+          state_senate_district?: number | null
+          state_senator?: string | null
           status?: string | null
           summary?: string | null
           tags?: string[] | null
@@ -531,12 +547,17 @@ export type Database = {
         }
         Update: {
           ai_summary?: string | null
+          assembly_member?: string | null
           author?: string | null
           author_role?: string | null
           city?: string | null
+          city_district?: number | null
           coauthors?: string[] | null
+          congressional_district?: number | null
+          congressional_rep?: string | null
           content_hash?: string | null
           county?: string | null
+          county_district?: number | null
           created_at?: string | null
           district?: string | null
           district_number?: number | null
@@ -556,6 +577,9 @@ export type Database = {
           search_vector?: unknown | null
           source_id?: string | null
           source_url?: string | null
+          state_assembly_district?: number | null
+          state_senate_district?: number | null
+          state_senator?: string | null
           status?: string | null
           summary?: string | null
           tags?: string[] | null
@@ -584,9 +608,14 @@ export type Database = {
           agenda_available_at: string | null
           agenda_url: string | null
           ai_summary: string | null
+          assembly_member: string | null
           attachments: Json | null
           body_name: string | null
+          city_district: number | null
+          congressional_district: number | null
+          congressional_rep: string | null
           content_hash: string | null
+          county_district: number | null
           created_at: string | null
           embedding: string | null
           ends_at: string | null
@@ -604,6 +633,9 @@ export type Database = {
           source_id: string | null
           source_url: string | null
           starts_at: string | null
+          state_assembly_district: number | null
+          state_senate_district: number | null
+          state_senator: string | null
           status: string | null
           title: string | null
           updated_at: string | null
@@ -612,9 +644,14 @@ export type Database = {
           agenda_available_at?: string | null
           agenda_url?: string | null
           ai_summary?: string | null
+          assembly_member?: string | null
           attachments?: Json | null
           body_name?: string | null
+          city_district?: number | null
+          congressional_district?: number | null
+          congressional_rep?: string | null
           content_hash?: string | null
+          county_district?: number | null
           created_at?: string | null
           embedding?: string | null
           ends_at?: string | null
@@ -632,6 +669,9 @@ export type Database = {
           source_id?: string | null
           source_url?: string | null
           starts_at?: string | null
+          state_assembly_district?: number | null
+          state_senate_district?: number | null
+          state_senator?: string | null
           status?: string | null
           title?: string | null
           updated_at?: string | null
@@ -640,9 +680,14 @@ export type Database = {
           agenda_available_at?: string | null
           agenda_url?: string | null
           ai_summary?: string | null
+          assembly_member?: string | null
           attachments?: Json | null
           body_name?: string | null
+          city_district?: number | null
+          congressional_district?: number | null
+          congressional_rep?: string | null
           content_hash?: string | null
+          county_district?: number | null
           created_at?: string | null
           embedding?: string | null
           ends_at?: string | null
@@ -660,6 +705,9 @@ export type Database = {
           source_id?: string | null
           source_url?: string | null
           starts_at?: string | null
+          state_assembly_district?: number | null
+          state_senate_district?: number | null
+          state_senator?: string | null
           status?: string | null
           title?: string | null
           updated_at?: string | null

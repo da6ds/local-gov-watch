@@ -12,6 +12,7 @@ import { LegislationTimeline } from "@/components/legislation/LegislationTimelin
 import { PDFViewer } from "@/components/legislation/PDFViewer";
 import { QuickActions } from "@/components/legislation/QuickActions";
 import { RelatedInfo } from "@/components/legislation/RelatedInfo";
+import { DistrictInfo } from "@/components/DistrictInfo";
 import { Copy, Tag, ArrowLeft, Home, ChevronDown, ExternalLink, User, Users, MapPin, Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -299,6 +300,19 @@ export default function LegislationDetail() {
             </Card>
           )}
 
+          {/* District Information */}
+          <DistrictInfo
+            cityDistrict={legislation.city_district || legislation.district_number}
+            countyDistrict={legislation.county_district}
+            stateSenateDistrict={legislation.state_senate_district}
+            stateAssemblyDistrict={legislation.state_assembly_district}
+            congressionalDistrict={legislation.congressional_district}
+            stateSenator={legislation.state_senator}
+            assemblyMember={legislation.assembly_member}
+            congressionalRep={legislation.congressional_rep}
+            state="TX"
+          />
+
           {/* Topics - Collapsible */}
           {displayTopics.length > 0 && (
             <Collapsible open={topicsOpen} onOpenChange={setTopicsOpen}>
@@ -548,6 +562,19 @@ export default function LegislationDetail() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* District Information - Desktop */}
+            <DistrictInfo
+              cityDistrict={legislation.city_district || legislation.district_number}
+              countyDistrict={legislation.county_district}
+              stateSenateDistrict={legislation.state_senate_district}
+              stateAssemblyDistrict={legislation.state_assembly_district}
+              congressionalDistrict={legislation.congressional_district}
+              stateSenator={legislation.state_senator}
+              assemblyMember={legislation.assembly_member}
+              congressionalRep={legislation.congressional_rep}
+              state="TX"
+            />
 
             {/* AI Summary - only show if meaningful content exists */}
             {hasMeaningfulSummary && (
