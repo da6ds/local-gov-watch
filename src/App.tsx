@@ -9,6 +9,7 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { GlobalBanner } from "@/components/GlobalBanner";
+import { LocationFilterProvider } from "@/contexts/LocationFilterContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import DigestPreview from "./pages/DigestPreview";
@@ -92,13 +93,15 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AppContent />
-            </BrowserRouter>
-          </TooltipProvider>
+          <BrowserRouter>
+            <LocationFilterProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <AppContent />
+              </TooltipProvider>
+            </LocationFilterProvider>
+          </BrowserRouter>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

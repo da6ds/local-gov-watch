@@ -1,61 +1,27 @@
 import { Layout } from "@/components/Layout";
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Calendar, ExternalLink } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
-import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
-import { CityBadge } from "@/components/CityBadge";
 import { MeetingFilters } from "@/components/MeetingFilters";
 import { useMeetingFilters } from "@/hooks/useMeetingFilters";
 import { sortMeetings } from "@/lib/meetingSorting";
 import { filterMeetings, getAvailableMeetingFilters } from "@/lib/meetingFiltering";
 import { useTrackedTermsFilter } from "@/hooks/useTrackedTermsFilter";
 import { filterMeetingsByTrackedTerms } from "@/lib/trackedTermsFiltering";
-import { Filter } from "lucide-react";
-import { expandJurisdictionSlugs } from "@/lib/jurisdictionHelpers";
+import { Calendar, MapPin, ExternalLink, Filter } from "lucide-react";
+import { format } from "date-fns";
+import { useFilteredMeetings } from "@/hooks/useFilteredQueries";
+import { useLocationFilter } from "@/contexts/LocationFilterContext";
+import { CityBadge } from "@/components/CityBadge";
 
 export default function BrowseMeetings() {
-  const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
+  const { selectedLocationSlugs } = useLocationFilter();
   const { filters, setFilters } = useMeetingFilters();
   const { activeKeywords, hasActiveFilters: hasTrackedTermsFilter, activeTerms } = useTrackedTermsFilter();
 
-  // Resolve jurisdiction IDs with hierarchical expansion
-  useEffect(() => {
-    const fetchIds = async () => {
-      const guestScope = getGuestScope();
-      // Expand slugs to include child jurisdictions (e.g., California -> all CA counties/cities)
-      const expandedIds = await expandJurisdictionSlugs(guestScope);
-      setJurisdictionIds(expandedIds);
-    };
-    fetchIds();
-  }, []);
-
-  // Fetch all meetings (filtering will be done client-side)
-  const { data: meetings, isLoading } = useQuery({
-    queryKey: ['browse', 'meetings', jurisdictionIds],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('meeting')
-        .select(`
-          *,
-          jurisdiction:jurisdiction_id (name, slug, type)
-        `)
-        .in('jurisdiction_id', jurisdictionIds)
-        .order('starts_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching meetings:', error);
-        throw error;
-      }
-
-      return data || [];
-    },
-    enabled: jurisdictionIds.length > 0,
-  });
+  // Fetch meetings using filtered query
+  const { data: meetings, isLoading } = useFilteredMeetings({ upcoming: false, limit: 100 });
 
   // Get available filter options
   const availableFilters = useMemo(() => {

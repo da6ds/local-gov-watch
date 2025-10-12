@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useNavigate } from "react-router-dom";
+import { useLocationFilter } from "@/contexts/LocationFilterContext";
 
 const digestFormSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -71,7 +72,7 @@ const ERROR_MESSAGES: Record<string, { title: string; description: string }> = {
 
 export default function Alerts() {
   const navigate = useNavigate();
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const { selectedLocationSlugs, setSelectedLocations } = useLocationFilter();
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -120,7 +121,7 @@ export default function Alerts() {
   };
 
   const handleSendTest = async () => {
-    if (!watchedEmail || !watchedName || selectedLocations.length === 0) {
+    if (!watchedEmail || !watchedName || selectedLocationSlugs.length === 0) {
       toast.error("Please fill in all required fields before sending a test");
       return;
     }
@@ -131,7 +132,7 @@ export default function Alerts() {
         body: {
           email: watchedEmail,
           userName: watchedName,
-          locations: selectedLocations,
+          locations: selectedLocationSlugs,
           topics: selectedTopics.length > 0 ? selectedTopics : undefined,
           cadence: watchedCadence,
         },
@@ -190,10 +191,7 @@ export default function Alerts() {
           <div className="flex flex-col md:flex-row md:items-center gap-2">
             <h1 className="text-xl font-bold">Alert Settings</h1>
             <div className="flex items-center gap-2">
-              <LocationSelector
-                value={selectedLocations}
-                onChange={handleLocationChange}
-              />
+              <LocationSelector />
             </div>
           </div>
           <Button onClick={() => setIsCreateDialogOpen(true)} className="md:ml-auto" size="sm">
@@ -314,7 +312,7 @@ export default function Alerts() {
                 <div className="space-y-2">
                   <Label>Locations</Label>
                   <LocationSelector
-                    value={selectedLocations}
+                    value={selectedLocationSlugs}
                     onChange={handleLocationChange}
                   />
                   {errors.locations && (
@@ -375,7 +373,7 @@ export default function Alerts() {
                   </Button>
                   <EmailPreviewDialog
                     name={watchedName}
-                    locations={selectedLocations}
+                    locations={selectedLocationSlugs}
                     topics={selectedTopics}
                     cadence={watchedCadence}
                     disabled={!isValid}

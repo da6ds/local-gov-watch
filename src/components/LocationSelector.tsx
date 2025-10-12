@@ -1,40 +1,30 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { X, MapPin, ChevronDown, Navigation } from "lucide-react";
 import { toast } from "sonner";
+import { useLocationFilter } from "@/contexts/LocationFilterContext";
 
 interface LocationSelectorProps {
-  value: string[]; // Array of jurisdiction slugs
-  onChange: (slugs: string[]) => void;
+  value?: string[]; // Array of jurisdiction slugs (optional, uses context if not provided)
+  onChange?: (slugs: string[]) => void; // Optional, uses context if not provided
   maxSelections?: number;
   placeholder?: string;
 }
 
 export function LocationSelector({ 
-  value, 
-  onChange, 
+  value: externalValue, 
+  onChange: externalOnChange, 
   maxSelections = 3,
   placeholder = "Select locations..."
 }: LocationSelectorProps) {
   const [open, setOpen] = useState(false);
+  const { jurisdictions, selectedLocationSlugs, setSelectedLocations } = useLocationFilter();
   
-  // Fetch all jurisdictions
-  const { data: jurisdictions = [] } = useQuery({
-    queryKey: ['jurisdictions'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('jurisdiction')
-        .select('id, slug, name, type')
-        .order('name');
-      
-      if (error) throw error;
-      return data || [];
-    }
-  });
+  // Use either external control or context
+  const value = externalValue ?? selectedLocationSlugs;
+  const onChange = externalOnChange ?? setSelectedLocations;
 
   const selectedJurisdictions = jurisdictions.filter(j => value.includes(j.slug));
 

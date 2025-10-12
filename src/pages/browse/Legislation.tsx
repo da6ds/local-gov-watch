@@ -1,15 +1,12 @@
 import { Layout } from "@/components/Layout";
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, User, MapPin, Filter } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TagChips } from "@/components/TagChips";
-import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 import { StatusFilter } from "@/components/filters/StatusFilter";
 import { format } from "date-fns";
 import { LegislationFilters } from "@/components/LegislationFilters";
@@ -19,66 +16,46 @@ import { filterLegislation, getAvailableFilters } from "@/lib/legislationFilteri
 import { useTrackedTermsFilter } from "@/hooks/useTrackedTermsFilter";
 import { filterLegislationByTrackedTerms } from "@/lib/trackedTermsFiltering";
 import { DistrictInfo } from "@/components/DistrictInfo";
-import { expandJurisdictionSlugs } from "@/lib/jurisdictionHelpers";
+import { useFilteredLegislation } from "@/hooks/useFilteredQueries";
+import { useLocationFilter } from "@/contexts/LocationFilterContext";
+import { useState } from "react";
 
 export default function BrowseLegislation() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
+  const { selectedLocationSlugs } = useLocationFilter();
   const [searchParams, setSearchParams] = useSearchParams();
   const statusParam = searchParams.get("status") || "all";
   const { filters, setFilters } = useLegislationFilters();
   const { activeKeywords, hasActiveFilters: hasTrackedTermsFilter, activeTerms } = useTrackedTermsFilter();
 
-  // Resolve jurisdiction IDs with hierarchical expansion
-  useEffect(() => {
-    const fetchIds = async () => {
-      const guestScope = getGuestScope();
-      // Expand slugs to include child jurisdictions (e.g., California -> all CA counties/cities)
-      const expandedIds = await expandJurisdictionSlugs(guestScope);
-      setJurisdictionIds(expandedIds);
-    };
-    fetchIds();
-  }, []);
-
-  const { data: legislation, isLoading } = useQuery({
-    queryKey: ['browse', 'legislation', jurisdictionIds, searchTerm, statusParam],
-    queryFn: async () => {
-      const topicIds = getGuestTopics();
-
-      let query = supabase
-        .from('legislation')
-        .select('*')
-        .in('jurisdiction_id', jurisdictionIds);
-
-      if (searchTerm) {
-        query = query.or(`title.ilike.%${searchTerm}%,summary.ilike.%${searchTerm}%`);
-      }
-
-      // Note: Topic filtering temporarily simplified to avoid TS type recursion
-
-      // Don't filter by status here - we'll do it in the client-side filtering
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching legislation:', error);
-        throw error;
-      }
-
-      return data || [];
-    },
-    enabled: jurisdictionIds.length > 0,
+  // Fetch legislation using filtered query
+  const { data: legislation, isLoading } = useFilteredLegislation({
+    limit: 100,
+    orderBy: 'introduced_at',
+    ascending: false
   });
+
+  // Apply search term filter client-side
+  const searchFilteredLegislation = useMemo(() => {
+    if (!legislation) return [];
+    if (!searchTerm) return legislation;
+    
+    const term = searchTerm.toLowerCase();
+    return legislation.filter(item => 
+      item.title?.toLowerCase().includes(term) ||
+      item.summary?.toLowerCase().includes(term)
+    );
+  }, [legislation, searchTerm]);
 
   // Calculate available filter options from fetched data
   const availableFilters = useMemo(() => {
-    if (!legislation) return { authors: [], districts: [], cities: [], statuses: [] };
-    return getAvailableFilters(legislation);
-  }, [legislation]);
+    if (!searchFilteredLegislation) return { authors: [], districts: [], cities: [], statuses: [] };
+    return getAvailableFilters(searchFilteredLegislation);
+  }, [searchFilteredLegislation]);
 
   // Apply filters and sorting client-side
   const processedLegislation = useMemo(() => {
-    if (!legislation) return [];
+    if (!searchFilteredLegislation) return [];
     
     // Combine status from URL params with filters
     const combinedFilters = {
@@ -87,7 +64,7 @@ export default function BrowseLegislation() {
     };
     
     // First filter by standard filters
-    let filtered = filterLegislation(legislation, combinedFilters);
+    let filtered = filterLegislation(searchFilteredLegislation, combinedFilters);
     
     // Then apply tracked terms filter
     if (hasTrackedTermsFilter) {
@@ -98,7 +75,7 @@ export default function BrowseLegislation() {
     const sorted = sortLegislation(filtered, filters.sortBy);
     
     return sorted;
-  }, [legislation, filters, statusParam, activeKeywords, hasTrackedTermsFilter]);
+  }, [searchFilteredLegislation, filters, statusParam, activeKeywords, hasTrackedTermsFilter]);
 
   const handleStatusChange = (value: string) => {
     if (value === "all") {
@@ -169,7 +146,7 @@ export default function BrowseLegislation() {
 
         {/* Results Count */}
         <div className="text-sm text-muted-foreground">
-          Showing {processedLegislation.length} of {legislation?.length || 0} items
+          Showing {processedLegislation.length} of {searchFilteredLegislation?.length || 0} items
           {hasTrackedTermsFilter && ' matching your tracked topics'}
         </div>
 

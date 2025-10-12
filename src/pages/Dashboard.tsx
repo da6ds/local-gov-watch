@@ -18,39 +18,27 @@ import { LocationSelector } from "@/components/LocationSelector";
 import { Calendar as CalendarComponent } from "@/components/calendar/Calendar";
 import { getGuestScope, setGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 import { Button } from "@/components/ui/button";
+import { useLocationFilter } from "@/contexts/LocationFilterContext";
+import { useFilteredDashboardData, useFilteredTrendingTopics } from "@/hooks/useFilteredQueries";
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const { isGuest, guestSession } = useAuth();
-  const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([]);
+  const { selectedLocationSlugs, jurisdictionIds, setSelectedLocations } = useLocationFilter();
   const [scopeString, setScopeString] = useState<string>('');
-  const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
   const runUpdate = useGuestRunUpdate();
   const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
   const [autoRefreshEta, setAutoRefreshEta] = useState<number | null>(null);
 
-  // Initialize jurisdictions from guest session
+  // Build scope string for data status checks
   useEffect(() => {
-    const guestScope = getGuestScope();
-    setSelectedJurisdictions(guestScope);
-    setScopeString(guestScope.join(','));
-  }, []);
-
-  // Resolve jurisdiction IDs with hierarchical expansion (California -> all CA jurisdictions)
-  useEffect(() => {
-    if (selectedJurisdictions.length === 0) return;
+    if (jurisdictionIds.length === 0) return;
     
-    const fetchIds = async () => {
-      // Import expandJurisdictionSlugs dynamically
-      const { expandJurisdictionSlugs } = await import('@/lib/jurisdictionHelpers');
-      const expandedIds = await expandJurisdictionSlugs(selectedJurisdictions);
-      setJurisdictionIds(expandedIds);
-      
-      // Build scope string for the API (pass all expanded jurisdiction IDs)
+    const fetchScopeString = async () => {
       const { data } = await supabase
         .from('jurisdiction')
         .select('slug, type')
-        .in('id', expandedIds);
+        .in('id', jurisdictionIds);
       
       if (data) {
         const scopeParts = data.map(j => `${j.type}:${j.slug}`);
@@ -58,20 +46,19 @@ export default function Dashboard() {
       }
     };
     
-    fetchIds();
-  }, [selectedJurisdictions]);
+    fetchScopeString();
+  }, [jurisdictionIds]);
 
   // Handle jurisdiction change
   const handleJurisdictionChange = (slugs: string[]) => {
-    setSelectedJurisdictions(slugs);
-    setGuestScope(slugs);
-    setScopeString(slugs.join(','));
+    setSelectedLocations(slugs);
     
     // Invalidate all data queries
-    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['filtered-dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['filtered-legislation'] });
+    queryClient.invalidateQueries({ queryKey: ['filtered-meetings'] });
+    queryClient.invalidateQueries({ queryKey: ['filtered-trending-topics'] });
     queryClient.invalidateQueries({ queryKey: ['calendar'] });
-    queryClient.invalidateQueries({ queryKey: ['browse'] });
-    queryClient.invalidateQueries({ queryKey: ['trends'] });
     
     toast.success("Location updated");
   };
@@ -117,31 +104,16 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [isAutoRefreshing, refetchDataStatus, queryClient]);
 
-  // Fetch data using dashboard API with topic filtering from sessionStorage
-  const topicsParam = getGuestTopics().join(',');
-  
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
-    queryKey: ['dashboard', scopeString, topicsParam],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('dashboard-api', {
-        body: { scope: scopeString, topics: topicsParam }
-      });
-
-      if (error) throw error;
-      return data || { legislation: [], meetings: [], elections: [] };
-    },
-    enabled: !!scopeString && jurisdictionIds.length > 0 && !isAutoRefreshing,
-  });
+  // Fetch data using filtered queries
+  const { data: dashboardData, isLoading: dashboardLoading } = useFilteredDashboardData();
+  const { data: trendingTopicsData, isLoading: trendingLoading } = useFilteredTrendingTopics(8);
 
   const recentLegislation = dashboardData?.legislation || [];
   const upcomingMeetings = dashboardData?.meetings || [];
   const upcomingElections = dashboardData?.elections || [];
 
-  // Calculate trending topics from recent data
-  const trendingTopics = useMemo(() => {
-    if (!recentLegislation || !upcomingMeetings) return [];
-    return analyzeCombinedTrendingTopics(recentLegislation, upcomingMeetings, 8);
-  }, [recentLegislation, upcomingMeetings]);
+  // Use trending topics from filtered query
+  const trendingTopics = trendingTopicsData || [];
 
   return (
     <TooltipProvider>
@@ -293,7 +265,7 @@ export default function Dashboard() {
               <CardContent className="pt-0">
                 <TrendingTopicsWidget 
                   topics={trendingTopics}
-                  isLoading={dashboardLoading || isAutoRefreshing}
+                  isLoading={dashboardLoading || trendingLoading || isAutoRefreshing}
                 />
               </CardContent>
             </Card>
