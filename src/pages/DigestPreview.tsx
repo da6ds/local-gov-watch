@@ -26,12 +26,13 @@ export default function DigestPreview() {
       
       if (!jurisdiction) return [];
       
+      // Filter by created_at (new to database) but sort by introduced_at (actual legislation date)
       const { data } = await supabase
         .from('legislation')
         .select('*')
         .eq('jurisdiction_id', jurisdiction.id)
         .gte('created_at', sevenDaysAgo)
-        .order('created_at', { ascending: false })
+        .order('introduced_at', { ascending: false })
         .limit(3);
       return data || [];
     }

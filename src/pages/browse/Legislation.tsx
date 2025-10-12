@@ -56,7 +56,8 @@ export default function BrowseLegislation() {
         query = query.eq('status', statusParam);
       }
 
-      query = query.order('created_at', { ascending: false });
+      // Sort by introduced_at (when government introduced it), not created_at (when we added it)
+      query = query.order('introduced_at', { ascending: false });
 
       const { data, error } = await query;
 
@@ -88,7 +89,10 @@ export default function BrowseLegislation() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Browse Legislation</h1>
+            <div>
+              <h1 className="text-3xl font-bold">Browse Legislation</h1>
+              <p className="text-sm text-muted-foreground mt-1">Sorted by most recently introduced</p>
+            </div>
             <StatusFilter 
               value={statusParam}
               onChange={handleStatusChange}

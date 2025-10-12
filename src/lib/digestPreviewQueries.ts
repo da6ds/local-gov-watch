@@ -41,13 +41,14 @@ export async function getPreviewLegislation(locations: string[], topics: string[
   
   const jurisdictionIds = jurisdictions.map(j => j.id);
   
-  // Get legislation
+  // Get legislation - filter by introduced_at (when legislation was introduced)
+  // but use created_at for the "new in last 7 days" filter since that tracks when we added it
   let query = supabase
     .from('legislation')
     .select('id, title, ai_summary, summary, tags, introduced_at, jurisdiction_id')
     .in('jurisdiction_id', jurisdictionIds)
     .gte('created_at', sevenDaysAgo)
-    .order('created_at', { ascending: false })
+    .order('introduced_at', { ascending: false })
     .limit(5);
   
   // Filter by topics if selected
