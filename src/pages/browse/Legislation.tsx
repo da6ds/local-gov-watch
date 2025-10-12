@@ -1,5 +1,5 @@
 import { Layout } from "@/components/Layout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, User, MapPin } from "lucide-react";
@@ -12,12 +12,17 @@ import { TagChips } from "@/components/TagChips";
 import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 import { StatusFilter } from "@/components/filters/StatusFilter";
 import { format } from "date-fns";
+import { LegislationFilters } from "@/components/LegislationFilters";
+import { useLegislationFilters } from "@/hooks/useLegislationFilters";
+import { sortLegislation } from "@/lib/legislationSorting";
+import { filterLegislation, getAvailableFilters } from "@/lib/legislationFiltering";
 
 export default function BrowseLegislation() {
   const [searchTerm, setSearchTerm] = useState("");
   const [jurisdictionIds, setJurisdictionIds] = useState<string[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const statusParam = searchParams.get("status") || "all";
+  const { filters, setFilters } = useLegislationFilters();
 
   // Resolve jurisdiction IDs
   useEffect(() => {
@@ -51,13 +56,7 @@ export default function BrowseLegislation() {
 
       // Note: Topic filtering temporarily simplified to avoid TS type recursion
 
-      // Filter by status if not "all"
-      if (statusParam !== "all") {
-        query = query.eq('status', statusParam);
-      }
-
-      // Sort by introduced_at (when government introduced it), not created_at (when we added it)
-      query = query.order('introduced_at', { ascending: false });
+      // Don't filter by status here - we'll do it in the client-side filtering
 
       const { data, error } = await query;
 
@@ -70,6 +69,31 @@ export default function BrowseLegislation() {
     },
     enabled: jurisdictionIds.length > 0,
   });
+
+  // Calculate available filter options from fetched data
+  const availableFilters = useMemo(() => {
+    if (!legislation) return { authors: [], districts: [], cities: [], statuses: [] };
+    return getAvailableFilters(legislation);
+  }, [legislation]);
+
+  // Apply filters and sorting client-side
+  const processedLegislation = useMemo(() => {
+    if (!legislation) return [];
+    
+    // Combine status from URL params with filters
+    const combinedFilters = {
+      ...filters,
+      status: statusParam !== "all" ? statusParam : filters.status
+    };
+    
+    // First filter
+    const filtered = filterLegislation(legislation, combinedFilters);
+    
+    // Then sort
+    const sorted = sortLegislation(filtered, filters.sortBy);
+    
+    return sorted;
+  }, [legislation, filters, statusParam]);
 
   const handleStatusChange = (value: string) => {
     if (value === "all") {
@@ -91,12 +115,11 @@ export default function BrowseLegislation() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Browse Legislation</h1>
-              <p className="text-sm text-muted-foreground mt-1">Sorted by most recently introduced</p>
             </div>
             <StatusFilter 
               value={statusParam}
               onChange={handleStatusChange}
-              count={legislation?.length}
+              count={processedLegislation?.length}
             />
           </div>
           
@@ -110,6 +133,18 @@ export default function BrowseLegislation() {
               className="pl-10"
             />
           </form>
+        </div>
+
+        {/* Filters Component */}
+        <LegislationFilters
+          currentFilters={filters}
+          onFilterChange={setFilters}
+          availableFilters={availableFilters}
+        />
+
+        {/* Results Count */}
+        <div className="text-sm text-muted-foreground">
+          Showing {processedLegislation.length} of {legislation?.length || 0} items
         </div>
 
         {isLoading ? (
@@ -126,9 +161,25 @@ export default function BrowseLegislation() {
           <Card className="p-8 text-center">
             <p className="text-muted-foreground">No legislation found</p>
           </Card>
+        ) : processedLegislation.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground mb-4">No legislation matches your filters</p>
+            <button 
+              onClick={() => setFilters({
+                sortBy: filters.sortBy,
+                author: null,
+                district: null,
+                city: null,
+                status: null
+              })}
+              className="text-primary hover:underline"
+            >
+              Clear filters
+            </button>
+          </Card>
         ) : (
           <div className="space-y-4">
-            {legislation.map((item) => (
+            {processedLegislation.map((item) => (
               <Link key={item.id} to={`/legislation/${item.id}`}>
                 <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer">
                   <div className="flex items-start justify-between gap-4 mb-3">
