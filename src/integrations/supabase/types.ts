@@ -581,6 +581,7 @@ export type Database = {
       }
       meeting: {
         Row: {
+          agenda_available_at: string | null
           agenda_url: string | null
           ai_summary: string | null
           attachments: Json | null
@@ -593,17 +594,22 @@ export type Database = {
           extracted_text: string | null
           id: string
           jurisdiction_id: string | null
+          livestream_url: string | null
           location: string | null
+          minutes_available_at: string | null
           minutes_url: string | null
           occurred_at: string | null
+          recording_url: string | null
           search_vector: unknown | null
           source_id: string | null
           source_url: string | null
           starts_at: string | null
+          status: string | null
           title: string | null
           updated_at: string | null
         }
         Insert: {
+          agenda_available_at?: string | null
           agenda_url?: string | null
           ai_summary?: string | null
           attachments?: Json | null
@@ -616,17 +622,22 @@ export type Database = {
           extracted_text?: string | null
           id?: string
           jurisdiction_id?: string | null
+          livestream_url?: string | null
           location?: string | null
+          minutes_available_at?: string | null
           minutes_url?: string | null
           occurred_at?: string | null
+          recording_url?: string | null
           search_vector?: unknown | null
           source_id?: string | null
           source_url?: string | null
           starts_at?: string | null
+          status?: string | null
           title?: string | null
           updated_at?: string | null
         }
         Update: {
+          agenda_available_at?: string | null
           agenda_url?: string | null
           ai_summary?: string | null
           attachments?: Json | null
@@ -639,13 +650,17 @@ export type Database = {
           extracted_text?: string | null
           id?: string
           jurisdiction_id?: string | null
+          livestream_url?: string | null
           location?: string | null
+          minutes_available_at?: string | null
           minutes_url?: string | null
           occurred_at?: string | null
+          recording_url?: string | null
           search_vector?: unknown | null
           source_id?: string | null
           source_url?: string | null
           starts_at?: string | null
+          status?: string | null
           title?: string | null
           updated_at?: string | null
         }

@@ -220,6 +220,11 @@ END:VCALENDAR`;
               agendaUrl={meeting.agenda_url}
               minutesUrl={meeting.minutes_url}
               extractedText={meeting.extracted_text}
+              livestreamUrl={meeting.livestream_url || streamUrl}
+              recordingUrl={meeting.recording_url || videoUrl}
+              agendaAvailableAt={meeting.agenda_available_at}
+              minutesAvailableAt={meeting.minutes_available_at}
+              status={meeting.status}
             />
 
             {/* Metadata */}
@@ -247,7 +252,11 @@ END:VCALENDAR`;
           <div className="lg:col-span-1 space-y-4">
             {/* Meeting Status */}
             {meeting.starts_at && (
-              <MeetingStatus startsAt={meeting.starts_at} />
+              <MeetingStatus 
+                startsAt={meeting.starts_at} 
+                endsAt={meeting.ends_at}
+                status={meeting.status}
+              />
             )}
 
             {/* Quick Actions */}
