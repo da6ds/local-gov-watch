@@ -56,16 +56,22 @@ Representative names are included where available.
 
 ## Running the Connectors
 
+### ✅ Fixed: Jurisdiction Slug Format
+The connectors initially had incorrect jurisdiction slugs (e.g., `sonoma-county-ca`) but have been updated to the correct format with type prefixes (e.g., `county:sonoma-county-ca`). All 8 North Bay connectors are now properly configured.
+
 ### Manual Trigger (Admin Only)
-Use the Connectors admin page to run connectors manually.
+1. Navigate to `/admin/connectors` in your app
+2. Find a North Bay connector (e.g., "sonoma-county-meetings")
+3. Click "Run now"
+4. Wait for "Last run" to update with stats
 
 ### Automatic Schedule
 All connectors run every 6 hours automatically via cron.
 
-### Test a Single Connector
+### Test a Single Connector via API
 ```bash
 # Example: Run Sonoma County meetings
-curl -X POST 'https://[project-id].supabase.co/functions/v1/run-connector' \
+curl -X POST 'https://dizlzsmsfdtfubopnolf.supabase.co/functions/v1/run-connector' \
   -H "Authorization: Bearer [service-role-key]" \
   -H "Content-Type: application/json" \
   -d '{"connectorId": "[connector-uuid]"}'
