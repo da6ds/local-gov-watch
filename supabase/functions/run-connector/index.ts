@@ -1,10 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const RunConnectorSchema = z.object({
+  connectorId: z.string().uuid()
+});
 
 interface ConnectorStats {
   newCount: number;
@@ -20,7 +26,21 @@ serve(async (req) => {
   }
 
   try {
-    const { connectorId } = await req.json();
+    // Input validation
+    const body = await req.json();
+    const validation = RunConnectorSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid connector ID format' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const { connectorId } = validation.data;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -142,10 +162,18 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    // Log full error server-side for debugging
     console.error("Error running connector:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Return sanitized error to client
+    const errorId = crypto.randomUUID();
+    console.error(`Error ID ${errorId}:`, error instanceof Error ? error.stack : error);
+    
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ 
+        error: 'An error occurred while running the connector. Please contact support if this persists.',
+        error_id: errorId
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

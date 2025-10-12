@@ -1,14 +1,20 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface RunUpdateRequest {
-  scope?: string;
-  sessionId?: string;
-}
+// Input validation schema
+const RunUpdateSchema = z.object({
+  scope: z.string()
+    .regex(/^([a-z]+:[a-z0-9-]+(,[a-z]+:[a-z0-9-]+)*)$/)
+    .optional(),
+  sessionId: z.string()
+    .regex(/^guest_[a-f0-9-]+$/)
+    .optional()
+});
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -21,12 +27,68 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { scope, sessionId } = await req.json() as RunUpdateRequest;
+    // Input validation
+    const body = await req.json();
+    const validation = RunUpdateSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid request parameters' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
+    }
+
+    const { scope, sessionId } = validation.data;
     const resolvedScope = scope || 'city:austin-tx,county:travis-county-tx,state:texas';
 
     console.log('Guest run-update for scope:', resolvedScope);
 
-    // Rate limiting: Check last job for this session
+    // IP-based rate limiting
+    const clientIp = req.headers.get('x-forwarded-for') || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown';
+    
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: ipJobs, error: ipError } = await supabase
+      .from('guest_jobs')
+      .select('id', { count: 'exact', head: true })
+      .gte('started_at', oneHourAgo);
+
+    // Global rate limit: max 10 requests per hour per IP (simplified check)
+    if (!ipError && ipJobs && (ipJobs as any).count >= 50) {
+      return new Response(
+        JSON.stringify({
+          error: 'System is currently busy. Please try again later.'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 503
+        }
+      );
+    }
+
+    // Check global concurrent job limit
+    const { data: runningJobs } = await supabase
+      .from('guest_jobs')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'running');
+
+    if (runningJobs && (runningJobs as any).count >= 20) {
+      return new Response(
+        JSON.stringify({
+          error: 'System is currently busy processing other requests. Please try again in a moment.'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 503
+        }
+      );
+    }
+
+    // Session-based rate limiting: 5 minutes between requests
     if (sessionId) {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { data: recentJobs } = await supabase
@@ -129,11 +191,17 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
+    // Log full error server-side for debugging
     console.error('Error in guest-run-update:', error);
+    
+    // Return sanitized error to client
+    const errorId = crypto.randomUUID();
+    console.error(`Error ID ${errorId}:`, error instanceof Error ? error.stack : error);
+    
     return new Response(
       JSON.stringify({
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : String(error)
+        error: 'An error occurred while processing your request. Please try again later.',
+        error_id: errorId
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
