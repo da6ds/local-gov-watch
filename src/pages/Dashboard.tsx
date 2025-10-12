@@ -3,16 +3,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
-import { TrendingUp, Calendar, FileText, Scale, Vote, Bell, ArrowRight } from "lucide-react";
+import { TrendingUp, Calendar, FileText, Scale, Bell, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, formatDistanceToNow } from "date-fns";
-import { TrendsPlaceholder } from "@/components/TrendsPlaceholder";
+import { TrendingTopicsWidget } from "@/components/TrendingTopicsWidget";
+import { analyzeCombinedTrendingTopics } from "@/lib/trendingTopics";
+import { useState, useEffect, useMemo } from "react";
 import { useDataStatus } from "@/hooks/useDataStatus";
 import { useGuestRunUpdate } from "@/hooks/useGuestRunUpdate";
 import { toast } from "sonner";
-import React, { useState, useEffect } from "react";
 import { LocationSelector } from "@/components/LocationSelector";
 import { Calendar as CalendarComponent } from "@/components/calendar/Calendar";
 import { getGuestScope, setGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
@@ -131,6 +132,12 @@ export default function Dashboard() {
   const upcomingMeetings = dashboardData?.meetings || [];
   const upcomingElections = dashboardData?.elections || [];
 
+  // Calculate trending topics from recent data
+  const trendingTopics = useMemo(() => {
+    if (!recentLegislation || !upcomingMeetings) return [];
+    return analyzeCombinedTrendingTopics(recentLegislation, upcomingMeetings, 8);
+  }, [recentLegislation, upcomingMeetings]);
+
   return (
     <TooltipProvider>
       <Layout>
@@ -172,8 +179,8 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Snapshot Cards */}
-          <div className="grid md:grid-cols-3 gap-3">
+          {/* Snapshot Cards - Only Legislation and Meetings */}
+          <div className="grid md:grid-cols-2 gap-3">
             {/* Recent Legislation */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
@@ -248,46 +255,6 @@ export default function Dashboard() {
                 </Button>
               </CardContent>
             </Card>
-
-            {/* Upcoming Elections */}
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <Link to="/browse/elections" className="group" aria-label="View all upcoming elections">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors text-base" role="heading" aria-level={2}>
-                    <Vote className="h-4 w-4 text-primary" />
-                    Upcoming Elections
-                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
-                  </CardTitle>
-                </Link>
-                <CardDescription className="text-xs">Register and vote</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-2xl font-bold mb-2">{upcomingElections.length}</p>
-                {upcomingElections.length > 0 ? (
-                  <div className="space-y-2 mb-3">
-                    {upcomingElections.slice(0, typeof window !== 'undefined' && window.innerWidth >= 768 ? 5 : 3).map((election: any) => (
-                      <Link
-                        key={election.id}
-                        to={`/election/${election.id}`}
-                        className="block text-sm"
-                      >
-                        <p className="text-foreground hover:text-primary line-clamp-1">
-                          • {election.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {election.date && format(new Date(election.date), 'MMM d, yyyy')}
-                        </p>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground mb-3">No elections scheduled</p>
-                )}
-                <Button variant="link" asChild className="p-0 h-auto text-sm">
-                  <Link to="/browse/elections">View all →</Link>
-                </Button>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Bottom Grid: Calendar & Trends */}
@@ -312,16 +279,17 @@ export default function Dashboard() {
             {/* Trends Card */}
             <Card>
               <CardHeader className="pb-2">
-                <Link to="/browse/trends" className="group" aria-label="View all trends">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer text-base" role="heading" aria-level={2}>
-                    <TrendingUp className="h-4 w-4" />
-                    Trending Topics
-                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
-                  </CardTitle>
-                </Link>
+                <CardTitle className="flex items-center gap-2 text-base" role="heading" aria-level={2}>
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  Trending Topics
+                </CardTitle>
+                <CardDescription className="text-xs">Most mentioned in recent activity</CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
-                <TrendsPlaceholder />
+                <TrendingTopicsWidget 
+                  topics={trendingTopics}
+                  isLoading={dashboardLoading || isAutoRefreshing}
+                />
               </CardContent>
             </Card>
           </div>
