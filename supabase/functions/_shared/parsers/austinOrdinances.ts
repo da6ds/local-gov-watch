@@ -16,6 +16,13 @@ export interface OrdinanceData {
   full_text: string | null;
   ai_summary: string | null;
   tags: string[];
+  author: string | null;
+  author_role: string | null;
+  coauthors: string[];
+  city: string | null;
+  county: string | null;
+  district: string | null;
+  district_number: number | null;
 }
 
 export async function parseAustinOrdinances(
@@ -44,6 +51,13 @@ export async function parseAustinOrdinances(
         full_text: null,
         ai_summary: null,
         tags: ['land-development', 'zoning'],
+        author: 'Zo Qadri',
+        author_role: 'Council Member',
+        coauthors: ['Ryan Alter', 'Leslie Pool'],
+        city: 'Austin',
+        county: 'Travis County',
+        district: 'District 9',
+        district_number: 9,
       },
       {
         external_id: 'ORD-2025-002',
@@ -57,6 +71,13 @@ export async function parseAustinOrdinances(
         full_text: null,
         ai_summary: null,
         tags: ['budget', 'finance'],
+        author: 'Natasha Harper-Madison',
+        author_role: 'Council Member',
+        coauthors: ['Paige Ellis', 'José Velásquez'],
+        city: 'Austin',
+        county: 'Travis County',
+        district: 'District 1',
+        district_number: 1,
       },
       {
         external_id: 'ORD-2025-003',
@@ -70,6 +91,13 @@ export async function parseAustinOrdinances(
         full_text: null,
         ai_summary: null,
         tags: ['housing', 'short-term-rentals'],
+        author: 'Mackenzie Kelly',
+        author_role: 'Council Member',
+        coauthors: ['Chito Vela'],
+        city: 'Austin',
+        county: 'Travis County',
+        district: 'District 6',
+        district_number: 6,
       },
       {
         external_id: 'ORD-2025-004',
@@ -83,6 +111,13 @@ export async function parseAustinOrdinances(
         full_text: null,
         ai_summary: null,
         tags: ['water', 'conservation', 'environment'],
+        author: 'Leslie Pool',
+        author_role: 'Council Member',
+        coauthors: ['Vanessa Fuentes'],
+        city: 'Austin',
+        county: 'Travis County',
+        district: 'District 7',
+        district_number: 7,
       },
       {
         external_id: 'ORD-2025-005',
@@ -96,6 +131,13 @@ export async function parseAustinOrdinances(
         full_text: null,
         ai_summary: null,
         tags: ['housing', 'affordable-housing'],
+        author: 'Paige Ellis',
+        author_role: 'Council Member',
+        coauthors: ['Zo Qadri', 'Ryan Alter'],
+        city: 'Austin',
+        county: 'Travis County',
+        district: 'District 8',
+        district_number: 8,
       },
     ];
     
@@ -156,6 +198,13 @@ export async function parseAustinOrdinances(
               full_text: ordinance.full_text,
               ai_summary: ordinance.ai_summary,
               tags: ordinance.tags,
+              author: ordinance.author,
+              author_role: ordinance.author_role,
+              coauthors: ordinance.coauthors,
+              city: ordinance.city,
+              county: ordinance.county,
+              district: ordinance.district,
+              district_number: ordinance.district_number,
               updated_at: new Date().toISOString(),
             })
             .eq('id', existing.id);
@@ -178,6 +227,13 @@ export async function parseAustinOrdinances(
               full_text: ordinance.full_text,
               ai_summary: ordinance.ai_summary,
               tags: ordinance.tags,
+              author: ordinance.author,
+              author_role: ordinance.author_role,
+              coauthors: ordinance.coauthors,
+              city: ordinance.city,
+              county: ordinance.county,
+              district: ordinance.district,
+              district_number: ordinance.district_number,
             })
             .select('id')
             .single();

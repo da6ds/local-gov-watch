@@ -465,8 +465,15 @@ export type Database = {
       legislation: {
         Row: {
           ai_summary: string | null
+          author: string | null
+          author_role: string | null
+          city: string | null
+          coauthors: string[] | null
           content_hash: string | null
+          county: string | null
           created_at: string | null
+          district: string | null
+          district_number: number | null
           districts: string[] | null
           doc_url: string | null
           effective_at: string | null
@@ -491,8 +498,15 @@ export type Database = {
         }
         Insert: {
           ai_summary?: string | null
+          author?: string | null
+          author_role?: string | null
+          city?: string | null
+          coauthors?: string[] | null
           content_hash?: string | null
+          county?: string | null
           created_at?: string | null
+          district?: string | null
+          district_number?: number | null
           districts?: string[] | null
           doc_url?: string | null
           effective_at?: string | null
@@ -517,8 +531,15 @@ export type Database = {
         }
         Update: {
           ai_summary?: string | null
+          author?: string | null
+          author_role?: string | null
+          city?: string | null
+          coauthors?: string[] | null
           content_hash?: string | null
+          county?: string | null
           created_at?: string | null
+          district?: string | null
+          district_number?: number | null
           districts?: string[] | null
           doc_url?: string | null
           effective_at?: string | null

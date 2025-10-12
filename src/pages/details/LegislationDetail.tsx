@@ -12,7 +12,7 @@ import { LegislationTimeline } from "@/components/legislation/LegislationTimelin
 import { PDFViewer } from "@/components/legislation/PDFViewer";
 import { QuickActions } from "@/components/legislation/QuickActions";
 import { RelatedInfo } from "@/components/legislation/RelatedInfo";
-import { Copy, Tag, ArrowLeft, Home, ChevronDown, ExternalLink } from "lucide-react";
+import { Copy, Tag, ArrowLeft, Home, ChevronDown, ExternalLink, User, Users, MapPin, Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -201,31 +201,81 @@ export default function LegislationDetail() {
               )}
               {legislation.status && <StatusBadge status={legislation.status} />}
             </div>
-
-            {/* Dates */}
-            {(legislation.introduced_at || legislation.passed_at || legislation.effective_at) && (
-              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                {legislation.introduced_at && (
-                  <div>
-                    <span className="font-medium">Introduced:</span>{" "}
-                    {format(new Date(legislation.introduced_at), "MMM d, yyyy")}
-                  </div>
-                )}
-                {legislation.passed_at && (
-                  <div>
-                    <span className="font-medium">Passed:</span>{" "}
-                    {format(new Date(legislation.passed_at), "MMM d, yyyy")}
-                  </div>
-                )}
-                {legislation.effective_at && (
-                  <div>
-                    <span className="font-medium">Effective:</span>{" "}
-                    {format(new Date(legislation.effective_at), "MMM d, yyyy")}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
+
+          {/* Metadata Card - Mobile */}
+          <Card className="p-3">
+            <div className="space-y-2 text-xs">
+              {/* Author */}
+              {legislation.author && (
+                <div className="flex gap-2">
+                  <User className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <span className="font-semibold">{legislation.author}</span>
+                    {legislation.author_role && (
+                      <span className="text-muted-foreground">, {legislation.author_role}</span>
+                    )}
+                    {legislation.district && (
+                      <span className="text-primary"> ({legislation.district})</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Co-authors */}
+              {legislation.coauthors && legislation.coauthors.length > 0 && (
+                <div className="flex gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 flex flex-wrap gap-1">
+                    {legislation.coauthors.map((coauthor, idx) => (
+                      <Badge key={idx} variant="secondary" className="text-xs py-0 px-1.5">
+                        {coauthor}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Location */}
+              {(legislation.city || legislation.county) && (
+                <div className="flex gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    {legislation.city && <span>{legislation.city}</span>}
+                    {legislation.city && legislation.county && <span>, </span>}
+                    {legislation.county && <span>{legislation.county}</span>}
+                  </div>
+                </div>
+              )}
+
+              {/* Dates */}
+              {(legislation.introduced_at || legislation.passed_at || legislation.effective_at) && (
+                <div className="flex gap-2">
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 flex flex-col gap-0.5">
+                    {legislation.introduced_at && (
+                      <div>
+                        <span className="font-medium">Introduced:</span>{" "}
+                        {format(new Date(legislation.introduced_at), "MMM d, yyyy")}
+                      </div>
+                    )}
+                    {legislation.passed_at && (
+                      <div>
+                        <span className="font-medium">Passed:</span>{" "}
+                        {format(new Date(legislation.passed_at), "MMM d, yyyy")}
+                      </div>
+                    )}
+                    {legislation.effective_at && (
+                      <div>
+                        <span className="font-medium">Effective:</span>{" "}
+                        {format(new Date(legislation.effective_at), "MMM d, yyyy")}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
 
           {/* AI Summary - only show if meaningful */}
           {hasMeaningfulSummary && (
@@ -405,29 +455,99 @@ export default function LegislationDetail() {
                 )}
                 {legislation.status && <StatusBadge status={legislation.status} />}
               </div>
-
-              {/* Dates */}
-              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                {legislation.introduced_at && (
-                  <div>
-                    <span className="font-medium">Introduced:</span>{" "}
-                    {format(new Date(legislation.introduced_at), "PPP")}
-                  </div>
-                )}
-                {legislation.passed_at && (
-                  <div>
-                    <span className="font-medium">Passed:</span>{" "}
-                    {format(new Date(legislation.passed_at), "PPP")}
-                  </div>
-                )}
-                {legislation.effective_at && (
-                  <div>
-                    <span className="font-medium">Effective:</span>{" "}
-                    {format(new Date(legislation.effective_at), "PPP")}
-                  </div>
-                )}
-              </div>
             </div>
+
+            {/* Metadata Card - Desktop */}
+            <Card>
+              <CardContent className="p-4">
+                <div className="grid grid-cols-1 gap-3 text-sm">
+                  {/* Author */}
+                  {legislation.author && (
+                    <div className="flex gap-3">
+                      <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="font-semibold">{legislation.author}</div>
+                        {legislation.author_role && (
+                          <div className="text-muted-foreground text-xs">{legislation.author_role}</div>
+                        )}
+                        {legislation.district && (
+                          <Badge variant="outline" className="mt-1 text-xs">
+                            {legislation.district}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Co-authors */}
+                  {legislation.coauthors && legislation.coauthors.length > 0 && (
+                    <div className="flex gap-3">
+                      <Users className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-muted-foreground text-xs mb-1">Co-sponsored by</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {legislation.coauthors.map((coauthor, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">
+                              {coauthor}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Location */}
+                  {(legislation.city || legislation.county) && (
+                    <div className="flex gap-3">
+                      <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-muted-foreground text-xs mb-1">Jurisdiction</div>
+                        <div>
+                          {legislation.city && <span className="font-medium">{legislation.city}</span>}
+                          {legislation.city && legislation.county && <span>, </span>}
+                          {legislation.county && <span className="text-muted-foreground">{legislation.county}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dates */}
+                  {(legislation.introduced_at || legislation.passed_at || legislation.effective_at) && (
+                    <div className="flex gap-3">
+                      <CalendarIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="space-y-1">
+                          {legislation.introduced_at && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground text-xs">Introduced</span>
+                              <span className="font-medium text-xs">
+                                {format(new Date(legislation.introduced_at), "MMM d, yyyy")}
+                              </span>
+                            </div>
+                          )}
+                          {legislation.passed_at && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground text-xs">Passed</span>
+                              <span className="font-medium text-xs">
+                                {format(new Date(legislation.passed_at), "MMM d, yyyy")}
+                              </span>
+                            </div>
+                          )}
+                          {legislation.effective_at && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground text-xs">Effective</span>
+                              <span className="font-medium text-xs">
+                                {format(new Date(legislation.effective_at), "MMM d, yyyy")}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* AI Summary - only show if meaningful content exists */}
             {hasMeaningfulSummary && (

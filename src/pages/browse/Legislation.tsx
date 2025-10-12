@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, User, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
@@ -144,6 +144,21 @@ export default function BrowseLegislation() {
                   </div>
 
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
+                    {item.author && (
+                      <div className="flex items-center gap-1">
+                        <User className="h-3.5 w-3.5" />
+                        <span>{item.author}</span>
+                        {item.district && (
+                          <span className="text-primary">({item.district})</span>
+                        )}
+                      </div>
+                    )}
+                    {item.city && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        <span>{item.city}</span>
+                      </div>
+                    )}
                     {item.introduced_at && (
                       <div className="flex items-center gap-1">
                         <span>Introduced {format(new Date(item.introduced_at), 'MMM d, yyyy')}</span>
