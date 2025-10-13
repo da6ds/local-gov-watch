@@ -2,6 +2,7 @@ export interface AgendaLegislation {
   type: 'ordinance' | 'resolution' | 'item';
   number: string;
   title: string;
+  author?: string;
   status: 'introduced' | 'public_hearing' | 'passed' | 'continued' | 'tabled';
   action_taken?: string;
 }
@@ -74,12 +75,14 @@ export function extractLegislationFromAgenda(
         continue;
       }
       
-      console.log('✓ Found ordinance:', number, title.substring(0, 50));
+      const author = extractAuthorFromContext(agendaText, match.index);
+      console.log('✓ Found ordinance:', number, title.substring(0, 50), author ? `by ${author}` : '');
       
       legislation.push({
         type: 'ordinance',
         number: number,
         title: cleanTitle(title),
+        author: author,
         status: deriveStatusFromContext(agendaText, match.index),
       });
     }
@@ -101,12 +104,14 @@ export function extractLegislationFromAgenda(
         continue;
       }
       
-      console.log('✓ Found resolution:', number, title.substring(0, 50));
+      const author = extractAuthorFromContext(agendaText, match.index);
+      console.log('✓ Found resolution:', number, title.substring(0, 50), author ? `by ${author}` : '');
       
       legislation.push({
         type: 'resolution',
         number: number,
         title: cleanTitle(title),
+        author: author,
         status: deriveStatusFromContext(agendaText, match.index),
       });
     }
@@ -168,18 +173,64 @@ function isValidLegislationTitle(title: string): boolean {
 }
 
 function cleanTitle(title: string): string {
-  // Remove common prefixes
-  title = title.replace(/^(An|A|The)\s+/i, '');
+  // Remove excessive whitespace and line breaks
+  title = title.replace(/\s+/g, ' ').trim();
   
-  // Remove trailing punctuation except periods
-  title = title.replace(/[,;:\-_]+$/, '');
+  // Remove common PDF artifacts
+  title = title.replace(/\f/g, ''); // Form feed
+  title = title.replace(/\r/g, ''); // Carriage return
+  
+  // Remove page numbers and headers
+  title = title.replace(/Page \d+ of \d+/gi, '');
+  title = title.replace(/^[\d\s]+/, ''); // Leading numbers/spaces
+  
+  // Remove common redundant prefixes
+  title = title.replace(/^(?:An|A|The)\s+(?:Ordinance|Resolution)\s+/i, '');
+  title = title.replace(/^to\s+/i, '');
   
   // Capitalize first letter
   if (title.length > 0) {
     title = title.charAt(0).toUpperCase() + title.slice(1);
   }
   
+  // Remove trailing punctuation except periods
+  title = title.replace(/[,;:\-_]+$/, '');
+  
+  // Truncate if too long (max 200 chars)
+  if (title.length > 200) {
+    title = title.substring(0, 197) + '...';
+  }
+  
   return title.trim();
+}
+
+function extractAuthorFromContext(text: string, matchIndex: number): string | undefined {
+  // Look at text around the match (500 chars before and after)
+  const start = Math.max(0, matchIndex - 500);
+  const end = Math.min(text.length, matchIndex + 500);
+  const context = text.substring(start, end);
+  
+  // Common patterns for author/sponsor in agendas
+  const authorPatterns = [
+    /(?:Author|Sponsor|Introduced by|By):\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+    /(?:Supervisor|Councilmember|Member)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+    /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*(?:Supervisor|Councilmember|District)/i,
+  ];
+  
+  for (const pattern of authorPatterns) {
+    const match = context.match(pattern);
+    if (match && match[1]) {
+      // Clean up the author name
+      const name = match[1].trim();
+      // Exclude common false positives
+      const excludeList = ['Board', 'Council', 'Staff', 'Department', 'Committee', 'Clerk', 'Manager', 'Attorney'];
+      if (!excludeList.some(exclude => name.includes(exclude))) {
+        return name;
+      }
+    }
+  }
+  
+  return undefined;
 }
 
 function deriveStatusFromContext(text: string, matchIndex: number): AgendaLegislation['status'] {

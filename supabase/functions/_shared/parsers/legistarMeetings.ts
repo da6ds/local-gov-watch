@@ -170,6 +170,7 @@ export async function parseLegistarMeetings(
                   introduced_at: meeting.starts_at.toISOString(),
                   doc_url: meeting.agenda_url, // Link to the agenda PDF
                   tags: extractKeywordTags(item.title),
+                  author: item.author || null,
                 };
                 
                 if (existingLeg) {
