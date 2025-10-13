@@ -232,7 +232,12 @@ END:VCALENDAR`;
               recordingUrl={meeting.recording_url || videoUrl}
               agendaAvailableAt={meeting.agenda_available_at}
               minutesAvailableAt={meeting.minutes_available_at}
+              agendaStatus={(meeting as any).agenda_status}
+              minutesStatus={(meeting as any).minutes_status}
+              packetUrls={(meeting as any).packet_urls}
+              votingRecords={(meeting as any).voting_records}
               status={meeting.status}
+              startsAt={meeting.starts_at}
             />
 
             {/* Metadata */}

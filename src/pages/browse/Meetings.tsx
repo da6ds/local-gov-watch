@@ -15,6 +15,7 @@ import { useFilteredMeetings } from "@/hooks/useFilteredQueries";
 import { useLocationFilter } from "@/contexts/LocationFilterContext";
 import { CityBadge } from "@/components/CityBadge";
 import { MeetingTypeBadge } from "@/components/MeetingTypeBadge";
+import { MeetingStatusBadge } from "@/components/meeting/MeetingStatusBadge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Gavel } from "lucide-react";
@@ -67,15 +68,21 @@ export default function BrowseMeetings() {
       <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer">
         <div className="flex items-start justify-between gap-4 mb-3">
           <div className="flex-1">
-            <div className="flex items-start gap-2 mb-2">
-              <h3 className="text-lg font-semibold flex-1">{meeting.title}</h3>
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               {meeting.meeting_type && (
                 <MeetingTypeBadge 
                   meetingType={meeting.meeting_type} 
                   isLegislative={meeting.is_legislative || false}
                 />
               )}
+              <MeetingStatusBadge
+                status={meeting.status || 'upcoming'}
+                agendaStatus={(meeting as any).agenda_status}
+                minutesStatus={(meeting as any).minutes_status}
+                startsAt={meeting.starts_at}
+              />
             </div>
+            <h3 className="text-lg font-semibold">{meeting.title}</h3>
             {meeting.body_name && (
               <p className="text-muted-foreground text-sm">{meeting.body_name}</p>
             )}
