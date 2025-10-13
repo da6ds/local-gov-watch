@@ -622,9 +622,11 @@ export type Database = {
           external_id: string | null
           extracted_text: string | null
           id: string
+          is_legislative: boolean | null
           jurisdiction_id: string | null
           livestream_url: string | null
           location: string | null
+          meeting_type: Database["public"]["Enums"]["meeting_type"] | null
           minutes_available_at: string | null
           minutes_url: string | null
           occurred_at: string | null
@@ -658,9 +660,11 @@ export type Database = {
           external_id?: string | null
           extracted_text?: string | null
           id?: string
+          is_legislative?: boolean | null
           jurisdiction_id?: string | null
           livestream_url?: string | null
           location?: string | null
+          meeting_type?: Database["public"]["Enums"]["meeting_type"] | null
           minutes_available_at?: string | null
           minutes_url?: string | null
           occurred_at?: string | null
@@ -694,9 +698,11 @@ export type Database = {
           external_id?: string | null
           extracted_text?: string | null
           id?: string
+          is_legislative?: boolean | null
           jurisdiction_id?: string | null
           livestream_url?: string | null
           location?: string | null
+          meeting_type?: Database["public"]["Enums"]["meeting_type"] | null
           minutes_available_at?: string | null
           minutes_url?: string | null
           occurred_at?: string | null
@@ -1392,6 +1398,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      meeting_type:
+        | "city_council"
+        | "board_of_supervisors"
+        | "committee"
+        | "commission"
+        | "authority"
       user_role: "activist" | "government" | "nonprofit"
     }
     CompositeTypes: {
@@ -1521,6 +1533,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      meeting_type: [
+        "city_council",
+        "board_of_supervisors",
+        "committee",
+        "commission",
+        "authority",
+      ],
       user_role: ["activist", "government", "nonprofit"],
     },
   },

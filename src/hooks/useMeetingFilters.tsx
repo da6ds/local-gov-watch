@@ -3,11 +3,20 @@ import { MeetingFilterOptions } from '@/components/MeetingFilters';
 
 const STORAGE_KEY = 'meeting-filters';
 
+export type MeetingType = 
+  | 'city_council'
+  | 'board_of_supervisors'
+  | 'committee'
+  | 'commission'
+  | 'authority';
+
 const getDefaultFilters = (): MeetingFilterOptions => ({
   sortBy: 'date_desc',
   status: null,
   city: null,
-  bodyName: null
+  bodyName: null,
+  meetingTypes: [],
+  legislativeOnly: false
 });
 
 export const useMeetingFilters = () => {
@@ -18,7 +27,12 @@ export const useMeetingFilters = () => {
     const stored = sessionStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        // Ensure new fields exist
+        return {
+          ...getDefaultFilters(),
+          ...parsed
+        };
       } catch {
         return getDefaultFilters();
       }

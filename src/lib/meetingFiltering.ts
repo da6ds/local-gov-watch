@@ -1,9 +1,11 @@
-import { MeetingFilterOptions } from '@/components/MeetingFilters';
+import { MeetingFilterOptions, MeetingType } from '@/components/MeetingFilters';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
 
 export const filterMeetings = <T extends {
   starts_at?: string | null;
   body_name?: string | null;
+  meeting_type?: string | null;
+  is_legislative?: boolean | null;
   jurisdiction?: {
     name?: string;
   } | null;
@@ -49,6 +51,18 @@ export const filterMeetings = <T extends {
       return false;
     }
 
+    // Meeting type filter
+    if (filters.meetingTypes && filters.meetingTypes.length > 0) {
+      if (!item.meeting_type || !filters.meetingTypes.includes(item.meeting_type as MeetingType)) {
+        return false;
+      }
+    }
+
+    // Legislative only filter
+    if (filters.legislativeOnly && !item.is_legislative) {
+      return false;
+    }
+
     return true;
   });
 };
@@ -58,20 +72,32 @@ export const filterMeetings = <T extends {
  */
 export const getAvailableMeetingFilters = <T extends {
   body_name?: string | null;
+  meeting_type?: string | null;
   jurisdiction?: {
     name?: string;
   } | null;
 }>(items: T[]) => {
   const cities = new Set<string>();
   const bodyNames = new Set<string>();
+  const typeCounts: Record<MeetingType, number> = {
+    city_council: 0,
+    board_of_supervisors: 0,
+    committee: 0,
+    commission: 0,
+    authority: 0
+  };
 
   items.forEach(item => {
     if (item.jurisdiction?.name) cities.add(item.jurisdiction.name);
     if (item.body_name) bodyNames.add(item.body_name);
+    if (item.meeting_type && item.meeting_type in typeCounts) {
+      typeCounts[item.meeting_type as MeetingType]++;
+    }
   });
 
   return {
     cities: Array.from(cities).sort(),
-    bodyNames: Array.from(bodyNames).sort()
+    bodyNames: Array.from(bodyNames).sort(),
+    typeCounts
   };
 };

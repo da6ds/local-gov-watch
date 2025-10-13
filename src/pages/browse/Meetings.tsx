@@ -14,6 +14,10 @@ import { format } from "date-fns";
 import { useFilteredMeetings } from "@/hooks/useFilteredQueries";
 import { useLocationFilter } from "@/contexts/LocationFilterContext";
 import { CityBadge } from "@/components/CityBadge";
+import { MeetingTypeBadge } from "@/components/MeetingTypeBadge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Gavel } from "lucide-react";
 
 export default function BrowseMeetings() {
   const { selectedLocationSlugs } = useLocationFilter();
@@ -25,7 +29,17 @@ export default function BrowseMeetings() {
 
   // Get available filter options
   const availableFilters = useMemo(() => {
-    if (!meetings) return { cities: [], bodyNames: [] };
+    if (!meetings) return { 
+      cities: [], 
+      bodyNames: [], 
+      typeCounts: { 
+        city_council: 0, 
+        board_of_supervisors: 0, 
+        committee: 0, 
+        commission: 0, 
+        authority: 0 
+      } 
+    };
     return getAvailableMeetingFilters(meetings);
   }, [meetings]);
 
@@ -53,7 +67,15 @@ export default function BrowseMeetings() {
       <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer">
         <div className="flex items-start justify-between gap-4 mb-3">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold mb-1">{meeting.title}</h3>
+            <div className="flex items-start gap-2 mb-2">
+              <h3 className="text-lg font-semibold flex-1">{meeting.title}</h3>
+              {meeting.meeting_type && (
+                <MeetingTypeBadge 
+                  meetingType={meeting.meeting_type} 
+                  isLegislative={meeting.is_legislative || false}
+                />
+              )}
+            </div>
             {meeting.body_name && (
               <p className="text-muted-foreground text-sm">{meeting.body_name}</p>
             )}
@@ -107,7 +129,24 @@ export default function BrowseMeetings() {
   return (
     <Layout>
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Browse Meetings</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Browse Meetings</h1>
+          
+          {/* Legislative Only Toggle */}
+          <div className="flex items-center gap-3 bg-card border rounded-lg px-4 py-2">
+            <Gavel className="h-4 w-4 text-amber-600" />
+            <Label htmlFor="legislative-mode" className="text-sm font-medium cursor-pointer">
+              Legislative Bodies Only
+            </Label>
+            <Switch
+              id="legislative-mode"
+              checked={filters.legislativeOnly}
+              onCheckedChange={(checked) => 
+                setFilters({ ...filters, legislativeOnly: checked })
+              }
+            />
+          </div>
+        </div>
 
         {/* Tracked Terms Indicator */}
         {hasTrackedTermsFilter && (

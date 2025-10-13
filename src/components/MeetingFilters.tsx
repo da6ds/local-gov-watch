@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, X, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { MeetingTypeFilter } from './MeetingTypeFilter';
 
 export type MeetingSortOption = 
   | 'date_desc'
@@ -9,11 +10,20 @@ export type MeetingSortOption =
   | 'title_asc'
   | 'title_desc';
 
+export type MeetingType = 
+  | 'city_council'
+  | 'board_of_supervisors'
+  | 'committee'
+  | 'commission'
+  | 'authority';
+
 export interface MeetingFilterOptions {
   sortBy: MeetingSortOption;
   status: string | null;
   city: string | null;
   bodyName: string | null;
+  meetingTypes: MeetingType[];
+  legislativeOnly: boolean;
 }
 
 interface MeetingFiltersProps {
@@ -22,6 +32,7 @@ interface MeetingFiltersProps {
   availableFilters: {
     cities: string[];
     bodyNames: string[];
+    typeCounts: Record<MeetingType, number>;
   };
 }
 
@@ -34,7 +45,9 @@ export const MeetingFilters = ({
   const activeFilterCount = [
     currentFilters.status,
     currentFilters.city,
-    currentFilters.bodyName
+    currentFilters.bodyName,
+    currentFilters.meetingTypes.length > 0 ? 'types' : null,
+    currentFilters.legislativeOnly ? 'legislative' : null
   ].filter(val => val !== null).length;
 
   const handleSortChange = (value: MeetingSortOption) => {
@@ -50,14 +63,25 @@ export const MeetingFilters = ({
       sortBy: currentFilters.sortBy,
       status: null,
       city: null,
-      bodyName: null
+      bodyName: null,
+      meetingTypes: [],
+      legislativeOnly: false
     });
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-card rounded-lg border mb-6">
-      {/* Sort Control and Filter Toggle */}
-      <div className="flex flex-wrap items-center gap-4">
+    <div className="space-y-4 mb-6">
+      {/* Meeting Type Filter - Always Visible */}
+      <MeetingTypeFilter
+        selectedTypes={currentFilters.meetingTypes}
+        onTypesChange={(types) => handleFilterChange('meetingTypes', types)}
+        typeCounts={availableFilters.typeCounts}
+      />
+
+      {/* Other Filters */}
+      <div className="flex flex-col gap-4 p-4 bg-card rounded-lg border">
+        {/* Sort Control and Filter Toggle */}
+        <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
           <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
             Sort by:
@@ -219,6 +243,7 @@ export const MeetingFilters = ({
           )}
         </div>
       )}
+      </div>
     </div>
   );
 };

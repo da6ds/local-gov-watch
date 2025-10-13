@@ -2,6 +2,7 @@ import { politeFetch, loadHTML, safeText, normalizeDate, createExternalId, Inges
 import { summarize } from '../ai.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { extractLegislationFromAgenda } from './agendaItemParser.ts';
+import { determineMeetingType } from '../meetingTypeHelper.ts';
 
 const MEETINGS_PAGE_LIMIT = parseInt(Deno.env.get('MEETINGS_PAGE_LIMIT') || '5');
 
@@ -206,12 +207,17 @@ export async function parseLegistarMeetings(
         
         let itemId: string | null = null;
 
+        // Determine meeting type
+        const { meetingType, isLegislative } = determineMeetingType(meeting.body_name);
+
         if (existing) {
           await supabase
             .from('meeting')
             .update({
               title: meeting.title,
               body_name: meeting.body_name,
+              meeting_type: meetingType,
+              is_legislative: isLegislative,
               starts_at: meeting.starts_at.toISOString(),
               ends_at: meeting.ends_at?.toISOString(),
               location: meeting.location,
@@ -233,6 +239,8 @@ export async function parseLegistarMeetings(
               external_id: meeting.external_id,
               title: meeting.title,
               body_name: meeting.body_name,
+              meeting_type: meetingType,
+              is_legislative: isLegislative,
               starts_at: meeting.starts_at.toISOString(),
               ends_at: meeting.ends_at?.toISOString(),
               location: meeting.location,

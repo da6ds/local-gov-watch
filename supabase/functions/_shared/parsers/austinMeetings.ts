@@ -1,6 +1,7 @@
 import { politeFetch, loadHTML, safeText, normalizeDate, createExternalId, IngestStats, addError, extractPdfText } from '../helpers.ts';
 import { summarize } from '../ai.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { determineMeetingType } from '../meetingTypeHelper.ts';
 
 const MEETINGS_PAGE_LIMIT = parseInt(Deno.env.get('MEETINGS_PAGE_LIMIT') || '3');
 
@@ -148,6 +149,9 @@ export async function parseAustinMeetings(
           .eq('external_id', meeting.external_id)
           .single();
         
+        // Determine meeting type
+        const { meetingType, isLegislative } = determineMeetingType(meeting.body_name);
+
         let itemId: string | null = null;
 
         if (existing) {
@@ -156,6 +160,8 @@ export async function parseAustinMeetings(
             .update({
               title: meeting.title,
               body_name: meeting.body_name,
+              meeting_type: meetingType,
+              is_legislative: isLegislative,
               starts_at: meeting.starts_at.toISOString(),
               ends_at: meeting.ends_at?.toISOString(),
               location: meeting.location,
@@ -177,6 +183,8 @@ export async function parseAustinMeetings(
               external_id: meeting.external_id,
               title: meeting.title,
               body_name: meeting.body_name,
+              meeting_type: meetingType,
+              is_legislative: isLegislative,
               starts_at: meeting.starts_at.toISOString(),
               ends_at: meeting.ends_at?.toISOString(),
               location: meeting.location,
