@@ -54,7 +54,9 @@ export function MeetingDocuments({
   status = 'upcoming',
   startsAt
 }: MeetingDocumentsProps) {
-  const hasMultipleDocs = [agendaUrl, minutesUrl, extractedText].filter(Boolean).length > 1;
+  // Always show tabs if we have agenda OR if meeting is completed (to show minutes section)
+  const shouldShowTabs = agendaUrl || extractedText || (status === 'completed');
+  const hasMultipleDocs = shouldShowTabs;
   const agendaIsNew = isDocumentRecent(agendaAvailableAt);
   const minutesAreNew = isDocumentRecent(minutesAvailableAt);
   
@@ -311,11 +313,6 @@ export function MeetingDocuments({
                 </p>
               </div>
               {renderPacketDocuments()}
-              <iframe 
-                src={agendaUrl}
-                className="w-full h-[600px] md:h-[800px] border rounded mt-4"
-                title="Meeting Agenda"
-              />
             </>
           )}
           
@@ -345,11 +342,6 @@ export function MeetingDocuments({
                 </div>
               </div>
               {renderVotingRecords()}
-              <iframe 
-                src={minutesUrl}
-                className="w-full h-[600px] md:h-[800px] border rounded mt-4"
-                title="Meeting Minutes"
-              />
             </>
           )}
           
@@ -372,15 +364,15 @@ export function MeetingDocuments({
       </CardHeader>
       <CardContent>
         {renderQuickActions()}
-        <Tabs defaultValue={agendaUrl ? "agenda" : minutesUrl ? "minutes" : "text"}>
-          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${[agendaUrl, minutesUrl, extractedText].filter(Boolean).length}, 1fr)` }}>
+        <Tabs defaultValue={agendaUrl ? "agenda" : status === 'completed' ? "minutes" : "text"}>
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${[agendaUrl, status === 'completed', extractedText].filter(Boolean).length}, 1fr)` }}>
             {agendaUrl && (
               <TabsTrigger value="agenda" className="flex items-center gap-1">
                 Agenda
                 {agendaIsNew && <Badge variant="secondary" className="text-xs ml-1">New</Badge>}
               </TabsTrigger>
             )}
-            {minutesUrl && (
+            {status === 'completed' && (
               <TabsTrigger value="minutes" className="flex items-center gap-1">
                 Minutes
                 {minutesAreNew && <Badge variant="secondary" className="text-xs ml-1">New</Badge>}
@@ -421,46 +413,55 @@ export function MeetingDocuments({
                 </p>
               </div>
               {renderPacketDocuments()}
-              <iframe 
-                src={agendaUrl}
-                className="w-full h-[600px] md:h-[800px] border rounded"
-                title="Meeting Agenda"
-              />
             </TabsContent>
           )}
 
-          {minutesUrl && (
+          {status === 'completed' && (
             <TabsContent value="minutes" className="mt-4 space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  {getStatusBadge('minutes', minutesStatus)}
-                  {minutesAvailableAt && (
-                    <span className="text-sm text-muted-foreground">
-                      Published: {format(new Date(minutesAvailableAt), 'MMMM d, yyyy')}
-                    </span>
-                  )}
+              {minutesUrl ? (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge('minutes', minutesStatus)}
+                      {minutesAvailableAt && (
+                        <span className="text-sm text-muted-foreground">
+                          Published: {format(new Date(minutesAvailableAt), 'MMMM d, yyyy')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" asChild>
+                        <a href={minutesUrl} target="_blank" rel="noopener noreferrer">
+                          View Minutes PDF
+                          <ExternalLink className="h-3 w-3 ml-2" />
+                        </a>
+                      </Button>
+                      <Button size="sm" variant="outline" asChild>
+                        <a href={minutesUrl} download>
+                          <Download className="h-4 w-4 mr-2" />
+                          Download
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                  {renderVotingRecords()}
+                </>
+              ) : (
+                <div className="space-y-3 py-4">
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge('minutes', minutesStatus)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    📝 Minutes Not Yet Published
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Minutes typically take 2-4 weeks to be approved and published after a meeting.
+                    {startsAt && (
+                      <> Check back after {format(new Date(new Date(startsAt).getTime() + 14 * 24 * 60 * 60 * 1000), 'MMMM d, yyyy')}.</>
+                    )}
+                  </p>
                 </div>
-                <div className="flex gap-2">
-                  <Button size="sm" asChild>
-                    <a href={minutesUrl} target="_blank" rel="noopener noreferrer">
-                      View Minutes PDF
-                      <ExternalLink className="h-3 w-3 ml-2" />
-                    </a>
-                  </Button>
-                  <Button size="sm" variant="outline" asChild>
-                    <a href={minutesUrl} download>
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </a>
-                  </Button>
-                </div>
-              </div>
-              {renderVotingRecords()}
-              <iframe 
-                src={minutesUrl}
-                className="w-full h-[600px] md:h-[800px] border rounded"
-                title="Meeting Minutes"
-              />
+              )}
             </TabsContent>
           )}
 
