@@ -606,6 +606,9 @@ export type Database = {
       meeting: {
         Row: {
           agenda_available_at: string | null
+          agenda_status:
+            | Database["public"]["Enums"]["agenda_status_enum"]
+            | null
           agenda_url: string | null
           ai_summary: string | null
           assembly_member: string | null
@@ -628,8 +631,12 @@ export type Database = {
           location: string | null
           meeting_type: Database["public"]["Enums"]["meeting_type"] | null
           minutes_available_at: string | null
+          minutes_status:
+            | Database["public"]["Enums"]["minutes_status_enum"]
+            | null
           minutes_url: string | null
           occurred_at: string | null
+          packet_urls: Json | null
           recording_url: string | null
           search_vector: unknown | null
           source_id: string | null
@@ -641,9 +648,13 @@ export type Database = {
           status: string | null
           title: string | null
           updated_at: string | null
+          voting_records: Json | null
         }
         Insert: {
           agenda_available_at?: string | null
+          agenda_status?:
+            | Database["public"]["Enums"]["agenda_status_enum"]
+            | null
           agenda_url?: string | null
           ai_summary?: string | null
           assembly_member?: string | null
@@ -666,8 +677,12 @@ export type Database = {
           location?: string | null
           meeting_type?: Database["public"]["Enums"]["meeting_type"] | null
           minutes_available_at?: string | null
+          minutes_status?:
+            | Database["public"]["Enums"]["minutes_status_enum"]
+            | null
           minutes_url?: string | null
           occurred_at?: string | null
+          packet_urls?: Json | null
           recording_url?: string | null
           search_vector?: unknown | null
           source_id?: string | null
@@ -679,9 +694,13 @@ export type Database = {
           status?: string | null
           title?: string | null
           updated_at?: string | null
+          voting_records?: Json | null
         }
         Update: {
           agenda_available_at?: string | null
+          agenda_status?:
+            | Database["public"]["Enums"]["agenda_status_enum"]
+            | null
           agenda_url?: string | null
           ai_summary?: string | null
           assembly_member?: string | null
@@ -704,8 +723,12 @@ export type Database = {
           location?: string | null
           meeting_type?: Database["public"]["Enums"]["meeting_type"] | null
           minutes_available_at?: string | null
+          minutes_status?:
+            | Database["public"]["Enums"]["minutes_status_enum"]
+            | null
           minutes_url?: string | null
           occurred_at?: string | null
+          packet_urls?: Json | null
           recording_url?: string | null
           search_vector?: unknown | null
           source_id?: string | null
@@ -717,6 +740,7 @@ export type Database = {
           status?: string | null
           title?: string | null
           updated_at?: string | null
+          voting_records?: Json | null
         }
         Relationships: [
           {
@@ -1371,6 +1395,10 @@ export type Database = {
         Args: { token: string }
         Returns: boolean
       }
+      update_meeting_statuses: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       vector_avg: {
         Args: { "": number[] }
         Returns: string
@@ -1397,6 +1425,7 @@ export type Database = {
       }
     }
     Enums: {
+      agenda_status_enum: "not_published" | "available" | "unavailable"
       app_role: "admin" | "moderator" | "user"
       meeting_type:
         | "city_council"
@@ -1404,6 +1433,11 @@ export type Database = {
         | "committee"
         | "commission"
         | "authority"
+      minutes_status_enum:
+        | "not_published"
+        | "draft"
+        | "approved"
+        | "unavailable"
       user_role: "activist" | "government" | "nonprofit"
     }
     CompositeTypes: {
@@ -1532,6 +1566,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agenda_status_enum: ["not_published", "available", "unavailable"],
       app_role: ["admin", "moderator", "user"],
       meeting_type: [
         "city_council",
@@ -1539,6 +1574,12 @@ export const Constants = {
         "committee",
         "commission",
         "authority",
+      ],
+      minutes_status_enum: [
+        "not_published",
+        "draft",
+        "approved",
+        "unavailable",
       ],
       user_role: ["activist", "government", "nonprofit"],
     },

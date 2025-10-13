@@ -152,6 +152,23 @@ export async function parseAustinMeetings(
         // Determine meeting type
         const { meetingType, isLegislative } = determineMeetingType(meeting.body_name);
 
+        // Determine meeting status based on start date
+        const now = new Date();
+        const meetingStatus = !meeting.starts_at ? 'upcoming' : 
+          meeting.starts_at > now ? 'upcoming' :
+          meeting.starts_at > new Date(now.getTime() - 3 * 60 * 60 * 1000) ? 'in_progress' :
+          'completed';
+
+        // Set agenda status
+        const agendaStatus = meeting.agenda_url ? 'available' :
+          meeting.starts_at && meeting.starts_at > new Date(now.getTime() + 72 * 60 * 60 * 1000) ? 'not_published' :
+          'unavailable';
+
+        // Set minutes status
+        const minutesStatus = meeting.minutes_url ? 'approved' :
+          meetingStatus === 'completed' ? 'not_published' :
+          'not_published';
+
         let itemId: string | null = null;
 
         if (existing) {
@@ -166,7 +183,12 @@ export async function parseAustinMeetings(
               ends_at: meeting.ends_at?.toISOString(),
               location: meeting.location,
               agenda_url: meeting.agenda_url,
+              agenda_status: agendaStatus,
+              agenda_available_at: meeting.agenda_url && meeting.starts_at ? new Date(meeting.starts_at.getTime() - 72 * 60 * 60 * 1000).toISOString() : null,
               minutes_url: meeting.minutes_url,
+              minutes_status: minutesStatus,
+              minutes_available_at: meeting.minutes_url && meeting.starts_at ? new Date(meeting.starts_at.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString() : null,
+              status: meetingStatus,
               extracted_text: meeting.extracted_text,
               ai_summary: meeting.ai_summary,
               updated_at: new Date().toISOString(),
@@ -189,7 +211,12 @@ export async function parseAustinMeetings(
               ends_at: meeting.ends_at?.toISOString(),
               location: meeting.location,
               agenda_url: meeting.agenda_url,
+              agenda_status: agendaStatus,
+              agenda_available_at: meeting.agenda_url && meeting.starts_at ? new Date(meeting.starts_at.getTime() - 72 * 60 * 60 * 1000).toISOString() : null,
               minutes_url: meeting.minutes_url,
+              minutes_status: minutesStatus,
+              minutes_available_at: meeting.minutes_url && meeting.starts_at ? new Date(meeting.starts_at.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString() : null,
+              status: meetingStatus,
               extracted_text: meeting.extracted_text,
               ai_summary: meeting.ai_summary,
             })
