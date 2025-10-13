@@ -45,19 +45,19 @@ export function extractLegislationFromAgenda(
   
   const legislation: AgendaLegislation[] = [];
   
-  // STRICT patterns that require actual legislation numbers
+  // Balanced patterns - not too strict, not too loose
   const ordinancePatterns = [
-    // Must have "Ordinance No." followed by a year-based number (2025-001)
-    /Ordinance\s+(?:No\.?|Number)\s+(\d{4}[-_]\d+)[:\s]*([^\n\r]{20,150})?/gi,
-    // Or "Ord. No. 2025-001"
-    /Ord\.\s+No\.\s+(\d{4}[-_]\d+)[:\s]*([^\n\r]{20,150})?/gi,
+    // Format: "Ordinance No. 2025-001" or "Ordinance 2025-001" (year-based)
+    /Ordinance\s+(?:No\.?|Number|#)?\s*(\d{4}[-_]\d+)\s*[:\-–—]?\s*([^\n\r]{15,250})?/gi,
+    // Format: "Ord. No. 123" (short number)
+    /Ord(?:inance)?\s+(?:No\.?|Number|#)?\s*(\d{3,6})\s*[:\-–—]?\s*([^\n\r]{15,250})?/gi,
   ];
   
   const resolutionPatterns = [
-    // Must have "Resolution No." followed by year-number or number
-    /Resolution\s+(?:No\.?|Number)\s+(\d{4}[-_][\dA-Z]+|\d{2,4}[-_][A-Z]-\d+)[:\s]*([^\n\r]{20,150})?/gi,
-    // Or "Res. No. 2025-15"
-    /Res\.\s+No\.\s+(\d{4}[-_][\dA-Z]+|\d{2,4}[-_][A-Z]-\d+)[:\s]*([^\n\r]{20,150})?/gi,
+    // Format: "Resolution No. 2025-15" or "Resolution 95-0926" (year-based or hyphenated)
+    /Resolution\s+(?:No\.?|Number|#)?\s*([\d]{2,4}[-_][\dA-Z]+)\s*[:\-–—]?\s*([^\n\r]{15,250})?/gi,
+    // Format: "Res. No. 123" (short number)
+    /Res(?:olution)?\s+(?:No\.?|Number|#)?\s*(\d{3,6})\s*[:\-–—]?\s*([^\n\r]{15,250})?/gi,
   ];
   
   // Extract ordinances using all patterns
@@ -67,11 +67,14 @@ export function extractLegislationFromAgenda(
     while ((match = pattern.exec(agendaText)) !== null) {
       totalOrdinanceMatches++;
       const number = match[1];
-      const title = match[2]?.trim() || `Ordinance ${number}`;
+      let title = match[2]?.trim() || `Ordinance ${number}`;
       
-      // STRICT FILTERING to avoid false positives
+      // Clean the title first
+      title = cleanTitle(title);
+      
+      // Validate title quality - skip garbage
       if (!isValidLegislationTitle(title)) {
-        console.log('❌ Skipping invalid ordinance:', number, title.substring(0, 50));
+        console.log('❌ Skipping invalid ordinance:', number, title.substring(0, 60));
         continue;
       }
       
@@ -81,7 +84,7 @@ export function extractLegislationFromAgenda(
       legislation.push({
         type: 'ordinance',
         number: number,
-        title: cleanTitle(title),
+        title: title,
         author: author,
         status: deriveStatusFromContext(agendaText, match.index),
       });
@@ -96,11 +99,14 @@ export function extractLegislationFromAgenda(
     while ((match = pattern.exec(agendaText)) !== null) {
       totalResolutionMatches++;
       const number = match[1];
-      const title = match[2]?.trim() || `Resolution ${number}`;
+      let title = match[2]?.trim() || `Resolution ${number}`;
       
-      // STRICT FILTERING to avoid false positives
+      // Clean the title first
+      title = cleanTitle(title);
+      
+      // Validate title quality - skip garbage
       if (!isValidLegislationTitle(title)) {
-        console.log('❌ Skipping invalid resolution:', number, title.substring(0, 50));
+        console.log('❌ Skipping invalid resolution:', number, title.substring(0, 60));
         continue;
       }
       
@@ -110,7 +116,7 @@ export function extractLegislationFromAgenda(
       legislation.push({
         type: 'resolution',
         number: number,
-        title: cleanTitle(title),
+        title: title,
         author: author,
         status: deriveStatusFromContext(agendaText, match.index),
       });
@@ -131,12 +137,18 @@ export function extractLegislationFromAgenda(
 function isValidLegislationTitle(title: string): boolean {
   if (!title) return false;
   
-  // Must be between 20-200 characters
-  if (title.length < 20 || title.length > 200) {
+  // Must be between 10-200 characters (after cleaning)
+  if (title.length < 10 || title.length > 200) {
     return false;
   }
   
-  // Skip Spanish boilerplate keywords
+  // Must have at least some letters
+  const letterCount = (title.match(/[a-zA-Z]/g) || []).length;
+  if (letterCount < 8) {
+    return false;
+  }
+  
+  // Skip Spanish boilerplate (common in California agendas)
   const spanishBoilerplate = [
     'también pueden',
     'los miembros',
@@ -148,7 +160,9 @@ function isValidLegislationTitle(title: string): boolean {
     'distritales también',
     'del condado de',
     'antes de la audiencia',
-    'que hayan recibido'
+    'que hayan recibido',
+    'para obtener',
+    'la junta',
   ];
   
   const lowerTitle = title.toLowerCase();
@@ -158,14 +172,20 @@ function isValidLegislationTitle(title: string): boolean {
     }
   }
   
-  // Skip if starts with common noise words
-  if (/^(with|and|or|for|to|in|on|at|by|of|the|a|an)\s/i.test(title)) {
+  // Skip if starts with common noise words/fragments
+  if (/^(with|and|or|for|to|in|on|at|by|of|include|the amount|that|which)\s/i.test(title)) {
     return false;
   }
   
-  // Skip if too many special characters (noise)
+  // Skip if too many special characters (PDF noise)
   const specialChars = title.replace(/[a-zA-Z0-9\s]/g, '');
   if (specialChars.length > title.length / 3) {
+    return false;
+  }
+  
+  // Skip if it's mostly numbers (like "Resolution 95-0926" without title)
+  const digitCount = (title.match(/\d/g) || []).length;
+  if (digitCount > title.length / 2) {
     return false;
   }
   
@@ -212,9 +232,15 @@ function extractAuthorFromContext(text: string, matchIndex: number): string | un
   
   // Common patterns for author/sponsor in agendas
   const authorPatterns = [
+    // Standard author/sponsor formats
     /(?:Author|Sponsor|Introduced by|By):\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
     /(?:Supervisor|Councilmember|Member)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
     /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*(?:Supervisor|Councilmember|District)/i,
+    
+    // California Board of Supervisors specific formats
+    /District\s+\d+[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+    /Moved by\s+(?:Supervisor|Director|Member)\s+([A-Z][a-z]+)/i,
+    /Presented by\s+(?:Supervisor|Director|Member)\s+([A-Z][a-z]+)/i,
   ];
   
   for (const pattern of authorPatterns) {
