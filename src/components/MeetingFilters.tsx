@@ -46,6 +46,9 @@ interface MeetingFiltersProps {
     cities: string[];
     bodyNames: string[];
     typeCounts: Record<MeetingType, number>;
+    agendaCount: number;
+    minutesCount: number;
+    liveCount: number;
   };
 }
 
@@ -56,6 +59,7 @@ export const MeetingFilters = ({
 }: MeetingFiltersProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAdvisoryExpanded, setIsAdvisoryExpanded] = useState(false);
+  const [activeDatePreset, setActiveDatePreset] = useState<string | null>(null);
 
   // Calculate active filter count
   const activeFilterCount = [
@@ -130,7 +134,7 @@ export const MeetingFilters = ({
     });
   };
 
-  const setQuickDateRange = (days: number | null) => {
+  const setQuickDateRange = (days: number | null, preset: string) => {
     if (days === null) {
       // All time
       onFilterChange({
@@ -147,6 +151,7 @@ export const MeetingFilters = ({
         dateRange: { start, end }
       });
     }
+    setActiveDatePreset(preset);
   };
 
   const clearFilters = () => {
@@ -168,6 +173,7 @@ export const MeetingFilters = ({
       }
     });
     setIsAdvisoryExpanded(false);
+    setActiveDatePreset(null);
   };
 
   // Get active filter descriptions
@@ -198,7 +204,15 @@ export const MeetingFilters = ({
     if (currentFilters.documentStatus.liveNow) {
       labels.push('Live Now');
     }
-    if (currentFilters.dateRange.start || currentFilters.dateRange.end) {
+    if (activeDatePreset) {
+      const presetLabels = {
+        'last-7': 'Last 7 Days',
+        'last-30': 'Last 30 Days',
+        'last-90': 'Last 90 Days',
+        'all-time': 'All Time'
+      };
+      labels.push(`Date: ${presetLabels[activeDatePreset as keyof typeof presetLabels]}`);
+    } else if (currentFilters.dateRange.start || currentFilters.dateRange.end) {
       const start = currentFilters.dateRange.start ? format(currentFilters.dateRange.start, 'MMM d') : 'Start';
       const end = currentFilters.dateRange.end ? format(currentFilters.dateRange.end, 'MMM d') : 'End';
       labels.push(`Date: ${start} - ${end}`);
@@ -251,9 +265,9 @@ export const MeetingFilters = ({
 
       {/* Collapsible Content */}
       {!isCollapsed && (
-        <div className="px-4 pb-4 space-y-6 border-t pt-4">
+        <div className="px-4 pb-4 space-y-3 border-t pt-4">
           {/* Meeting Types Section */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <h4 className="font-medium text-sm">Meeting Type</h4>
             
             {/* Legislative Bodies Toggle */}
@@ -269,7 +283,7 @@ export const MeetingFilters = ({
             </div>
 
             {/* Legislative Body Types */}
-            <div className="pl-4 space-y-2">
+            <div className="pl-4 space-y-1">
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="city-council"
@@ -298,7 +312,7 @@ export const MeetingFilters = ({
                 <ChevronDown className={`h-4 w-4 transition-transform ${isAdvisoryExpanded ? 'rotate-180' : ''}`} />
                 All Other Meeting Types (Advisory Bodies)
               </CollapsibleTrigger>
-              <CollapsibleContent className="pl-4 pt-2 space-y-2">
+              <CollapsibleContent className="pl-4 pt-2 space-y-1">
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="committees"
@@ -334,9 +348,9 @@ export const MeetingFilters = ({
           </div>
 
           {/* Document Status Section */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <h4 className="font-medium text-sm">Document Status</h4>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="agenda-available"
@@ -344,7 +358,7 @@ export const MeetingFilters = ({
                   onCheckedChange={(checked) => handleDocumentStatusChange('agendaAvailable', checked as boolean)}
                 />
                 <Label htmlFor="agenda-available" className="text-sm cursor-pointer flex-1">
-                  📄 Agenda Available
+                  📄 Agenda Available ({availableFilters.agendaCount})
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
@@ -354,7 +368,7 @@ export const MeetingFilters = ({
                   onCheckedChange={(checked) => handleDocumentStatusChange('minutesAvailable', checked as boolean)}
                 />
                 <Label htmlFor="minutes-available" className="text-sm cursor-pointer flex-1">
-                  📝 Minutes Available
+                  📝 Minutes Available ({availableFilters.minutesCount})
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
@@ -364,18 +378,18 @@ export const MeetingFilters = ({
                   onCheckedChange={(checked) => handleDocumentStatusChange('liveNow', checked as boolean)}
                 />
                 <Label htmlFor="live-now" className="text-sm cursor-pointer flex-1">
-                  🔴 Live Now
+                  🔴 Live Now ({availableFilters.liveCount})
                 </Label>
               </div>
             </div>
           </div>
 
           {/* Date Range Section */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <h4 className="font-medium text-sm">📅 Date Range</h4>
             
             {/* Date Pickers */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">From</Label>
                 <Popover>
@@ -418,36 +432,36 @@ export const MeetingFilters = ({
             </div>
 
             {/* Quick Filters */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1">
               <Button 
-                variant="outline" 
+                variant={activeDatePreset === 'last-7' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setQuickDateRange(7)}
-                className="text-xs"
+                onClick={() => setQuickDateRange(7, 'last-7')}
+                className={activeDatePreset === 'last-7' ? 'bg-primary hover:bg-primary/90' : ''}
               >
                 Last 7 Days
               </Button>
               <Button 
-                variant="outline" 
+                variant={activeDatePreset === 'last-30' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setQuickDateRange(30)}
-                className="text-xs"
+                onClick={() => setQuickDateRange(30, 'last-30')}
+                className={activeDatePreset === 'last-30' ? 'bg-primary hover:bg-primary/90' : ''}
               >
                 Last 30 Days
               </Button>
               <Button 
-                variant="outline" 
+                variant={activeDatePreset === 'last-90' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setQuickDateRange(90)}
-                className="text-xs"
+                onClick={() => setQuickDateRange(90, 'last-90')}
+                className={activeDatePreset === 'last-90' ? 'bg-primary hover:bg-primary/90' : ''}
               >
                 Last 90 Days
               </Button>
               <Button 
-                variant="outline" 
+                variant={activeDatePreset === 'all-time' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setQuickDateRange(null)}
-                className="text-xs"
+                onClick={() => setQuickDateRange(null, 'all-time')}
+                className={activeDatePreset === 'all-time' ? 'bg-primary hover:bg-primary/90' : ''}
               >
                 All Time
               </Button>

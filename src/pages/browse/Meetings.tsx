@@ -37,9 +37,18 @@ export default function BrowseMeetings() {
         committee: 0, 
         commission: 0, 
         authority: 0 
-      } 
+      },
+      agendaCount: 0,
+      minutesCount: 0,
+      liveCount: 0
     };
-    return getAvailableMeetingFilters(meetings);
+    const baseFilters = getAvailableMeetingFilters(meetings);
+    return {
+      ...baseFilters,
+      agendaCount: meetings.filter(m => m.agenda_url).length,
+      minutesCount: meetings.filter(m => m.minutes_url).length,
+      liveCount: meetings.filter(m => m.status === 'in_progress').length
+    };
   }, [meetings]);
 
   // Apply filters and sorting
@@ -87,7 +96,7 @@ export default function BrowseMeetings() {
                 href={(meeting as any).live_stream_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-md transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-md transition-colors mb-2"
                 onClick={(e) => e.stopPropagation()}
               >
                 <LinkIcon className="h-3.5 w-3.5" />
@@ -95,11 +104,8 @@ export default function BrowseMeetings() {
               </a>
             )}
             
-            <div>
-              <h3 className="text-lg font-semibold">{meeting.title}</h3>
-            </div>
             <h3 className="text-lg font-semibold">{meeting.title}</h3>
-            {meeting.body_name && (
+            {meeting.body_name && meeting.body_name !== meeting.title && (
               <p className="text-muted-foreground text-sm">{meeting.body_name}</p>
             )}
           </div>
