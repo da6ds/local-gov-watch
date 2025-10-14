@@ -36,14 +36,31 @@ export function DocumentTextViewer({ text, pdfUrl, documentType }: DocumentTextV
     setCurrentMatchIndex(0);
   }, [searchQuery, text]);
 
-  // Scroll to current match
+  // Scroll to current match within container (not entire page)
   useEffect(() => {
-    if (matches.length > 0 && matchRefs.current[currentMatchIndex]) {
-      matchRefs.current[currentMatchIndex]?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
+    if (matches.length === 0) return;
+    
+    const container = textContainerRef.current;
+    const matchElement = matchRefs.current[currentMatchIndex];
+    
+    if (!container || !matchElement) return;
+    
+    // Use setTimeout to ensure DOM has updated with new highlights
+    setTimeout(() => {
+      // Calculate the match's position relative to the container
+      const matchOffsetTop = matchElement.offsetTop;
+      const matchHeight = matchElement.clientHeight;
+      const containerHeight = container.clientHeight;
+      
+      // Calculate scroll position to center the match in the container
+      const scrollTarget = matchOffsetTop - (containerHeight / 2) + (matchHeight / 2);
+      
+      // Scroll the container (NOT the page)
+      container.scrollTo({
+        top: scrollTarget,
+        behavior: 'smooth'
       });
-    }
+    }, 0);
   }, [currentMatchIndex, matches]);
 
   const goToPreviousMatch = () => {
@@ -115,6 +132,19 @@ export function DocumentTextViewer({ text, pdfUrl, documentType }: DocumentTextV
             placeholder="Search in document..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (e.shiftKey) {
+                  goToPreviousMatch();
+                } else {
+                  goToNextMatch();
+                }
+              }
+              if (e.key === 'Escape') {
+                setSearchQuery('');
+              }
+            }}
             className="pl-9"
           />
           {searchQuery && (
