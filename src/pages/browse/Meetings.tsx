@@ -16,9 +16,7 @@ import { useLocationFilter } from "@/contexts/LocationFilterContext";
 import { CityBadge } from "@/components/CityBadge";
 import { MeetingTypeBadge } from "@/components/MeetingTypeBadge";
 import { MeetingStatusBadge } from "@/components/meeting/MeetingStatusBadge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Gavel } from "lucide-react";
+import { ExternalLink as LinkIcon } from "lucide-react";
 
 export default function BrowseMeetings() {
   const { selectedLocationSlugs } = useLocationFilter();
@@ -82,6 +80,24 @@ export default function BrowseMeetings() {
                 startsAt={meeting.starts_at}
               />
             </div>
+            
+            {/* Live Stream Button */}
+            {meeting.status === 'in_progress' && (meeting as any).live_stream_url && (
+              <a 
+                href={(meeting as any).live_stream_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-md transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <LinkIcon className="h-3.5 w-3.5" />
+                Watch Live
+              </a>
+            )}
+            
+            <div>
+              <h3 className="text-lg font-semibold">{meeting.title}</h3>
+            </div>
             <h3 className="text-lg font-semibold">{meeting.title}</h3>
             {meeting.body_name && (
               <p className="text-muted-foreground text-sm">{meeting.body_name}</p>
@@ -136,24 +152,7 @@ export default function BrowseMeetings() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Browse Meetings</h1>
-          
-          {/* Legislative Only Toggle */}
-          <div className="flex items-center gap-3 bg-card border rounded-lg px-4 py-2">
-            <Gavel className="h-4 w-4 text-amber-600" />
-            <Label htmlFor="legislative-mode" className="text-sm font-medium cursor-pointer">
-              Legislative Bodies Only
-            </Label>
-            <Switch
-              id="legislative-mode"
-              checked={filters.legislativeOnly}
-              onCheckedChange={(checked) => 
-                setFilters({ ...filters, legislativeOnly: checked })
-              }
-            />
-          </div>
-        </div>
+        <h1 className="text-3xl font-bold">Browse Meetings</h1>
 
         {/* Tracked Terms Indicator */}
         {hasTrackedTermsFilter && (

@@ -155,6 +155,34 @@ END:VCALENDAR`;
                 )}
               </div>
 
+              {/* Live Stream Button */}
+              {meeting.status === 'in_progress' && (meeting as any).live_stream_url && (
+                <div className="p-4 bg-red-50 dark:bg-red-950/20 border-2 border-red-500 rounded-lg">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
+                      <span className="font-semibold text-red-700 dark:text-red-400">Meeting in Progress</span>
+                    </div>
+                    <Button 
+                      asChild
+                      className="bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      <a 
+                        href={(meeting as any).live_stream_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Video className="mr-2 h-4 w-4" />
+                        Watch Live Stream
+                      </a>
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    💡 You can view the live stream and follow along with the agenda below.
+                  </p>
+                </div>
+              )}
+
               {/* Date, Time, Location */}
               <div className="space-y-2 text-sm">
                 {meeting.starts_at && (

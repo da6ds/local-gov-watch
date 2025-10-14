@@ -1,8 +1,12 @@
-import { useState } from 'react';
-import { ChevronDown, X, Filter } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useState, useEffect } from 'react';
+import { ChevronDown, X, Filter, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MeetingTypeFilter } from './MeetingTypeFilter';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export type MeetingSortOption = 
   | 'date_desc'
@@ -24,6 +28,15 @@ export interface MeetingFilterOptions {
   bodyName: string | null;
   meetingTypes: MeetingType[];
   legislativeOnly: boolean;
+  documentStatus: {
+    agendaAvailable: boolean;
+    minutesAvailable: boolean;
+    liveNow: boolean;
+  };
+  dateRange: {
+    start: Date | null;
+    end: Date | null;
+  };
 }
 
 interface MeetingFiltersProps {
@@ -41,21 +54,99 @@ export const MeetingFilters = ({
   onFilterChange,
   availableFilters
 }: MeetingFiltersProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isAdvisoryExpanded, setIsAdvisoryExpanded] = useState(false);
+
+  // Calculate active filter count
   const activeFilterCount = [
-    currentFilters.status,
-    currentFilters.city,
-    currentFilters.bodyName,
     currentFilters.meetingTypes.length > 0 ? 'types' : null,
-    currentFilters.legislativeOnly ? 'legislative' : null
+    currentFilters.legislativeOnly ? 'legislative' : null,
+    currentFilters.documentStatus.agendaAvailable ? 'agenda' : null,
+    currentFilters.documentStatus.minutesAvailable ? 'minutes' : null,
+    currentFilters.documentStatus.liveNow ? 'live' : null,
+    currentFilters.dateRange.start ? 'dateStart' : null,
+    currentFilters.dateRange.end ? 'dateEnd' : null,
   ].filter(val => val !== null).length;
 
-  const handleSortChange = (value: MeetingSortOption) => {
-    onFilterChange({ ...currentFilters, sortBy: value });
+  // Two-way sync: Legislative toggle <-> Checkboxes
+  const handleLegislativeToggle = (checked: boolean) => {
+    if (checked) {
+      // Enable legislative mode: check both legislative types, uncheck all advisory
+      onFilterChange({
+        ...currentFilters,
+        legislativeOnly: true,
+        meetingTypes: ['city_council', 'board_of_supervisors']
+      });
+    } else {
+      // Disable legislative mode (keep current selections)
+      onFilterChange({
+        ...currentFilters,
+        legislativeOnly: false
+      });
+    }
   };
 
-  const handleFilterChange = (key: keyof MeetingFilterOptions, value: any) => {
-    onFilterChange({ ...currentFilters, [key]: value });
+  const handleMeetingTypeChange = (type: MeetingType, checked: boolean) => {
+    let newTypes = [...currentFilters.meetingTypes];
+    
+    if (checked) {
+      if (!newTypes.includes(type)) {
+        newTypes.push(type);
+      }
+    } else {
+      newTypes = newTypes.filter(t => t !== type);
+    }
+
+    // Check if we should auto-enable legislative mode
+    const hasCouncil = newTypes.includes('city_council');
+    const hasSupervisors = newTypes.includes('board_of_supervisors');
+    const hasAdvisory = newTypes.some(t => ['committee', 'commission', 'authority'].includes(t));
+    const shouldEnableLegislative = hasCouncil && hasSupervisors && !hasAdvisory;
+
+    onFilterChange({
+      ...currentFilters,
+      meetingTypes: newTypes,
+      legislativeOnly: shouldEnableLegislative
+    });
+  };
+
+  const handleDocumentStatusChange = (key: keyof MeetingFilterOptions['documentStatus'], checked: boolean) => {
+    onFilterChange({
+      ...currentFilters,
+      documentStatus: {
+        ...currentFilters.documentStatus,
+        [key]: checked
+      }
+    });
+  };
+
+  const handleDateRangeChange = (key: 'start' | 'end', date: Date | undefined) => {
+    onFilterChange({
+      ...currentFilters,
+      dateRange: {
+        ...currentFilters.dateRange,
+        [key]: date || null
+      }
+    });
+  };
+
+  const setQuickDateRange = (days: number | null) => {
+    if (days === null) {
+      // All time
+      onFilterChange({
+        ...currentFilters,
+        dateRange: { start: null, end: null }
+      });
+    } else {
+      const end = new Date();
+      end.setDate(end.getDate() + 90); // 90 days in future
+      const start = new Date();
+      start.setDate(start.getDate() - days);
+      onFilterChange({
+        ...currentFilters,
+        dateRange: { start, end }
+      });
+    }
   };
 
   const clearFilters = () => {
@@ -65,185 +156,255 @@ export const MeetingFilters = ({
       city: null,
       bodyName: null,
       meetingTypes: [],
-      legislativeOnly: false
+      legislativeOnly: false,
+      documentStatus: {
+        agendaAvailable: false,
+        minutesAvailable: false,
+        liveNow: false
+      },
+      dateRange: {
+        start: null,
+        end: null
+      }
     });
   };
 
   return (
-    <div className="space-y-4 mb-6">
-      {/* Meeting Type Filter - Always Visible */}
-      <MeetingTypeFilter
-        selectedTypes={currentFilters.meetingTypes}
-        onTypesChange={(types) => handleFilterChange('meetingTypes', types)}
-        typeCounts={availableFilters.typeCounts}
-      />
-
-      {/* Other Filters */}
-      <div className="flex flex-col gap-4 p-4 bg-card rounded-lg border">
-        {/* Sort Control and Filter Toggle */}
-        <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-          <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-            Sort by:
-          </label>
-          <Select value={currentFilters.sortBy} onValueChange={handleSortChange}>
-            <SelectTrigger className="flex-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="date_desc">Soonest First</SelectItem>
-              <SelectItem value="date_asc">Latest First</SelectItem>
-              <SelectItem value="title_asc">Title (A-Z)</SelectItem>
-              <SelectItem value="title_desc">Title (Z-A)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button
-          variant="outline"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="gap-2"
-        >
-          <Filter size={16} />
-          <span>Filters</span>
+    <div className="bg-card border rounded-lg">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <h3 className="font-semibold">Filters</h3>
           {activeFilterCount > 0 && (
             <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs font-semibold">
               {activeFilterCount}
             </span>
           )}
-          <ChevronDown 
-            size={16} 
-            className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-          />
-        </Button>
+        </div>
+        <ChevronDown 
+          className={`h-5 w-5 text-muted-foreground transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
+        />
       </div>
 
-      {/* Expanded Filter Panel */}
-      {isExpanded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
-          {/* Status Filter */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Status
-            </label>
-            <Select 
-              value={currentFilters.status || 'all'} 
-              onValueChange={(val) => handleFilterChange('status', val === 'all' ? null : val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Meetings" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Meetings</SelectItem>
-                <SelectItem value="upcoming">Upcoming</SelectItem>
-                <SelectItem value="past">Past</SelectItem>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="this-week">This Week</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Collapsible Content */}
+      {!isCollapsed && (
+        <div className="px-4 pb-4 space-y-6 border-t pt-4">
+          {/* Meeting Types Section */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">Meeting Type</h4>
+            
+            {/* Legislative Bodies Toggle */}
+            <div className="flex items-center space-x-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+              <Checkbox 
+                id="legislative-toggle"
+                checked={currentFilters.legislativeOnly}
+                onCheckedChange={handleLegislativeToggle}
+              />
+              <Label htmlFor="legislative-toggle" className="text-sm font-medium cursor-pointer flex-1">
+                ⚖️ Legislative Bodies (Where Laws Are Passed)
+              </Label>
+            </div>
+
+            {/* Legislative Body Types */}
+            <div className="pl-4 space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="city-council"
+                  checked={currentFilters.meetingTypes.includes('city_council')}
+                  onCheckedChange={(checked) => handleMeetingTypeChange('city_council', checked as boolean)}
+                />
+                <Label htmlFor="city-council" className="text-sm cursor-pointer flex-1">
+                  City Councils ({availableFilters.typeCounts.city_council || 0})
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="board-supervisors"
+                  checked={currentFilters.meetingTypes.includes('board_of_supervisors')}
+                  onCheckedChange={(checked) => handleMeetingTypeChange('board_of_supervisors', checked as boolean)}
+                />
+                <Label htmlFor="board-supervisors" className="text-sm cursor-pointer flex-1">
+                  Board of Supervisors ({availableFilters.typeCounts.board_of_supervisors || 0})
+                </Label>
+              </div>
+            </div>
+
+            {/* Advisory Bodies - Collapsible */}
+            <Collapsible open={isAdvisoryExpanded} onOpenChange={setIsAdvisoryExpanded}>
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-foreground transition-colors w-full">
+                <ChevronDown className={`h-4 w-4 transition-transform ${isAdvisoryExpanded ? 'rotate-180' : ''}`} />
+                All Other Meeting Types (Advisory Bodies)
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pl-4 pt-2 space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="committees"
+                    checked={currentFilters.meetingTypes.includes('committee')}
+                    onCheckedChange={(checked) => handleMeetingTypeChange('committee', checked as boolean)}
+                  />
+                  <Label htmlFor="committees" className="text-sm cursor-pointer flex-1">
+                    Committees ({availableFilters.typeCounts.committee || 0})
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="commissions"
+                    checked={currentFilters.meetingTypes.includes('commission')}
+                    onCheckedChange={(checked) => handleMeetingTypeChange('commission', checked as boolean)}
+                  />
+                  <Label htmlFor="commissions" className="text-sm cursor-pointer flex-1">
+                    Commissions ({availableFilters.typeCounts.commission || 0})
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="authorities"
+                    checked={currentFilters.meetingTypes.includes('authority')}
+                    onCheckedChange={(checked) => handleMeetingTypeChange('authority', checked as boolean)}
+                  />
+                  <Label htmlFor="authorities" className="text-sm cursor-pointer flex-1">
+                    Authorities ({availableFilters.typeCounts.authority || 0})
+                  </Label>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
 
-          {/* City Filter */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              City
-            </label>
-            <Select 
-              value={currentFilters.city || 'all'} 
-              onValueChange={(val) => handleFilterChange('city', val === 'all' ? null : val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Cities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Cities</SelectItem>
-                {availableFilters.cities.map(city => (
-                  <SelectItem key={city} value={city}>
-                    {city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Document Status Section */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">Document Status</h4>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="agenda-available"
+                  checked={currentFilters.documentStatus.agendaAvailable}
+                  onCheckedChange={(checked) => handleDocumentStatusChange('agendaAvailable', checked as boolean)}
+                />
+                <Label htmlFor="agenda-available" className="text-sm cursor-pointer flex-1">
+                  📄 Agenda Available
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="minutes-available"
+                  checked={currentFilters.documentStatus.minutesAvailable}
+                  onCheckedChange={(checked) => handleDocumentStatusChange('minutesAvailable', checked as boolean)}
+                />
+                <Label htmlFor="minutes-available" className="text-sm cursor-pointer flex-1">
+                  📝 Minutes Available
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="live-now"
+                  checked={currentFilters.documentStatus.liveNow}
+                  onCheckedChange={(checked) => handleDocumentStatusChange('liveNow', checked as boolean)}
+                />
+                <Label htmlFor="live-now" className="text-sm cursor-pointer flex-1">
+                  🔴 Live Now
+                </Label>
+              </div>
+            </div>
           </div>
 
-          {/* Body Name Filter */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Meeting Type
-            </label>
-            <Select 
-              value={currentFilters.bodyName || 'all'} 
-              onValueChange={(val) => handleFilterChange('bodyName', val === 'all' ? null : val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {availableFilters.bodyNames.map(name => (
-                  <SelectItem key={name} value={name}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Date Range Section */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">📅 Date Range</h4>
+            
+            {/* Date Pickers */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">From</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {currentFilters.dateRange.start ? format(currentFilters.dateRange.start, 'MMM d, yyyy') : 'Select date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={currentFilters.dateRange.start || undefined}
+                      onSelect={(date) => handleDateRangeChange('start', date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">To</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {currentFilters.dateRange.end ? format(currentFilters.dateRange.end, 'MMM d, yyyy') : 'Select date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={currentFilters.dateRange.end || undefined}
+                      onSelect={(date) => handleDateRangeChange('end', date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Quick Filters */}
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setQuickDateRange(7)}
+                className="text-xs"
+              >
+                Last 7 Days
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setQuickDateRange(30)}
+                className="text-xs"
+              >
+                Last 30 Days
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setQuickDateRange(90)}
+                className="text-xs"
+              >
+                Last 90 Days
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setQuickDateRange(null)}
+                className="text-xs"
+              >
+                All Time
+              </Button>
+            </div>
           </div>
 
           {/* Clear Filters Button */}
           {activeFilterCount > 0 && (
-            <div className="col-span-full">
-              <Button 
-                variant="outline"
-                onClick={clearFilters}
-                className="gap-2"
-              >
-                <X size={16} />
-                Clear all filters
-              </Button>
-            </div>
+            <Button 
+              variant="outline"
+              onClick={clearFilters}
+              className="w-full gap-2"
+            >
+              <X size={16} />
+              Clear All Filters
+            </Button>
           )}
         </div>
       )}
-
-      {/* Active Filter Pills */}
-      {activeFilterCount > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {currentFilters.status && (
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
-              Status: {currentFilters.status}
-              <button 
-                onClick={() => handleFilterChange('status', null)}
-                className="hover:opacity-70 transition-opacity"
-              >
-                <X size={14} />
-              </button>
-            </span>
-          )}
-          {currentFilters.city && (
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
-              {currentFilters.city}
-              <button 
-                onClick={() => handleFilterChange('city', null)}
-                className="hover:opacity-70 transition-opacity"
-              >
-                <X size={14} />
-              </button>
-            </span>
-          )}
-          {currentFilters.bodyName && (
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
-              {currentFilters.bodyName}
-              <button 
-                onClick={() => handleFilterChange('bodyName', null)}
-                className="hover:opacity-70 transition-opacity"
-              >
-                <X size={14} />
-              </button>
-            </span>
-          )}
-        </div>
-      )}
-      </div>
     </div>
   );
 };

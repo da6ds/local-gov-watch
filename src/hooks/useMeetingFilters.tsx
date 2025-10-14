@@ -16,7 +16,16 @@ const getDefaultFilters = (): MeetingFilterOptions => ({
   city: null,
   bodyName: null,
   meetingTypes: [],
-  legislativeOnly: false
+  legislativeOnly: false,
+  documentStatus: {
+    agendaAvailable: false,
+    minutesAvailable: false,
+    liveNow: false
+  },
+  dateRange: {
+    start: null,
+    end: null
+  }
 });
 
 export const useMeetingFilters = () => {

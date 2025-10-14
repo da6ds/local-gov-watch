@@ -6,6 +6,9 @@ export const filterMeetings = <T extends {
   body_name?: string | null;
   meeting_type?: string | null;
   is_legislative?: boolean | null;
+  status?: string | null;
+  agenda_status?: string | null;
+  minutes_status?: string | null;
   jurisdiction?: {
     name?: string;
   } | null;
@@ -16,6 +19,44 @@ export const filterMeetings = <T extends {
   return items.filter(item => {
     const now = new Date();
     const meetingDate = item.starts_at ? new Date(item.starts_at) : null;
+
+    // Date range filter
+    if (filters.dateRange?.start || filters.dateRange?.end) {
+      if (!meetingDate) return false;
+      
+      if (filters.dateRange.start && meetingDate < startOfDay(filters.dateRange.start)) {
+        return false;
+      }
+      if (filters.dateRange.end && meetingDate > endOfDay(filters.dateRange.end)) {
+        return false;
+      }
+    }
+
+    // Document status filters
+    if (filters.documentStatus) {
+      const hasAnyDocFilter = filters.documentStatus.agendaAvailable || 
+                              filters.documentStatus.minutesAvailable || 
+                              filters.documentStatus.liveNow;
+      
+      if (hasAnyDocFilter) {
+        let matchesDocFilter = false;
+        
+        if (filters.documentStatus.agendaAvailable && item.agenda_status === 'available') {
+          matchesDocFilter = true;
+        }
+        if (filters.documentStatus.minutesAvailable && 
+            (item.minutes_status === 'approved' || item.minutes_status === 'draft')) {
+          matchesDocFilter = true;
+        }
+        if (filters.documentStatus.liveNow && item.status === 'in_progress') {
+          matchesDocFilter = true;
+        }
+        
+        if (!matchesDocFilter) {
+          return false;
+        }
+      }
+    }
 
     // Status filter
     if (filters.status && meetingDate) {

@@ -627,6 +627,7 @@ export type Database = {
           id: string
           is_legislative: boolean | null
           jurisdiction_id: string | null
+          live_stream_url: string | null
           livestream_url: string | null
           location: string | null
           meeting_type: Database["public"]["Enums"]["meeting_type"] | null
@@ -673,6 +674,7 @@ export type Database = {
           id?: string
           is_legislative?: boolean | null
           jurisdiction_id?: string | null
+          live_stream_url?: string | null
           livestream_url?: string | null
           location?: string | null
           meeting_type?: Database["public"]["Enums"]["meeting_type"] | null
@@ -719,6 +721,7 @@ export type Database = {
           id?: string
           is_legislative?: boolean | null
           jurisdiction_id?: string | null
+          live_stream_url?: string | null
           livestream_url?: string | null
           location?: string | null
           meeting_type?: Database["public"]["Enums"]["meeting_type"] | null
