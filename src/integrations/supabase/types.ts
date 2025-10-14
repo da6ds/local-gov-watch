@@ -640,6 +640,7 @@ export type Database = {
           packet_urls: Json | null
           recording_url: string | null
           search_vector: unknown | null
+          source_detail_url: string | null
           source_id: string | null
           source_url: string | null
           starts_at: string | null
@@ -687,6 +688,7 @@ export type Database = {
           packet_urls?: Json | null
           recording_url?: string | null
           search_vector?: unknown | null
+          source_detail_url?: string | null
           source_id?: string | null
           source_url?: string | null
           starts_at?: string | null
@@ -734,6 +736,7 @@ export type Database = {
           packet_urls?: Json | null
           recording_url?: string | null
           search_vector?: unknown | null
+          source_detail_url?: string | null
           source_id?: string | null
           source_url?: string | null
           starts_at?: string | null

@@ -14,6 +14,7 @@ export interface MeetingData {
   location: string | null;
   agenda_url: string | null;
   minutes_url: string | null;
+  source_detail_url: string | null;
   attachments: any[];
   extracted_text: string | null;
   ai_summary: string | null;
@@ -49,6 +50,8 @@ export async function parseAustinMeetings(
         const timeText = safeText($(elem).find('.meeting-time, .time').first().text());
         const locationText = safeText($(elem).find('.meeting-location, .location').first().text());
         const agendaLink = $(elem).find('a:contains("Agenda"), a[href*="agenda"]').first().attr('href');
+        const detailsLink = $(elem).find('a:contains("details"), a:contains("Details")').first().attr('href');
+        const sourceDetailUrl = detailsLink ? new URL(detailsLink, listingUrl).href : null;
         const minutesLink = $(elem).find('a:contains("Minutes"), a[href*="minutes"]').first().attr('href');
         
         const starts_at = normalizeDate(`${dateText} ${timeText}`);
@@ -68,6 +71,7 @@ export async function parseAustinMeetings(
           location: locationText || 'Austin City Hall',
           agenda_url: agendaLink ? new URL(agendaLink, listingUrl).href : null,
           minutes_url: minutesLink ? new URL(minutesLink, listingUrl).href : null,
+          source_detail_url: sourceDetailUrl,
           attachments: [],
           extracted_text: null,
           ai_summary: null,
@@ -97,6 +101,7 @@ export async function parseAustinMeetings(
         location: 'Austin City Hall, 301 W 2nd St',
         agenda_url: 'https://www.austintexas.gov/edims/pio/document.cfm?id=123456',
         minutes_url: null,
+        source_detail_url: null,
         attachments: [],
         extracted_text: null,
         ai_summary: null,
@@ -116,6 +121,7 @@ export async function parseAustinMeetings(
         location: 'Austin City Hall, 301 W 2nd St',
         agenda_url: 'https://www.austintexas.gov/edims/pio/document.cfm?id=123457',
         minutes_url: null,
+        source_detail_url: null,
         attachments: [],
         extracted_text: null,
         ai_summary: null,
@@ -188,6 +194,7 @@ export async function parseAustinMeetings(
               minutes_url: meeting.minutes_url,
               minutes_status: minutesStatus,
               minutes_available_at: meeting.minutes_url && meeting.starts_at ? new Date(meeting.starts_at.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString() : null,
+              source_detail_url: meeting.source_detail_url,
               status: meetingStatus,
               extracted_text: meeting.extracted_text,
               ai_summary: meeting.ai_summary,
@@ -216,6 +223,7 @@ export async function parseAustinMeetings(
               minutes_url: meeting.minutes_url,
               minutes_status: minutesStatus,
               minutes_available_at: meeting.minutes_url && meeting.starts_at ? new Date(meeting.starts_at.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString() : null,
+              source_detail_url: meeting.source_detail_url,
               status: meetingStatus,
               extracted_text: meeting.extracted_text,
               ai_summary: meeting.ai_summary,

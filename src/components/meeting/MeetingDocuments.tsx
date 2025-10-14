@@ -37,6 +37,7 @@ interface MeetingDocumentsProps {
   votingRecords?: VotingRecord[];
   status?: string;
   startsAt?: string;
+  sourceDetailUrl?: string;
 }
 
 export function MeetingDocuments({ 
@@ -52,7 +53,8 @@ export function MeetingDocuments({
   packetUrls = [],
   votingRecords = [],
   status = 'upcoming',
-  startsAt
+  startsAt,
+  sourceDetailUrl
 }: MeetingDocumentsProps) {
   // Always show tabs if we have agenda OR if meeting is completed (to show minutes section)
   const shouldShowTabs = agendaUrl || extractedText || (status === 'completed');
@@ -451,15 +453,50 @@ export function MeetingDocuments({
                   <div className="flex items-center gap-2">
                     {getStatusBadge('minutes', minutesStatus)}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    📝 Minutes Not Yet Published
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Minutes typically take 2-4 weeks to be approved and published after a meeting.
-                    {startsAt && (
-                      <> Check back after {format(new Date(new Date(startsAt).getTime() + 14 * 24 * 60 * 60 * 1000), 'MMMM d, yyyy')}.</>
-                    )}
-                  </p>
+                  {startsAt && new Date(startsAt).getTime() > Date.now() - 14 * 24 * 60 * 60 * 1000 ? (
+                    // Recent meeting (< 14 days old)
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-3 bg-yellow-900/20 border border-yellow-700 rounded-lg p-4">
+                        <Clock className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h3 className="font-medium text-yellow-200">Minutes Not Yet Published</h3>
+                          <p className="text-sm text-yellow-300/80 mt-1">
+                            This meeting occurred {Math.floor((Date.now() - new Date(startsAt).getTime()) / (1000 * 60 * 60 * 24))} days ago. 
+                            Minutes are typically published 2-4 weeks after meetings.
+                          </p>
+                          <p className="text-sm text-yellow-300/60 mt-2">
+                            Expected availability: ~{format(new Date(new Date(startsAt).getTime() + 21 * 24 * 60 * 60 * 1000), 'MMMM d, yyyy')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Older meeting (> 14 days old)
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-3 bg-muted/50 border rounded-lg p-4">
+                        <FileText className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h3 className="font-medium">Minutes Not Available</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Minutes may not have been published for this meeting, or may be available 
+                            on the jurisdiction's website.
+                          </p>
+                          {sourceDetailUrl && (
+                            <Button 
+                              variant="link" 
+                              size="sm" 
+                              asChild 
+                              className="mt-2 h-auto p-0 text-blue-400 hover:text-blue-300"
+                            >
+                              <a href={sourceDetailUrl} target="_blank" rel="noopener noreferrer">
+                                Check jurisdiction website <ExternalLink className="w-3 h-3 ml-1 inline" />
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>

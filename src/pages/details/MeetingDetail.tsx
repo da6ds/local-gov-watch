@@ -266,6 +266,7 @@ END:VCALENDAR`;
               votingRecords={(meeting as any).voting_records}
               status={meeting.status}
               startsAt={meeting.starts_at}
+              sourceDetailUrl={(meeting as any).source_detail_url}
             />
 
             {/* Metadata */}

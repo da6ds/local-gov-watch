@@ -15,6 +15,7 @@ export interface MeetingData {
   location: string | null;
   agenda_url: string | null;
   minutes_url: string | null;
+  source_detail_url: string | null;
   attachments: any[];
   extracted_text: string | null;
   ai_summary: string | null;
@@ -48,14 +49,19 @@ export async function parseLegistarMeetings(
     
     // Parse upcoming meetings from calendar
     // Legistar uses a standard table format
+    const rows: any[] = [];
     $('table.rgMasterTable tr, tr.rgRow, tr.rgAltRow').each((i, row) => {
       if (i === 0) return; // Skip header
-      
+      rows.push(row);
+    });
+    
+    // Process rows asynchronously
+    for (const row of rows) {
       try {
         const $row = $(row);
         const cells = $row.find('td');
         
-        if (cells.length < 3) return;
+        if (cells.length < 3) continue;
         
         // Extract meeting info
         const bodyName = safeText(cells.eq(0).text()) || 'Board Meeting';
@@ -66,12 +72,49 @@ export async function parseLegistarMeetings(
         // Find agenda link
         const agendaLink = $row.find('a:contains("Agenda"), a[href*="agenda"]').first().attr('href') ||
                           $row.find('a[href*="AgendaQuick"]').first().attr('href');
-        const minutesLink = $row.find('a:contains("Minutes"), a[href*="minutes"]').first().attr('href');
+        
+        // Find meeting detail page link
+        const detailsLink = $row.find('a:contains("details"), a:contains("Details")').first().attr('href');
+        const sourceDetailUrl = detailsLink ? new URL(detailsLink, baseUrl).href : null;
+        
+        // Try to find minutes link on calendar page
+        let minutesLink = $row.find('a:contains("Minutes"), a[href*="minutes"]').first().attr('href');
+        
+        // If no minutes link on calendar and we have a detail page, check there
+        if (!minutesLink && sourceDetailUrl) {
+          try {
+            const detailResponse = await politeFetch(sourceDetailUrl);
+            const detailHtml = await detailResponse.text();
+            const $detail = await loadHTML(detailHtml);
+            
+            // Try multiple selectors for minutes
+            const minutesSelectors = [
+              'a:contains("Minutes")',
+              'a:contains("Draft Minutes")',
+              'a:contains("Approved Minutes")',
+              'a:contains("Meeting Minutes")',
+              'a[href*="View.ashx?M=M"]',
+              'a[href*="Minutes.pdf"]',
+              'a[href*="/gateway.aspx"][href*=".pdf"]'
+            ];
+            
+            for (const selector of minutesSelectors) {
+              const link = $detail(selector).first().attr('href');
+              if (link && link.toLowerCase().includes('minute')) {
+                minutesLink = link;
+                console.log(`✅ Found minutes on detail page: ${minutesLink}`);
+                break;
+              }
+            }
+          } catch (err) {
+            console.log(`⚠️ Could not check detail page for minutes: ${err instanceof Error ? err.message : 'Unknown'}`);
+          }
+        }
         
         const starts_at = normalizeDate(`${dateText} ${timeText}`);
         if (!starts_at) {
           stats.skippedCount++;
-          return;
+          continue;
         }
         
         const external_id = createExternalId([baseUrl, bodyName, dateText]);
@@ -85,6 +128,7 @@ export async function parseLegistarMeetings(
           location: locationText || null,
           agenda_url: agendaLink ? new URL(agendaLink, baseUrl).href : null,
           minutes_url: minutesLink ? new URL(minutesLink, baseUrl).href : null,
+          source_detail_url: sourceDetailUrl,
           attachments: [],
           extracted_text: null,
           ai_summary: null,
@@ -94,7 +138,7 @@ export async function parseLegistarMeetings(
       } catch (error) {
         addError(stats, `Failed to parse meeting: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-    });
+    }
     
     console.log(`Found ${meetings.length} meetings from Legistar`);
     
@@ -244,6 +288,7 @@ export async function parseLegistarMeetings(
               minutes_url: meeting.minutes_url,
               minutes_status: minutesStatus,
               minutes_available_at: meeting.minutes_url && meeting.starts_at ? new Date(meeting.starts_at.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString() : null,
+              source_detail_url: meeting.source_detail_url,
               status: meetingStatus,
               extracted_text: meeting.extracted_text,
               ai_summary: meeting.ai_summary,
@@ -272,6 +317,7 @@ export async function parseLegistarMeetings(
               minutes_url: meeting.minutes_url,
               minutes_status: minutesStatus,
               minutes_available_at: meeting.minutes_url && meeting.starts_at ? new Date(meeting.starts_at.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString() : null,
+              source_detail_url: meeting.source_detail_url,
               status: meetingStatus,
               extracted_text: meeting.extracted_text,
               ai_summary: meeting.ai_summary,

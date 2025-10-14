@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.preview-digest-email]
 verify_jwt = true
+
+[functions.discover-minutes]
+verify_jwt = false
