@@ -9,7 +9,7 @@ import { sortMeetings } from "@/lib/meetingSorting";
 import { filterMeetings, getAvailableMeetingFilters } from "@/lib/meetingFiltering";
 import { useTrackedTermsFilter } from "@/hooks/useTrackedTermsFilter";
 import { filterMeetingsByTrackedTerms } from "@/lib/trackedTermsFiltering";
-import { Calendar, MapPin, ExternalLink, Filter } from "lucide-react";
+import { Calendar, MapPin, ExternalLink, Filter, TestTube2 } from "lucide-react";
 import { format } from "date-fns";
 import { useFilteredMeetings } from "@/hooks/useFilteredQueries";
 import { useLocationFilter } from "@/contexts/LocationFilterContext";
@@ -149,10 +149,26 @@ export default function BrowseMeetings() {
     </div>
   );
 
+  // Check if test meetings exist
+  const hasTestData = useMemo(() => 
+    meetings?.some(m => m.external_id?.startsWith('test-')),
+    [meetings]
+  );
+
   return (
     <Layout>
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Browse Meetings</h1>
+
+        {/* Test Data Indicator */}
+        {hasTestData && (
+          <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-sm text-blue-300">
+              <TestTube2 className="w-4 h-4" />
+              <span>Test data active: Mock meetings from June-August 2025 included for feature testing.</span>
+            </div>
+          </div>
+        )}
 
         {/* Tracked Terms Indicator */}
         {hasTrackedTermsFilter && (
