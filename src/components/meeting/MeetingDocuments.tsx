@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DocumentPreview } from "@/components/DocumentPreview";
-import { FileText, Video, Clock, ExternalLink, CheckCircle2, XCircle, Pause, Download, Paperclip } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DocumentTextViewer } from "./DocumentTextViewer";
+import { FileText, Video, Clock, ExternalLink, CheckCircle2, XCircle, Pause, Download, Paperclip, ChevronDown, FileX } from "lucide-react";
 import { isDocumentRecent } from "@/lib/meetingUtils";
 import { format, addHours } from "date-fns";
+import { MOCK_AGENDA_TEXT, MOCK_MINUTES_TEXT } from "@/lib/mockDocumentText";
 
 interface PacketDocument {
   title: string;
@@ -348,14 +349,20 @@ export function MeetingDocuments({
           )}
           
           {extractedText && !agendaUrl && !minutesUrl && (
-            <DocumentPreview text={extractedText} />
+            <div className="border border-border rounded-lg p-4 bg-muted/30 max-h-[500px] overflow-y-auto text-sm">
+              <p className="whitespace-pre-wrap leading-relaxed">{extractedText}</p>
+            </div>
           )}
         </CardContent>
       </Card>
     );
   }
 
-  // Multiple documents - show tabs
+  // Use mock text when extracted_text is not available
+  const agendaText = extractedText || MOCK_AGENDA_TEXT;
+  const minutesText = extractedText || MOCK_MINUTES_TEXT;
+
+  // Multiple documents - show collapsible sections
   return (
     <Card>
       <CardHeader>
@@ -364,150 +371,124 @@ export function MeetingDocuments({
           Meeting Documents
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
         {renderQuickActions()}
-        <Tabs defaultValue={agendaUrl ? "agenda" : status === 'completed' ? "minutes" : "text"}>
-          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${[agendaUrl, status === 'completed', extractedText].filter(Boolean).length}, 1fr)` }}>
-            {agendaUrl && (
-              <TabsTrigger value="agenda" className="flex items-center gap-1">
-                Agenda
-                {agendaIsNew && <Badge variant="secondary" className="text-xs ml-1">New</Badge>}
-              </TabsTrigger>
-            )}
-            {status === 'completed' && (
-              <TabsTrigger value="minutes" className="flex items-center gap-1">
-                Minutes
-                {minutesAreNew && <Badge variant="secondary" className="text-xs ml-1">New</Badge>}
-              </TabsTrigger>
-            )}
-            {extractedText && (
-              <TabsTrigger value="text">Full Text</TabsTrigger>
-            )}
-          </TabsList>
 
-          {agendaUrl && (
-            <TabsContent value="agenda" className="mt-4 space-y-4">
-              <div className="space-y-2">
+        {/* Agenda Section */}
+        {agendaUrl && (
+          <Collapsible>
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between p-3 bg-card border rounded-lg hover:bg-accent/50 transition-colors">
                 <div className="flex items-center gap-2">
-                  {getStatusBadge('agenda', agendaStatus)}
-                  {agendaAvailableAt && (
-                    <span className="text-sm text-muted-foreground">
-                      Published: {format(new Date(agendaAvailableAt), 'MMMM d, yyyy')}
-                    </span>
+                  <FileText className="w-5 h-5" />
+                  <h3 className="font-medium">📄 Agenda</h3>
+                  {agendaText && (
+                    <Badge variant="secondary" className="text-xs">
+                      Text Available
+                    </Badge>
                   )}
+                  {agendaIsNew && <Badge variant="secondary" className="text-xs">New</Badge>}
+                  {getStatusBadge('agenda', agendaStatus)}
                 </div>
-                <div className="flex gap-2">
-                  <Button size="sm" asChild>
-                    <a href={agendaUrl} target="_blank" rel="noopener noreferrer">
-                      View Agenda PDF
-                      <ExternalLink className="h-3 w-3 ml-2" />
-                    </a>
-                  </Button>
-                  <Button size="sm" variant="outline" asChild>
-                    <a href={agendaUrl} download>
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </a>
-                  </Button>
+                <ChevronDown className="w-5 h-5 transition-transform data-[state=open]:rotate-180" />
+              </div>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent>
+              {agendaAvailableAt && (
+                <div className="px-3 pt-2 text-sm text-muted-foreground">
+                  Published: {format(new Date(agendaAvailableAt), 'MMMM d, yyyy')}
                 </div>
+              )}
+              <DocumentTextViewer 
+                text={agendaText}
+                pdfUrl={agendaUrl}
+                documentType="agenda"
+              />
+              <div className="px-3 pb-2">
                 <p className="text-xs text-muted-foreground italic">
                   💡 Agendas show what will be discussed and when public comment periods occur.
                 </p>
               </div>
               {renderPacketDocuments()}
-            </TabsContent>
-          )}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
 
-          {status === 'completed' && (
-            <TabsContent value="minutes" className="mt-4 space-y-4">
+        {/* Agenda Not Available */}
+        {!agendaUrl && status === 'upcoming' && (
+          <div className="border border-border rounded-lg p-8 text-center">
+            <FileX className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+            <h3 className="text-lg font-medium text-muted-foreground mb-2">
+              Agenda Not Available
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              The agenda for this meeting has not been published yet.
+              <span className="block mt-2">
+                Agendas are typically published 72 hours before meetings.
+              </span>
+            </p>
+          </div>
+        )}
+
+        {/* Minutes Section */}
+        {status === 'completed' && (
+          <Collapsible>
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between p-3 bg-card border rounded-lg hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  <h3 className="font-medium">📝 Minutes</h3>
+                  {minutesUrl && minutesText && (
+                    <Badge variant="secondary" className="text-xs">
+                      Text Available
+                    </Badge>
+                  )}
+                  {minutesAreNew && <Badge variant="secondary" className="text-xs">New</Badge>}
+                  {getStatusBadge('minutes', minutesStatus)}
+                </div>
+                <ChevronDown className="w-5 h-5 transition-transform data-[state=open]:rotate-180" />
+              </div>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent>
               {minutesUrl ? (
                 <>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge('minutes', minutesStatus)}
-                      {minutesAvailableAt && (
-                        <span className="text-sm text-muted-foreground">
-                          Published: {format(new Date(minutesAvailableAt), 'MMMM d, yyyy')}
-                        </span>
-                      )}
+                  {minutesAvailableAt && (
+                    <div className="px-3 pt-2 text-sm text-muted-foreground">
+                      Published: {format(new Date(minutesAvailableAt), 'MMMM d, yyyy')}
                     </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" asChild>
-                        <a href={minutesUrl} target="_blank" rel="noopener noreferrer">
-                          View Minutes PDF
-                          <ExternalLink className="h-3 w-3 ml-2" />
-                        </a>
-                      </Button>
-                      <Button size="sm" variant="outline" asChild>
-                        <a href={minutesUrl} download>
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
+                  )}
+                  <DocumentTextViewer 
+                    text={minutesText}
+                    pdfUrl={minutesUrl}
+                    documentType="minutes"
+                  />
                   {renderVotingRecords()}
                 </>
               ) : (
-                <div className="space-y-3 py-4">
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge('minutes', minutesStatus)}
-                  </div>
-                  {startsAt && new Date(startsAt).getTime() > Date.now() - 14 * 24 * 60 * 60 * 1000 ? (
-                    // Recent meeting (< 14 days old)
-                    <div className="space-y-2">
-                      <div className="flex items-start gap-3 bg-yellow-900/20 border border-yellow-700 rounded-lg p-4">
-                        <Clock className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h3 className="font-medium text-yellow-200">Minutes Not Yet Published</h3>
-                          <p className="text-sm text-yellow-300/80 mt-1">
-                            This meeting occurred {Math.floor((Date.now() - new Date(startsAt).getTime()) / (1000 * 60 * 60 * 24))} days ago. 
-                            Minutes are typically published 2-4 weeks after meetings.
-                          </p>
-                          <p className="text-sm text-yellow-300/60 mt-2">
-                            Expected availability: ~{format(new Date(new Date(startsAt).getTime() + 21 * 24 * 60 * 60 * 1000), 'MMMM d, yyyy')}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    // Older meeting (> 14 days old)
-                    <div className="space-y-2">
-                      <div className="flex items-start gap-3 bg-muted/50 border rounded-lg p-4">
-                        <FileText className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h3 className="font-medium">Minutes Not Available</h3>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Minutes may not have been published for this meeting, or may be available 
-                            on the jurisdiction's website.
-                          </p>
-                          {sourceDetailUrl && (
-                            <Button 
-                              variant="link" 
-                              size="sm" 
-                              asChild 
-                              className="mt-2 h-auto p-0 text-blue-400 hover:text-blue-300"
-                            >
-                              <a href={sourceDetailUrl} target="_blank" rel="noopener noreferrer">
-                                Check jurisdiction website <ExternalLink className="w-3 h-3 ml-1 inline" />
-                              </a>
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                <div className="border-t border-border p-6 text-center">
+                  <FileX className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+                  <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                    Minutes Not Available
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {startsAt && new Date(startsAt).getTime() > Date.now() - 14 * 24 * 60 * 60 * 1000 ? (
+                      <>
+                        This meeting occurred {Math.floor((Date.now() - new Date(startsAt).getTime()) / (1000 * 60 * 60 * 24))} days ago.
+                        <span className="block mt-2">
+                          Minutes are typically published 2-4 weeks after meetings.
+                        </span>
+                      </>
+                    ) : (
+                      'Minutes have not been published for this meeting.'
+                    )}
+                  </p>
                 </div>
               )}
-            </TabsContent>
-          )}
-
-          {extractedText && (
-            <TabsContent value="text" className="mt-4">
-              <DocumentPreview text={extractedText} />
-            </TabsContent>
-          )}
-        </Tabs>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
       </CardContent>
     </Card>
   );
