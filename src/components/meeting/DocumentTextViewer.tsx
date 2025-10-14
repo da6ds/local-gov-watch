@@ -18,7 +18,7 @@ export function DocumentTextViewer({ text, pdfUrl, documentType }: DocumentTextV
 
   // Find all matches when search query changes
   useEffect(() => {
-    if (!searchQuery || !text) {
+    if (!searchQuery || searchQuery.length < 2 || !text) {
       setMatches([]);
       setCurrentMatchIndex(0);
       return;
@@ -47,20 +47,31 @@ export function DocumentTextViewer({ text, pdfUrl, documentType }: DocumentTextV
     
     // Use setTimeout to ensure DOM has updated with new highlights
     setTimeout(() => {
-      // Calculate the match's position relative to the container
+      // Get the match's position relative to the container
       const matchOffsetTop = matchElement.offsetTop;
       const matchHeight = matchElement.clientHeight;
       const containerHeight = container.clientHeight;
       
-      // Calculate scroll position to center the match in the container
-      const scrollTarget = matchOffsetTop - (containerHeight / 2) + (matchHeight / 2);
+      // Position match at 1/3 from top of container (unless near the start)
+      // If match is in first ~100px, just scroll to top
+      let scrollTarget;
+      if (matchOffsetTop < 100) {
+        scrollTarget = 0; // Just go to top if match is near the beginning
+      } else {
+        // Position match at 1/3 down from top of visible area
+        scrollTarget = matchOffsetTop - (containerHeight / 3);
+      }
+      
+      // Ensure we don't scroll past the bottom
+      const maxScroll = container.scrollHeight - containerHeight;
+      scrollTarget = Math.max(0, Math.min(scrollTarget, maxScroll));
       
       // Scroll the container (NOT the page)
       container.scrollTo({
         top: scrollTarget,
         behavior: 'smooth'
       });
-    }, 0);
+    }, 100); // Increased timeout to ensure DOM is ready
   }, [currentMatchIndex, matches]);
 
   const goToPreviousMatch = () => {
@@ -184,15 +195,23 @@ export function DocumentTextViewer({ text, pdfUrl, documentType }: DocumentTextV
           </div>
         )}
 
-        {searchQuery && matches.length === 0 && (
-          <span className="text-sm text-muted-foreground whitespace-nowrap">No matches</span>
+        {searchQuery && searchQuery.length >= 2 && matches.length === 0 && (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            No matches found for "{searchQuery}"
+          </span>
+        )}
+        
+        {searchQuery && searchQuery.length === 1 && (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            Type 2+ characters to search
+          </span>
         )}
       </div>
 
       {/* Scrollable Text Container */}
       <div
         ref={textContainerRef}
-        className="border border-border rounded-lg p-4 bg-muted/30 overflow-y-auto max-h-[500px] text-sm"
+        className="border border-border rounded-lg p-4 bg-muted/30 overflow-y-auto max-h-[500px] text-sm relative"
       >
         {highlightedText}
       </div>
