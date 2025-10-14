@@ -31,6 +31,13 @@ export async function parseAustinMeetings(
   
   console.log('Parsing Austin City Council meetings...');
   
+  // Log date range
+  const startDate = new Date('2025-01-01');
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + 90);
+  console.log(`📅 Target date range: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`);
+  console.log('⚠️ Note: Austin site may only show recent/upcoming meetings');
+  
   // Austin City Council meetings listing
   const listingUrl = 'https://www.austintexas.gov/department/city-council/council/council_meeting_info_center.htm';
   

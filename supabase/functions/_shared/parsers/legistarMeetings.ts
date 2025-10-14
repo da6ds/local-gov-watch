@@ -37,8 +37,22 @@ export async function parseLegistarMeetings(
   
   console.log(`Parsing Legistar meetings from ${baseUrl}...`);
   
-  // Legistar calendar URL
-  const calendarUrl = `${baseUrl}/Calendar.aspx`;
+  // Fetch all 2025 meetings + 90 days in future
+  const startDate = new Date('2025-01-01');
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + 90); // 90 days ahead
+  
+  console.log(`📅 Date range: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`);
+  
+  // Legistar calendar URL with date range
+  // Format: MM/DD/YYYY
+  const params = new URLSearchParams({
+    FromDate: startDate.toLocaleDateString('en-US'),
+    ToDate: endDate.toLocaleDateString('en-US')
+  });
+  const calendarUrl = `${baseUrl}/Calendar.aspx?${params.toString()}`;
+  
+  console.log(`🔗 Fetching: ${calendarUrl}`);
   
   try {
     const response = await politeFetch(calendarUrl);

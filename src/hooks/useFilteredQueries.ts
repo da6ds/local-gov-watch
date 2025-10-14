@@ -54,8 +54,9 @@ export function useFilteredMeetings(options?: {
         query = query.gte('starts_at', new Date().toISOString());
       }
       
+      // Order by most recent first (desc) to show latest meetings
       query = query.order('starts_at', { 
-        ascending: options?.upcoming ?? true 
+        ascending: false 
       });
       
       if (options?.limit) {

@@ -23,8 +23,8 @@ export default function BrowseMeetings() {
   const { filters, setFilters } = useMeetingFilters();
   const { activeKeywords, hasActiveFilters: hasTrackedTermsFilter, activeTerms } = useTrackedTermsFilter();
 
-  // Fetch meetings using filtered query
-  const { data: meetings, isLoading } = useFilteredMeetings({ upcoming: false, limit: 100 });
+  // Fetch meetings using filtered query - get ALL meetings (no date filter)
+  const { data: meetings, isLoading } = useFilteredMeetings({ limit: 500 });
 
   // Get available filter options
   const availableFilters = useMemo(() => {
