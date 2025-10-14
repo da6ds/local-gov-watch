@@ -167,10 +167,72 @@ export const MeetingFilters = ({
         end: null
       }
     });
+    setIsAdvisoryExpanded(false);
   };
 
+  // Get active filter descriptions
+  const getActiveFilterLabels = () => {
+    const labels: string[] = [];
+    
+    if (currentFilters.legislativeOnly) {
+      labels.push('Legislative Bodies Only');
+    }
+    if (currentFilters.meetingTypes.length > 0) {
+      const typeNames = {
+        city_council: 'City Councils',
+        board_of_supervisors: 'Board of Supervisors',
+        committee: 'Committees',
+        commission: 'Commissions',
+        authority: 'Authorities'
+      };
+      currentFilters.meetingTypes.forEach(type => {
+        labels.push(typeNames[type]);
+      });
+    }
+    if (currentFilters.documentStatus.agendaAvailable) {
+      labels.push('Agenda Available');
+    }
+    if (currentFilters.documentStatus.minutesAvailable) {
+      labels.push('Minutes Available');
+    }
+    if (currentFilters.documentStatus.liveNow) {
+      labels.push('Live Now');
+    }
+    if (currentFilters.dateRange.start || currentFilters.dateRange.end) {
+      const start = currentFilters.dateRange.start ? format(currentFilters.dateRange.start, 'MMM d') : 'Start';
+      const end = currentFilters.dateRange.end ? format(currentFilters.dateRange.end, 'MMM d') : 'End';
+      labels.push(`Date: ${start} - ${end}`);
+    }
+    
+    return labels;
+  };
+
+  const activeLabels = getActiveFilterLabels();
+
   return (
-    <div className="bg-card border rounded-lg">
+    <div className="space-y-3">
+      {/* Active Filters Display */}
+      {activeFilterCount > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 p-3">
+          <span className="text-sm font-medium">Active:</span>
+          {activeLabels.map((label, idx) => (
+            <span key={idx} className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium">
+              {label}
+            </span>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearFilters}
+            className="ml-auto h-7 text-xs"
+          >
+            <X className="h-3 w-3 mr-1" />
+            Clear All
+          </Button>
+        </div>
+      )}
+      
+      <div className="bg-card border rounded-lg">
       {/* Header */}
       <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
         <div className="flex items-center gap-2">
@@ -405,6 +467,7 @@ export const MeetingFilters = ({
           )}
         </div>
       )}
+      </div>
     </div>
   );
 };

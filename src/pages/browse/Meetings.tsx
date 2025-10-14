@@ -185,6 +185,11 @@ export default function BrowseMeetings() {
             Showing {processedMeetings.length} of {meetings?.length || 0} meetings
             {hasTrackedTermsFilter && ' matching your tracked topics'}
           </p>
+          {processedMeetings.length === 0 && meetings && meetings.length > 0 && (
+            <span className="text-sm text-yellow-500 font-medium">
+              ⚠️ All meetings hidden by active filters
+            </span>
+          )}
         </div>
         
         <div className="space-y-4">
