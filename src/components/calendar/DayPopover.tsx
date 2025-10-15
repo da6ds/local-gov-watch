@@ -4,8 +4,9 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { getEventsByDay } from "@/lib/calendarQueries";
-import { Calendar, ArrowRight } from "lucide-react";
+import { Calendar, ArrowRight, MapPin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "react-router-dom";
 
 interface DayPopoverProps {
   date: Date;
@@ -57,9 +58,10 @@ export function DayPopover({ date, eventCount, scope, topics, children }: DayPop
             <>
               <div className="space-y-2">
                 {events.slice(0, 2).map((event) => (
-                  <div
+                  <Link
                     key={event.id}
-                    className="flex flex-col gap-1 p-2 rounded-md bg-muted/50 border"
+                    to={event.kind === 'meeting' ? `/meeting/${event.id}` : `/election/${event.id}`}
+                    className="flex flex-col gap-1 p-2 rounded-md bg-muted/50 border hover:bg-muted transition-colors"
                   >
                     <div className="flex items-center gap-2">
                       <Badge 
@@ -73,10 +75,11 @@ export function DayPopover({ date, eventCount, scope, topics, children }: DayPop
                       </span>
                     </div>
                     <span className="text-sm line-clamp-1 font-medium">{event.title}</span>
-                    <span className="text-xs text-muted-foreground line-clamp-1">
-                      {event.jurisdiction}
-                    </span>
-                  </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      <span className="line-clamp-1">{event.jurisdiction}</span>
+                    </div>
+                  </Link>
                 ))}
               </div>
 

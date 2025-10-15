@@ -1,25 +1,20 @@
 import { Layout } from "@/components/Layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
-import { TrendingUp, Calendar, FileText, Scale, Bell, ArrowRight } from "lucide-react";
+import { Calendar, Scale, MapPin, CalendarDays } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, formatDistanceToNow } from "date-fns";
-import { TrendingTopicsWidget } from "@/components/TrendingTopicsWidget";
-import { analyzeCombinedTrendingTopics } from "@/lib/trendingTopics";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useDataStatus } from "@/hooks/useDataStatus";
 import { useGuestRunUpdate } from "@/hooks/useGuestRunUpdate";
 import { toast } from "sonner";
-import { LocationSelector } from "@/components/LocationSelector";
 import { Calendar as CalendarComponent } from "@/components/calendar/Calendar";
-import { getGuestScope, setGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 import { Button } from "@/components/ui/button";
 import { useLocationFilter } from "@/contexts/LocationFilterContext";
-import { useFilteredDashboardData, useFilteredTrendingTopics } from "@/hooks/useFilteredQueries";
+import { useFilteredDashboardData } from "@/hooks/useFilteredQueries";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
@@ -106,172 +101,154 @@ export default function Dashboard() {
 
   // Fetch data using filtered queries
   const { data: dashboardData, isLoading: dashboardLoading } = useFilteredDashboardData();
-  const { data: trendingTopicsData, isLoading: trendingLoading } = useFilteredTrendingTopics(8);
 
   const recentLegislation = dashboardData?.legislation || [];
   const upcomingMeetings = dashboardData?.meetings || [];
-  const upcomingElections = dashboardData?.elections || [];
-
-  // Use trending topics from filtered query
-  const trendingTopics = trendingTopicsData || [];
 
   return (
-    <TooltipProvider>
-      <Layout>
-        <div className="space-y-3">
-          {/* Header */}
-          <div>
-            <h1 className="text-xl font-bold mb-0.5">Dashboard</h1>
-            {/* Subtle status line */}
-            <div className="text-xs md:text-sm text-muted-foreground" aria-live="polite">
-              {isAutoRefreshing ? (
-                <span>Updating... ~{Math.round((autoRefreshEta || 120000) / 1000 / 60)}m remaining</span>
-              ) : dataStatus?.mode === 'live' && dataStatus.lastRunAt ? (
-                <span>Live as of {formatDistanceToNow(new Date(dataStatus.lastRunAt), { addSuffix: true })}</span>
-              ) : dataStatus?.mode === 'seed' && dataStatus.reason === 'no-successful-runs' && 
-                 (dataStatus.tableCounts.meetings + dataStatus.tableCounts.legislation + dataStatus.tableCounts.elections === 0) ? (
-                <span>No recent local updates yet</span>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Alert Summary Card */}
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Bell className="h-4 w-4" />
-                Alert Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{recentLegislation.length}</div>
-                  <p className="text-sm text-muted-foreground">new matches today</p>
-                </div>
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/alerts">View All</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Snapshot Cards - Only Legislation and Meetings */}
-          <div className="grid md:grid-cols-2 gap-3">
-            {/* Recent Legislation */}
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <Link to="/browse/legislation" className="group" aria-label="View all recent legislation updates">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors text-base" role="heading" aria-level={2}>
-                    <Scale className="h-4 w-4 text-primary" />
-                    Recent Updates
-                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
-                  </CardTitle>
-                </Link>
-                <CardDescription className="text-xs">New bills and ordinances</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-2xl font-bold mb-2">{recentLegislation.length}</p>
-                {recentLegislation.length > 0 ? (
-                  <div className="space-y-2 mb-3">
-                    {recentLegislation.slice(0, typeof window !== 'undefined' && window.innerWidth >= 768 ? 5 : 3).map((item: any) => (
-                      <Link 
-                        key={item.id} 
-                        to={`/legislation/${item.id}`}
-                        className="block text-sm text-foreground hover:text-primary line-clamp-1"
-                      >
-                        • {item.title}
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs md:text-sm text-muted-foreground mb-3">No recent updates</p>
-                )}
-                <Button variant="link" asChild className="p-0 h-auto text-xs md:text-sm">
-                  <Link to="/browse/legislation">View all →</Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Upcoming Meetings */}
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <Link to="/browse/meetings" className="group" aria-label="View all upcoming meetings">
-                  <CardTitle className="flex items-center gap-2 hover:text-primary transition-colors text-base" role="heading" aria-level={2}>
-                    <Calendar className="h-4 w-4 text-primary" />
-                    Upcoming Meetings
-                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
-                  </CardTitle>
-                </Link>
-                <CardDescription className="text-xs">City & county sessions</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-2xl font-bold mb-2">{upcomingMeetings.length}</p>
-                {upcomingMeetings.length > 0 ? (
-                  <div className="space-y-2 mb-3">
-                    {upcomingMeetings.slice(0, typeof window !== 'undefined' && window.innerWidth >= 768 ? 5 : 3).map((meeting: any) => (
-                      <Link
-                        key={meeting.id}
-                        to={`/meeting/${meeting.id}`}
-                        className="block text-sm"
-                      >
-                        <p className="text-foreground hover:text-primary line-clamp-1">
-                          • {meeting.title || meeting.body_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {meeting.starts_at && format(new Date(meeting.starts_at), 'MMM d, h:mm a')}
-                        </p>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground mb-3">No meetings scheduled</p>
-                )}
-                <Button variant="link" asChild className="p-0 h-auto text-sm">
-                  <Link to="/calendar">View calendar →</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Bottom Grid: Calendar & Trends */}
-          <div className="grid lg:grid-cols-2 gap-3">
-            {/* Calendar Card */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-base font-semibold flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Calendar
-                </h2>
-                <Link to="/calendar">
-                  <Button variant="ghost" size="sm" className="gap-1 h-8">
-                    View all
-                    <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </Link>
-              </div>
-              <CalendarComponent variant="dashboard" />
-            </div>
-
-            {/* Trends Card */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base" role="heading" aria-level={2}>
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                  Trending Topics
-                </CardTitle>
-                <CardDescription className="text-xs">Most mentioned in recent activity</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <TrendingTopicsWidget 
-                  topics={trendingTopics}
-                  isLoading={dashboardLoading || trendingLoading || isAutoRefreshing}
-                />
-              </CardContent>
-            </Card>
+    <Layout>
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
+          {/* Subtle status line */}
+          <div className="text-sm text-muted-foreground" aria-live="polite">
+            {isAutoRefreshing ? (
+              <span>Updating... ~{Math.round((autoRefreshEta || 120000) / 1000 / 60)}m remaining</span>
+            ) : dataStatus?.mode === 'live' && dataStatus.lastRunAt ? (
+              <span>Live as of {formatDistanceToNow(new Date(dataStatus.lastRunAt), { addSuffix: true })}</span>
+            ) : dataStatus?.mode === 'seed' && dataStatus.reason === 'no-successful-runs' && 
+               (dataStatus.tableCounts.meetings + dataStatus.tableCounts.legislation + dataStatus.tableCounts.elections === 0) ? (
+              <span>No recent local updates yet</span>
+            ) : null}
           </div>
         </div>
-      </Layout>
-    </TooltipProvider>
+
+        {/* Top Row - Two Columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Upcoming Meetings */}
+          <CollapsibleSection
+            storageKey="upcoming-meetings"
+            title="Upcoming Meetings"
+            icon={<CalendarDays className="h-5 w-5 text-primary" />}
+            badge={upcomingMeetings.length > 0 && <Badge variant="secondary">{upcomingMeetings.length}</Badge>}
+          >
+            <div className="space-y-3">
+              {upcomingMeetings.length > 0 ? (
+                <>
+                  {upcomingMeetings.slice(0, 5).map((meeting: any) => (
+                    <Link
+                      key={meeting.id}
+                      to={`/meeting/${meeting.id}`}
+                      className="block border-l-2 border-primary pl-3 hover:bg-accent rounded-r transition-colors"
+                    >
+                      {/* Location */}
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{meeting.jurisdiction?.name || 'Unknown'}</span>
+                      </div>
+                      
+                      {/* Meeting title */}
+                      <div className="font-medium text-sm mb-1">
+                        {meeting.title || meeting.body_name}
+                      </div>
+                      
+                      {/* Date & Time */}
+                      {meeting.starts_at && (
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(meeting.starts_at), 'MMM d, yyyy')} • {format(new Date(meeting.starts_at), 'h:mm a')}
+                        </div>
+                      )}
+                    </Link>
+                  ))}
+                  
+                  <Button variant="link" asChild className="w-full mt-4">
+                    <Link to="/browse/meetings">
+                      View All Meetings →
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No meetings scheduled
+                </p>
+              )}
+            </div>
+          </CollapsibleSection>
+
+          {/* Calendar */}
+          <CollapsibleSection
+            storageKey="calendar"
+            title="Calendar"
+            icon={<Calendar className="h-5 w-5 text-primary" />}
+          >
+            <CalendarComponent variant="dashboard" />
+          </CollapsibleSection>
+        </div>
+
+        {/* Bottom Row - Full Width Recent Updates */}
+        <CollapsibleSection
+          storageKey="recent-updates"
+          title="Recent Updates"
+          icon={<Scale className="h-5 w-5 text-primary" />}
+          badge={recentLegislation.length > 0 && <Badge variant="secondary">{recentLegislation.length}</Badge>}
+        >
+          <div className="space-y-4">
+            {recentLegislation.length > 0 ? (
+              <>
+                {recentLegislation.map((item: any) => (
+                  <Link
+                    key={item.id}
+                    to={`/legislation/${item.id}`}
+                    className="block border-b border-border pb-4 last:border-0 hover:bg-accent p-3 -mx-3 rounded transition-colors"
+                  >
+                    {/* Title (one line, truncated if needed) */}
+                    <h3 className="font-medium text-base truncate mb-2">
+                      {item.title}
+                    </h3>
+                    
+                    {/* Metadata line: Location + Date */}
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{item.jurisdiction?.name || 'Unknown'}</span>
+                      </div>
+                      <span>•</span>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>
+                          {item.introduced_at 
+                            ? format(new Date(item.introduced_at), 'MMM d, yyyy')
+                            : item.created_at 
+                            ? format(new Date(item.created_at), 'MMM d, yyyy')
+                            : 'Date unknown'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Optional: Short description (1-2 lines) */}
+                    {item.summary && (
+                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                        {item.summary}
+                      </p>
+                    )}
+                  </Link>
+                ))}
+                
+                <Button variant="link" asChild className="w-full mt-4">
+                  <Link to="/browse/legislation">
+                    Browse All Legislation →
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No recent updates
+              </p>
+            )}
+          </div>
+        </CollapsibleSection>
+      </div>
+    </Layout>
   );
 }
