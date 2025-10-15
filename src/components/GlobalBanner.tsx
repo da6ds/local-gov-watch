@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Sparkles } from "lucide-react";
 import { clearGuestSession } from "@/lib/guestSession";
 import { clearGuestScope, clearGuestTopics } from "@/lib/guestSessionStorage";
 import { useQueryClient } from "@tanstack/react-query";
@@ -10,7 +9,12 @@ import { useRef, useEffect } from "react";
 
 let bannerMounted = false;
 
-export function GlobalBanner() {
+interface GlobalBannerProps {
+  demoMode: boolean;
+  setDemoMode: (value: boolean) => void;
+}
+
+export function GlobalBanner({ demoMode, setDemoMode }: GlobalBannerProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const mountedRef = useRef(false);
@@ -35,25 +39,34 @@ export function GlobalBanner() {
     return null;
   }
 
-  const handleRestartDemo = () => {
+  const handleReset = () => {
+    sessionStorage.removeItem('hasSeenOnboarding');
+    sessionStorage.removeItem('hasSeenWalkthrough');
     clearGuestSession();
     clearGuestScope();
     clearGuestTopics();
     queryClient.clear();
-    toast.success("Demo restarted");
+    setDemoMode(false);
+    toast.success("Demo reset");
     navigate("/");
   };
 
   return (
     <div className="w-full bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-b border-primary/20 py-1.5">
       <div className="container mx-auto flex items-center justify-center gap-3">
-        <Badge variant="secondary" className="bg-primary/20 text-primary hover:bg-primary/30 text-xs">
-          Demo
-        </Badge>
+        <Button
+          variant={demoMode ? "default" : "outline"}
+          size="sm"
+          onClick={() => setDemoMode(!demoMode)}
+          className="h-7 text-xs gap-1.5"
+        >
+          <Sparkles className="h-3 w-3" />
+          {demoMode ? "Demo: ON" : "Demo: OFF"}
+        </Button>
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleRestartDemo}
+          onClick={handleReset}
           className="h-7 text-xs gap-1.5"
         >
           <RefreshCw className="h-3 w-3" />

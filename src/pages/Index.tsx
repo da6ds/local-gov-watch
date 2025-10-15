@@ -10,7 +10,7 @@ export default function Index() {
   const { startGuestSession } = useAuth();
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { completeOnboarding, skipOnboarding } = useOnboarding();
+  const { completeOnboarding, skipOnboarding } = useOnboarding(false);
 
   const handleTryDemo = async () => {
     const hasSeenOnboarding = sessionStorage.getItem('hasSeenOnboarding');

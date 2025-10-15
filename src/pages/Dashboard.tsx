@@ -139,7 +139,7 @@ export default function Dashboard() {
                   {upcomingMeetings.slice(0, 5).map((meeting: any) => (
                     <Link
                       key={meeting.id}
-                      to={`/meeting/${meeting.id}`}
+                      to={`/meetings/${meeting.id}`}
                       className="block border-l-2 border-primary pl-3 hover:bg-accent rounded-r transition-colors"
                     >
                       {/* Location */}

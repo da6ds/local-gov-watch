@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { isDevModeEnabled } from './useDevMode';
 
-export function useOnboarding() {
+export function useOnboarding(demoMode: boolean) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const location = useLocation();
 
-  // Only show onboarding on landing page for new users
+  // Only show onboarding on landing page for new users when demo mode is ON
   useEffect(() => {
-    // Skip onboarding entirely in dev mode
-    if (isDevModeEnabled()) {
-      sessionStorage.setItem('hasSeenOnboarding', 'true');
+    if (!demoMode) {
       return;
     }
     
@@ -22,7 +19,7 @@ export function useOnboarding() {
       const timer = setTimeout(() => setShowOnboarding(true), 2000);
       return () => clearTimeout(timer);
     }
-  }, [location.pathname]);
+  }, [location.pathname, demoMode]);
 
   // Only show walkthrough on dashboard after onboarding
   useEffect(() => {
