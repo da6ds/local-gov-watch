@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { WalkthroughProvider } from "@/components/WalkthroughProvider";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useDevMode } from "@/hooks/useDevMode";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { GlobalBanner } from "@/components/GlobalBanner";
@@ -44,6 +45,7 @@ function AppContent() {
     completeOnboarding,
     skipOnboarding,
   } = useOnboarding();
+  const { isDevMode } = useDevMode();
 
   return (
     <>
@@ -57,6 +59,13 @@ function AppContent() {
         onComplete={() => setShowWalkthrough(false)}
       />
       <GlobalBanner />
+      
+      {isDevMode && (
+        <div className="fixed bottom-4 right-4 bg-yellow-500 text-black px-3 py-1 rounded text-xs font-mono z-50 shadow-lg">
+          🔧 DEV MODE
+        </div>
+      )}
+      
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/dashboard" element={<Dashboard />} />

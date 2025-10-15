@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { isDevModeEnabled } from './useDevMode';
 
 export function useOnboarding() {
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -8,6 +9,12 @@ export function useOnboarding() {
 
   // Only show onboarding on landing page for new users
   useEffect(() => {
+    // Skip onboarding entirely in dev mode
+    if (isDevModeEnabled()) {
+      sessionStorage.setItem('hasSeenOnboarding', 'true');
+      return;
+    }
+    
     const hasSeenOnboarding = sessionStorage.getItem('hasSeenOnboarding');
     const isLandingPage = location.pathname === '/';
     

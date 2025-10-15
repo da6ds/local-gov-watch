@@ -10,13 +10,20 @@ export interface GuestScope {
 
 export function getGuestScope(): string[] {
   if (typeof window === 'undefined') return [];
+  
+  // Check for dev mode
+  const isDevMode = localStorage.getItem('devMode') === 'true';
+  const defaultLocations = isDevMode 
+    ? ['sonoma-county-ca', 'napa-county-ca', 'california']
+    : ['austin-tx', 'travis-county-tx', 'texas'];
+  
   const stored = sessionStorage.getItem(GUEST_SCOPE_KEY);
-  if (!stored) return ['austin-tx', 'travis-county-tx', 'texas'];
+  if (!stored) return defaultLocations;
   try {
     const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed : ['austin-tx', 'travis-county-tx', 'texas'];
+    return Array.isArray(parsed) ? parsed : defaultLocations;
   } catch {
-    return ['austin-tx', 'travis-county-tx', 'texas'];
+    return defaultLocations;
   }
 }
 
