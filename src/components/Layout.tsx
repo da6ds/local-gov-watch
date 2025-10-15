@@ -1,26 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Menu, Scale } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { RefreshControl } from "@/components/RefreshControl";
 import { getGuestScope, setGuestScope } from "@/lib/guestSessionStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { BrowseDropdown } from "@/components/nav/BrowseDropdown";
 import { MyWorkspaceDropdown } from "@/components/nav/MyWorkspaceDropdown";
-import { SearchIconButton } from "@/components/nav/SearchIconButton";
-import { OmniFiltersBar } from "@/components/nav/OmniFiltersBar";
 import { MobileBottomNav } from "@/components/nav/MobileBottomNav";
-import { useDemoUser } from "@/hooks/useDemoUser";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { ResetButton } from "@/components/ResetButton";
 import { TrackedTermsFilter } from "@/components/TrackedTermsFilter";
+import { LocationSelector } from "@/components/LocationSelector";
+import { CategoriesPopover } from "@/components/CategoriesPopover";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -29,28 +20,6 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const queryClient = useQueryClient();
-  const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([]);
-  const { isLoggedIn } = useDemoUser();
-
-  // Initialize from session storage
-  useEffect(() => {
-    setSelectedJurisdictions(getGuestScope());
-  }, []);
-
-  // Handle jurisdiction change
-  const handleJurisdictionChange = (slugs: string[]) => {
-    setSelectedJurisdictions(slugs);
-    setGuestScope(slugs);
-    
-    // Invalidate all data queries
-    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-    queryClient.invalidateQueries({ queryKey: ['calendar'] });
-    queryClient.invalidateQueries({ queryKey: ['browse'] });
-    queryClient.invalidateQueries({ queryKey: ['trends'] });
-    
-    toast.success("Location updated");
-  };
 
   const mobileNavItems = [
     { href: "/dashboard", label: "Dashboard" },
@@ -62,18 +31,12 @@ export function Layout({ children }: LayoutProps) {
     { href: "/alerts", label: "Alerts" },
   ];
 
-  const hasActiveFilters = selectedJurisdictions.length > 0;
-
-  const handleClearAll = () => {
-    handleJurisdictionChange([]);
-    toast.success("All filters cleared");
-  };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Primary Navigation */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-12 items-center">
+        <div className="container flex h-16 items-center">
           {/* Mobile: Hamburger menu */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -135,44 +98,23 @@ export function Layout({ children }: LayoutProps) {
             </Button>
           </nav>
 
-          {/* Right Side Actions */}
+          {/* Right Side - Filters and Actions */}
           <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
-            {isLoggedIn && (
-              <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 hidden sm:flex text-xs px-2 py-0.5">
-                      Demo
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    Your data is temporary and will clear when you close this tab
-                  </TooltipContent>
-                </Tooltip>
-                <ResetButton />
-              </>
-            )}
             <TrackedTermsFilter />
-            <SearchIconButton />
-            <div className="hidden md:flex" data-tour="my-workspace">
-              <MyWorkspaceDropdown />
+            <div className="hidden md:flex">
+              <LocationSelector />
             </div>
             <div className="hidden md:flex">
-              <RefreshControl />
+              <CategoriesPopover />
+            </div>
+            <div className="hidden md:flex" data-tour="my-workspace">
+              <MyWorkspaceDropdown />
             </div>
           </div>
         </div>
       </header>
 
-      {/* OmniFilters Bar */}
-      <OmniFiltersBar
-        selectedJurisdictions={selectedJurisdictions}
-        onJurisdictionChange={handleJurisdictionChange}
-        onClearAll={handleClearAll}
-        showClearAll={hasActiveFilters}
-      />
-
-      <main className="container py-3 mt-8 md:mt-10 pb-20 md:pb-4">{children}</main>
+      <main className="container py-3 mt-4 md:mt-6 pb-20 md:pb-4">{children}</main>
 
       <footer className="border-t py-2 md:py-3 mb-16 md:mb-0">
         <div className="container text-center text-xs md:text-sm text-muted-foreground">
