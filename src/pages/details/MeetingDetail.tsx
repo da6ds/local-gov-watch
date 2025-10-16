@@ -20,35 +20,37 @@ export default function MeetingDetail() {
   const { id } = useParams();
 
   const { data: meeting, isLoading } = useQuery({
-    queryKey: ['meeting', id],
+    queryKey: ["meeting", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('meeting')
-        .select(`
+        .from("meeting")
+        .select(
+          `
           *,
           jurisdiction:jurisdiction_id (name, slug, type)
-        `)
-        .eq('id', id)
+        `,
+        )
+        .eq("id", id)
         .single();
-      
+
       if (error) throw error;
       return data;
     },
-    enabled: !!id
+    enabled: !!id,
   });
 
   const { data: topics } = useQuery({
-    queryKey: ['meeting-topics', id],
+    queryKey: ["meeting-topics", id],
     queryFn: async () => {
       const { data } = await supabase
-        .from('item_topic')
-        .select('topic, confidence')
-        .eq('item_id', id)
-        .eq('item_type', 'meeting')
-        .order('confidence', { ascending: false });
+        .from("item_topic")
+        .select("topic, confidence")
+        .eq("item_id", id)
+        .eq("item_type", "meeting")
+        .order("confidence", { ascending: false });
       return data || [];
     },
-    enabled: !!id
+    enabled: !!id,
   });
 
   const generateICS = () => {
@@ -57,20 +59,20 @@ export default function MeetingDetail() {
     const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:VEVENT
-SUMMARY:${meeting.title || 'Meeting'}
-DTSTART:${meeting.starts_at ? format(new Date(meeting.starts_at), "yyyyMMdd'T'HHmmss") : ''}
-DTEND:${meeting.ends_at ? format(new Date(meeting.ends_at), "yyyyMMdd'T'HHmmss") : ''}
-LOCATION:${meeting.location || ''}
-DESCRIPTION:${meeting.ai_summary || ''}
+SUMMARY:${meeting.title || "Meeting"}
+DTSTART:${meeting.starts_at ? format(new Date(meeting.starts_at), "yyyyMMdd'T'HHmmss") : ""}
+DTEND:${meeting.ends_at ? format(new Date(meeting.ends_at), "yyyyMMdd'T'HHmmss") : ""}
+LOCATION:${meeting.location || ""}
+DESCRIPTION:${meeting.ai_summary || ""}
 URL:${window.location.href}
 END:VEVENT
 END:VCALENDAR`;
 
-    const blob = new Blob([icsContent], { type: 'text/calendar' });
+    const blob = new Blob([icsContent], { type: "text/calendar" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = 'meeting.ics';
+    link.download = "meeting.ics";
     link.click();
   };
 
@@ -99,26 +101,32 @@ END:VCALENDAR`;
     );
   }
 
-  const attachments = meeting.attachments as Array<{ 
-    title: string; 
-    url?: string;
-    time?: string;
-    type?: string;
-    description?: string;
-    document_url?: string;
-    video_url?: string;
-    stream_url?: string;
-  }> || [];
+  const attachments =
+    (meeting.attachments as Array<{
+      title: string;
+      url?: string;
+      time?: string;
+      type?: string;
+      description?: string;
+      document_url?: string;
+      video_url?: string;
+      stream_url?: string;
+    }>) || [];
 
-  const streamUrl = attachments.find(a => a.stream_url)?.stream_url;
-  const videoUrl = attachments.find(a => a.video_url)?.video_url;
+  const streamUrl = attachments.find((a) => a.stream_url)?.stream_url;
+  const videoUrl = attachments.find((a) => a.video_url)?.video_url;
   const isTodaysMeeting = meeting.starts_at ? isToday(new Date(meeting.starts_at)) : false;
 
   return (
     <Layout>
       <Helmet>
-        <title>{meeting.title} - {meeting.body_name || 'Meeting'} - Local Gov Watch</title>
-        <meta name="description" content={meeting.ai_summary?.slice(0, 160) || `Meeting details for ${meeting.title}`} />
+        <title>
+          {meeting.title} - {meeting.body_name || "Meeting"} - Local Gov Watch
+        </title>
+        <meta
+          name="description"
+          content={meeting.ai_summary?.slice(0, 160) || `Meeting details for ${meeting.title}`}
+        />
         <meta property="og:title" content={meeting.title} />
         <meta property="og:type" content="event" />
         <meta property="og:description" content={meeting.ai_summary?.slice(0, 160)} />
@@ -144,34 +152,23 @@ END:VCALENDAR`;
             <div className="space-y-4">
               <div className="flex flex-col gap-3">
                 <h1 className="text-3xl md:text-4xl font-bold">{meeting.title}</h1>
-                {meeting.jurisdiction && (
-                  <CityBadge city={meeting.jurisdiction.name} size="large" />
-                )}
+                {meeting.jurisdiction && <CityBadge city={meeting.jurisdiction.name} size="large" />}
               </div>
-              
+
               <div className="flex flex-wrap items-center gap-2">
-                {meeting.body_name && (
-                  <Badge variant="outline">{meeting.body_name}</Badge>
-                )}
+                {meeting.body_name && <Badge variant="outline">{meeting.body_name}</Badge>}
               </div>
 
               {/* Live Stream Button */}
-              {meeting.status === 'in_progress' && (meeting as any).live_stream_url && (
+              {meeting.status === "in_progress" && (meeting as any).live_stream_url && (
                 <div className="p-4 bg-red-50 dark:bg-red-950/20 border-2 border-red-500 rounded-lg">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                       <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
                       <span className="font-semibold text-red-700 dark:text-red-400">Meeting in Progress</span>
                     </div>
-                    <Button 
-                      asChild
-                      className="bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      <a 
-                        href={(meeting as any).live_stream_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                    <Button asChild className="bg-red-500 hover:bg-red-600 text-white">
+                      <a href={(meeting as any).live_stream_url} target="_blank" rel="noopener noreferrer">
                         <Video className="mr-2 h-4 w-4" />
                         Watch Live Stream
                       </a>
@@ -201,9 +198,7 @@ END:VCALENDAR`;
                       <span>{meeting.location}</span>
                     </div>
                     {meeting.jurisdiction && (
-                      <div className="ml-6 text-sm text-muted-foreground">
-                        {meeting.jurisdiction.name}
-                      </div>
+                      <div className="ml-6 text-sm text-muted-foreground">{meeting.jurisdiction.name}</div>
                     )}
                   </div>
                 )}
@@ -231,14 +226,8 @@ END:VCALENDAR`;
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {topics.map((topic) => (
-                      <Link 
-                        key={topic.topic}
-                        to={`/browse/meetings?topic=${encodeURIComponent(topic.topic)}`}
-                      >
-                        <Badge 
-                          variant="outline"
-                          className="cursor-pointer hover:bg-muted transition-colors"
-                        >
+                      <Link key={topic.topic} to={`/browse/meetings?topic=${encodeURIComponent(topic.topic)}`}>
+                        <Badge variant="outline" className="cursor-pointer hover:bg-muted transition-colors">
                           {topic.topic}
                         </Badge>
                       </Link>
@@ -252,7 +241,7 @@ END:VCALENDAR`;
             <AgendaItems attachments={attachments} />
 
             {/* Meeting Documents (Tabbed Viewer) */}
-            <MeetingDocuments 
+            <MeetingDocuments
               agendaUrl={meeting.agenda_url}
               minutesUrl={meeting.minutes_url}
               extractedText={meeting.extracted_text}
@@ -282,8 +271,7 @@ END:VCALENDAR`;
                 )}
                 {meeting.updated_at && (
                   <div>
-                    <span className="font-medium">Last Updated:</span>{" "}
-                    {format(new Date(meeting.updated_at), "PPP")}
+                    <span className="font-medium">Last Updated:</span> {format(new Date(meeting.updated_at), "PPP")}
                   </div>
                 )}
               </CardContent>
@@ -294,11 +282,7 @@ END:VCALENDAR`;
           <div className="lg:col-span-1 space-y-4">
             {/* Meeting Status */}
             {meeting.starts_at && (
-              <MeetingStatus 
-                startsAt={meeting.starts_at} 
-                endsAt={meeting.ends_at}
-                status={meeting.status}
-              />
+              <MeetingStatus startsAt={meeting.starts_at} endsAt={meeting.ends_at} status={meeting.status} />
             )}
 
             {/* Quick Actions */}
@@ -307,23 +291,13 @@ END:VCALENDAR`;
                 <h3 className="text-base font-semibold">Actions</h3>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full justify-start"
-                  onClick={generateICS}
-                >
+                <Button variant="outline" size="sm" className="w-full justify-start" onClick={generateICS}>
                   <Calendar className="h-4 w-4 mr-2" />
                   Add to Calendar
                 </Button>
 
                 {isTodaysMeeting && streamUrl && (
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    className="w-full justify-start"
-                    asChild
-                  >
+                  <Button variant="destructive" size="sm" className="w-full justify-start" asChild>
                     <a href={streamUrl} target="_blank" rel="noopener noreferrer">
                       <Video className="h-4 w-4 mr-2" />
                       Watch Live
@@ -332,15 +306,10 @@ END:VCALENDAR`;
                 )}
 
                 {!isTodaysMeeting && videoUrl && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full justify-start"
-                    asChild
-                  >
+                  <Button variant="outline" size="sm" className="w-full justify-start" asChild>
                     <a href={videoUrl} target="_blank" rel="noopener noreferrer">
                       <Video className="h-4 w-4 mr-2" />
-                      View Recording
+                      View Recording Source
                     </a>
                   </Button>
                 )}
@@ -349,7 +318,7 @@ END:VCALENDAR`;
                   <Button variant="outline" size="sm" className="w-full justify-start" asChild>
                     <a href={meeting.agenda_url} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4 mr-2" />
-                      View Agenda
+                      View Agenda Source
                     </a>
                   </Button>
                 )}
@@ -358,7 +327,7 @@ END:VCALENDAR`;
                   <Button variant="outline" size="sm" className="w-full justify-start" asChild>
                     <a href={meeting.minutes_url} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4 mr-2" />
-                      View Minutes
+                      View Minutes Source
                     </a>
                   </Button>
                 )}
@@ -367,7 +336,7 @@ END:VCALENDAR`;
 
             {/* Related Meetings */}
             {meeting.starts_at && (
-              <RelatedMeetings 
+              <RelatedMeetings
                 currentMeetingId={meeting.id}
                 bodyName={meeting.body_name}
                 startsAt={meeting.starts_at}
