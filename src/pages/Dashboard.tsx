@@ -124,67 +124,73 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Top Row - Two Columns */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Upcoming Meetings */}
-          <CollapsibleSection
-            storageKey="upcoming-meetings"
-            title="Upcoming Meetings"
-            icon={<CalendarDays className="h-5 w-5 text-primary" />}
-            badge={upcomingMeetings.length > 0 && <Badge variant="secondary">{upcomingMeetings.length}</Badge>}
-          >
-            <div className="space-y-3">
-              {upcomingMeetings.length > 0 ? (
-                <>
-                  {upcomingMeetings.slice(0, 5).map((meeting: any) => (
-                    <Link
-                      key={meeting.id}
-                      to={`/meetings/${meeting.id}`}
-                      className="block border-l-2 border-primary pl-3 hover:bg-accent rounded-r transition-colors"
-                    >
-                      {/* Location */}
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                        <MapPin className="h-3 w-3" />
-                        <span>{meeting.jurisdiction?.name || 'Unknown'}</span>
-                      </div>
-                      
-                      {/* Meeting title */}
-                      <div className="font-medium text-sm mb-1">
-                        {meeting.title || meeting.body_name}
-                      </div>
-                      
-                      {/* Date & Time */}
-                      {meeting.starts_at && (
-                        <div className="text-xs text-muted-foreground">
-                          {format(new Date(meeting.starts_at), 'MMM d, yyyy')} • {format(new Date(meeting.starts_at), 'h:mm a')}
+        {/* Top Row - Meetings & Calendar */}
+        <CollapsibleSection
+          storageKey="meetings-calendar"
+          title="Meetings & Calendar"
+          icon={<CalendarDays className="h-5 w-5 text-primary" />}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Upcoming Meetings */}
+            <div>
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" />
+                Upcoming Meetings
+                {upcomingMeetings.length > 0 && <Badge variant="secondary">{upcomingMeetings.length}</Badge>}
+              </h3>
+              <div className="space-y-3">
+                {upcomingMeetings.length > 0 ? (
+                  <>
+                    {upcomingMeetings.slice(0, 5).map((meeting: any) => (
+                      <Link
+                        key={meeting.id}
+                        to={`/meetings/${meeting.id}`}
+                        className="block border-l-2 border-primary pl-3 hover:bg-accent rounded-r transition-colors"
+                      >
+                        {/* Location */}
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>{meeting.jurisdiction?.name || 'Unknown'}</span>
                         </div>
-                      )}
-                    </Link>
-                  ))}
-                  
-                  <Button variant="link" asChild className="w-full mt-4">
-                    <Link to="/browse/meetings">
-                      View All Meetings →
-                    </Link>
-                  </Button>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  No meetings scheduled
-                </p>
-              )}
+                        
+                        {/* Meeting title */}
+                        <div className="font-medium text-sm mb-1">
+                          {meeting.title || meeting.body_name}
+                        </div>
+                        
+                        {/* Date & Time */}
+                        {meeting.starts_at && (
+                          <div className="text-xs text-muted-foreground">
+                            {format(new Date(meeting.starts_at), 'MMM d, yyyy')} • {format(new Date(meeting.starts_at), 'h:mm a')}
+                          </div>
+                        )}
+                      </Link>
+                    ))}
+                    
+                    <Button variant="link" asChild className="w-full mt-4">
+                      <Link to="/browse/meetings">
+                        View All Meetings →
+                      </Link>
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No meetings scheduled
+                  </p>
+                )}
+              </div>
             </div>
-          </CollapsibleSection>
 
-          {/* Calendar */}
-          <CollapsibleSection
-            storageKey="calendar"
-            title="Calendar"
-            icon={<Calendar className="h-5 w-5 text-primary" />}
-          >
-            <CalendarComponent variant="dashboard" />
-          </CollapsibleSection>
-        </div>
+            {/* Calendar */}
+            <div>
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Calendar
+              </h3>
+              <CalendarComponent variant="dashboard" />
+            </div>
+          </div>
+        </CollapsibleSection>
 
         {/* Bottom Row - Full Width Recent Updates */}
         <CollapsibleSection
