@@ -62,7 +62,7 @@ export function RelatedMeetings({ currentMeetingId, bodyName, startsAt }: Relate
       </CardHeader>
       <CardContent className="space-y-3">
         {previousMeeting && (
-          <Button variant="outline" size="sm" className="w-full justify-start" asChild>
+          <Button variant="outline" className="w-full justify-start h-auto min-h-[80px] py-3" asChild>
             <Link to={`/meetings/${previousMeeting.id}`}>
               <ChevronLeft className="h-4 w-4 mr-2" />
               <div className="flex flex-col items-start text-left flex-1 min-w-0">
@@ -77,7 +77,7 @@ export function RelatedMeetings({ currentMeetingId, bodyName, startsAt }: Relate
         )}
 
         {nextMeeting && (
-          <Button variant="outline" size="sm" className="w-full justify-start" asChild>
+          <Button variant="outline" className="w-full justify-start h-auto min-h-[80px] py-3" asChild>
             <Link to={`/meetings/${nextMeeting.id}`}>
               <ChevronRight className="h-4 w-4 mr-2" />
               <div className="flex flex-col items-start text-left flex-1 min-w-0">
