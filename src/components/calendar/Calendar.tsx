@@ -173,10 +173,10 @@ export function Calendar({ variant = 'full' }: CalendarProps) {
         </Card>
       );
     }
-    // Dashboard variant: full-width grid
+    // Dashboard variant: full-width grid (no Card border for seamless integration)
     return (
-      <Card className={containerHeight} data-testid="calendar-card">
-        <CardContent className="p-4 md:p-6 h-full overflow-auto">
+      <div className={containerHeight} data-testid="calendar-card">
+        <div className="h-full overflow-auto">
           <CalendarGrid
             currentMonth={currentMonth}
             selectedDate={selectedDate}
@@ -188,8 +188,8 @@ export function Calendar({ variant = 'full' }: CalendarProps) {
             scope={scope}
             topics={topics}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -228,10 +228,10 @@ export function Calendar({ variant = 'full' }: CalendarProps) {
     );
   }
 
-  // Dashboard variant: full-width grid only
+  // Dashboard variant: full-width grid only (no Card border for seamless integration)
   return (
-    <Card className={containerHeight} data-testid="calendar-card">
-      <CardContent className="p-4 lg:p-6 h-full overflow-auto">
+    <div className={containerHeight} data-testid="calendar-card">
+      <div className="h-full overflow-auto">
         <CalendarGrid
           currentMonth={currentMonth}
           selectedDate={selectedDate}
@@ -243,7 +243,7 @@ export function Calendar({ variant = 'full' }: CalendarProps) {
           scope={scope}
           topics={topics}
         />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
