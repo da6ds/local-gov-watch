@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getGuestScope, getGuestTopics } from "@/lib/guestSessionStorage";
 import { CalendarGrid } from "./CalendarGrid";
@@ -33,8 +33,9 @@ export function Calendar({ variant = 'full' }: CalendarProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const scope = getGuestScope().join(',');
-  const topics = getGuestTopics();
+  // Memoize scope and topics to prevent unnecessary re-fetches
+  const scope = useMemo(() => getGuestScope().join(','), []);
+  const topics = useMemo(() => getGuestTopics(), []);
 
   // Prefetch event counts for the month
   const { data: counts = {} } = useQuery({
@@ -62,10 +63,13 @@ export function Calendar({ variant = 'full' }: CalendarProps) {
     setSheetOpen(false);
   };
 
-  // Fixed heights by breakpoint
-  const containerHeight = variant === 'dashboard' 
-    ? 'h-[520px] md:h-[560px]' 
-    : 'h-[480px] md:h-[600px] lg:h-[640px]';
+  // Fixed heights by breakpoint (memoized)
+  const containerHeight = useMemo(() => 
+    variant === 'dashboard' 
+      ? 'h-[520px] md:h-[560px]' 
+      : 'h-[480px] md:h-[600px] lg:h-[640px]',
+    [variant]
+  );
 
   // Mobile agenda view
   if (isMobile && mobileView === 'agenda') {

@@ -6,16 +6,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, formatDistanceToNow } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { useDataStatus } from "@/hooks/useDataStatus";
 import { useGuestRunUpdate } from "@/hooks/useGuestRunUpdate";
 import { toast } from "sonner";
-import { Calendar as CalendarComponent } from "@/components/calendar/Calendar";
 import { Button } from "@/components/ui/button";
 import { useLocationFilter } from "@/contexts/LocationFilterContext";
 import { useFilteredDashboardData } from "@/hooks/useFilteredQueries";
-import { CollapsibleSection } from "@/components/CollapsibleSection";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy load heavy components for better performance
+const CalendarComponent = lazy(() => import("@/components/calendar/Calendar").then(m => ({ default: m.Calendar })));
+const CollapsibleSection = lazy(() => import("@/components/CollapsibleSection").then(m => ({ default: m.CollapsibleSection })));
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
@@ -26,7 +28,7 @@ export default function Dashboard() {
   const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
   const [autoRefreshEta, setAutoRefreshEta] = useState<number | null>(null);
 
-  // Build scope string for data status checks
+  // Build scope string for data status checks (memoized)
   useEffect(() => {
     if (jurisdictionIds.length === 0) return;
     
@@ -103,8 +105,9 @@ export default function Dashboard() {
   // Fetch data using filtered queries
   const { data: dashboardData, isLoading: dashboardLoading } = useFilteredDashboardData();
 
-  const recentLegislation = dashboardData?.legislation || [];
-  const upcomingMeetings = dashboardData?.meetings || [];
+  // Memoize filtered data to prevent unnecessary re-renders
+  const recentLegislation = useMemo(() => dashboardData?.legislation || [], [dashboardData?.legislation]);
+  const upcomingMeetings = useMemo(() => dashboardData?.meetings || [], [dashboardData?.meetings]);
 
   return (
     <Layout>
@@ -126,7 +129,16 @@ export default function Dashboard() {
         </div>
 
         {/* Meetings & Calendar Container */}
-        <CollapsibleSection
+        <Suspense fallback={
+          <div className="border rounded-lg p-6">
+            <Skeleton className="h-8 w-64 mb-4" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Skeleton className="h-96" />
+              <Skeleton className="h-96" />
+            </div>
+          </div>
+        }>
+          <CollapsibleSection
           storageKey="meetings-calendar"
           defaultExpanded={true}
           renderHeader={(isExpanded) => {
@@ -199,6 +211,7 @@ export default function Dashboard() {
               <Link 
                 to="/browse/meetings"
                 className="text-primary hover:underline text-sm font-medium flex items-center gap-1 justify-center p-3 mt-auto"
+                aria-label="View all upcoming meetings"
               >
                 View All Meetings
                 <ArrowRight className="h-4 w-4" />
@@ -208,21 +221,35 @@ export default function Dashboard() {
             {/* Calendar Column */}
             <div className="flex flex-col h-full">
               <div className="flex-1">
-                <CalendarComponent variant="dashboard" />
+                <Suspense fallback={<Skeleton className="h-full w-full" />}>
+                  <CalendarComponent variant="dashboard" />
+                </Suspense>
               </div>
               <Link 
                 to="/calendar"
                 className="text-primary hover:underline text-sm font-medium flex items-center gap-1 justify-center p-3 mt-auto"
+                aria-label="View full calendar page"
               >
                 View Calendar
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
-        </CollapsibleSection>
+          </CollapsibleSection>
+        </Suspense>
 
         {/* Bottom Row - Full Width Recent Updates */}
-        <CollapsibleSection
+        <Suspense fallback={
+          <div className="border rounded-lg p-6">
+            <Skeleton className="h-8 w-48 mb-4" />
+            <div className="space-y-4">
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+            </div>
+          </div>
+        }>
+          <CollapsibleSection
           storageKey="recent-updates"
           title="Recent Updates"
           icon={<Scale className="h-5 w-5 text-primary" />}
@@ -282,7 +309,8 @@ export default function Dashboard() {
               </p>
             )}
           </div>
-        </CollapsibleSection>
+          </CollapsibleSection>
+        </Suspense>
       </div>
     </Layout>
   );
