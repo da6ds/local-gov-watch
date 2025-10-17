@@ -8,7 +8,12 @@ const getDefaultFilters = (): FilterOptions => ({
   author: null,
   district: null,
   city: null,
-  status: null
+  status: null,
+  statuses: [],
+  dateRange: {
+    start: null,
+    end: null
+  }
 });
 
 export const useLegislationFilters = () => {

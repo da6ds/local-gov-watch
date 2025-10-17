@@ -1,7 +1,12 @@
 import { useState } from 'react';
-import { ChevronDown, X, Filter } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { X, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export type SortOption = 
   | 'introduced_desc'
@@ -16,6 +21,11 @@ export interface FilterOptions {
   district: number | null;
   city: string | null;
   status: string | null;
+  statuses: string[];
+  dateRange: {
+    start: Date | null;
+    end: Date | null;
+  };
 }
 
 interface LegislationFiltersProps {
@@ -34,20 +44,63 @@ export const LegislationFilters = ({
   onFilterChange,
   availableFilters
 }: LegislationFiltersProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isStatusExpanded, setIsStatusExpanded] = useState(true);
+  const [isAuthorExpanded, setIsAuthorExpanded] = useState(false);
+  const [isDistrictExpanded, setIsDistrictExpanded] = useState(false);
+  const [isCityExpanded, setIsCityExpanded] = useState(false);
+  const [activeDatePreset, setActiveDatePreset] = useState<string | null>(null);
+
   const activeFilterCount = [
+    (currentFilters.statuses && currentFilters.statuses.length > 0) ? 'statuses' : null,
     currentFilters.author,
     currentFilters.district !== null ? currentFilters.district : null,
     currentFilters.city,
-    currentFilters.status
+    currentFilters.dateRange.start ? 'dateStart' : null,
+    currentFilters.dateRange.end ? 'dateEnd' : null,
   ].filter(val => val !== null).length;
 
-  const handleSortChange = (value: SortOption) => {
-    onFilterChange({ ...currentFilters, sortBy: value });
+  const handleStatusChange = (status: string, checked: boolean) => {
+    let newStatuses = [...(currentFilters.statuses || [])];
+    if (checked) {
+      if (!newStatuses.includes(status)) {
+        newStatuses.push(status);
+      }
+    } else {
+      newStatuses = newStatuses.filter(s => s !== status);
+    }
+    onFilterChange({
+      ...currentFilters,
+      statuses: newStatuses,
+      status: newStatuses.length === 1 ? newStatuses[0] : null
+    });
   };
 
-  const handleFilterChange = (key: keyof FilterOptions, value: any) => {
-    onFilterChange({ ...currentFilters, [key]: value });
+  const handleDateRangeChange = (key: 'start' | 'end', date: Date | undefined) => {
+    onFilterChange({
+      ...currentFilters,
+      dateRange: {
+        ...currentFilters.dateRange,
+        [key]: date || null
+      }
+    });
+  };
+
+  const setQuickDateRange = (days: number | null, preset: string) => {
+    if (days === null) {
+      onFilterChange({
+        ...currentFilters,
+        dateRange: { start: null, end: null }
+      });
+    } else {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - days);
+      onFilterChange({
+        ...currentFilters,
+        dateRange: { start, end }
+      });
+    }
+    setActiveDatePreset(preset);
   };
 
   const clearFilters = () => {
@@ -56,222 +109,248 @@ export const LegislationFilters = ({
       author: null,
       district: null,
       city: null,
-      status: null
+      status: null,
+      statuses: [],
+      dateRange: { start: null, end: null }
     });
+    setActiveDatePreset(null);
   };
 
-  const getSortLabel = (option: SortOption): string => {
-    const labels: Record<SortOption, string> = {
-      introduced_desc: 'Most Recently Introduced',
-      introduced_asc: 'Oldest First',
-      updated_desc: 'Last Updated',
-      title_asc: 'Title (A-Z)',
-      title_desc: 'Title (Z-A)'
-    };
-    return labels[option];
+  const getActiveFilterLabels = () => {
+    const labels: string[] = [];
+    if (currentFilters.statuses && currentFilters.statuses.length > 0) {
+      currentFilters.statuses.forEach(status => labels.push(`Status: ${status}`));
+    }
+    if (currentFilters.author) labels.push(`Author: ${currentFilters.author}`);
+    if (currentFilters.district !== null) labels.push(`District ${currentFilters.district}`);
+    if (currentFilters.city) labels.push(currentFilters.city);
+    if (activeDatePreset) {
+      const presetLabels = {
+        'last-30': 'Last 30 Days',
+        'last-90': 'Last 90 Days',
+        'last-year': 'Last Year',
+        'all-time': 'All Time'
+      };
+      labels.push(`Date: ${presetLabels[activeDatePreset as keyof typeof presetLabels]}`);
+    } else if (currentFilters.dateRange.start || currentFilters.dateRange.end) {
+      const start = currentFilters.dateRange.start ? format(currentFilters.dateRange.start, 'MMM d') : 'Start';
+      const end = currentFilters.dateRange.end ? format(currentFilters.dateRange.end, 'MMM d') : 'End';
+      labels.push(`Date: ${start} - ${end}`);
+    }
+    return labels;
   };
+
+  const activeLabels = getActiveFilterLabels();
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-card rounded-lg border mb-6">
-      {/* Sort Control and Filter Toggle */}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-          <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-            Sort by:
-          </label>
-          <Select value={currentFilters.sortBy} onValueChange={handleSortChange}>
-            <SelectTrigger className="flex-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="introduced_desc">Most Recently Introduced</SelectItem>
-              <SelectItem value="introduced_asc">Oldest First</SelectItem>
-              <SelectItem value="updated_desc">Last Updated</SelectItem>
-              <SelectItem value="title_asc">Title (A-Z)</SelectItem>
-              <SelectItem value="title_desc">Title (Z-A)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button
-          variant="outline"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="gap-2"
-        >
-          <Filter size={16} />
-          <span>Filters</span>
-          {activeFilterCount > 0 && (
-            <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs font-semibold">
-              {activeFilterCount}
-            </span>
-          )}
-          <ChevronDown 
-            size={16} 
-            className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-          />
-        </Button>
-      </div>
-
-      {/* Expanded Filter Panel */}
-      {isExpanded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
-          {/* Author Filter */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Council Member
-            </label>
-            <Select 
-              value={currentFilters.author || 'all'} 
-              onValueChange={(val) => handleFilterChange('author', val === 'all' ? null : val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Authors" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Authors</SelectItem>
-                {availableFilters.authors.map(author => (
-                  <SelectItem key={author} value={author}>
-                    {author}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* District Filter */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              District
-            </label>
-            <Select 
-              value={currentFilters.district?.toString() || 'all'} 
-              onValueChange={(val) => handleFilterChange('district', val === 'all' ? null : Number(val))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Districts" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Districts</SelectItem>
-                {availableFilters.districts.map(district => (
-                  <SelectItem key={district} value={district.toString()}>
-                    District {district}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* City Filter */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              City
-            </label>
-            <Select 
-              value={currentFilters.city || 'all'} 
-              onValueChange={(val) => handleFilterChange('city', val === 'all' ? null : val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Cities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Cities</SelectItem>
-                {availableFilters.cities.map(city => (
-                  <SelectItem key={city} value={city}>
-                    {city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Status
-            </label>
-            <Select 
-              value={currentFilters.status || 'all'} 
-              onValueChange={(val) => handleFilterChange('status', val === 'all' ? null : val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {availableFilters.statuses.map(status => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Clear Filters Button */}
-          {activeFilterCount > 0 && (
-            <div className="col-span-full">
-              <Button 
-                variant="outline"
-                onClick={clearFilters}
-                className="gap-2"
-              >
-                <X size={16} />
-                Clear all filters
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Active Filter Pills */}
+    <div className="space-y-4">
+      {/* Active Filters Display */}
       {activeFilterCount > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {currentFilters.author && (
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
-              Author: {currentFilters.author}
-              <button 
-                onClick={() => handleFilterChange('author', null)}
-                className="hover:opacity-70 transition-opacity"
-              >
-                <X size={14} />
-              </button>
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 p-3">
+          <span className="text-sm font-medium">Active:</span>
+          {activeLabels.map((label, idx) => (
+            <span key={idx} className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium">
+              {label}
             </span>
-          )}
-          {currentFilters.district !== null && (
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
-              District {currentFilters.district}
-              <button 
-                onClick={() => handleFilterChange('district', null)}
-                className="hover:opacity-70 transition-opacity"
-              >
-                <X size={14} />
-              </button>
-            </span>
-          )}
-          {currentFilters.city && (
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
-              {currentFilters.city}
-              <button 
-                onClick={() => handleFilterChange('city', null)}
-                className="hover:opacity-70 transition-opacity"
-              >
-                <X size={14} />
-              </button>
-            </span>
-          )}
-          {currentFilters.status && (
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
-              Status: {currentFilters.status}
-              <button 
-                onClick={() => handleFilterChange('status', null)}
-                className="hover:opacity-70 transition-opacity"
-              >
-                <X size={14} />
-              </button>
-            </span>
-          )}
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearFilters}
+            className="ml-auto h-7 text-xs"
+          >
+            <X className="h-3 w-3 mr-1" />
+            Clear All
+          </Button>
         </div>
       )}
+
+      <div className="space-y-4">
+        {/* Status Section */}
+        <div className="space-y-2">
+          <Collapsible open={isStatusExpanded} onOpenChange={setIsStatusExpanded}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-foreground transition-colors w-full">
+              <ChevronDown className={`h-4 w-4 transition-transform ${isStatusExpanded ? 'rotate-180' : ''}`} />
+              📊 Status
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2 space-y-1">
+              {availableFilters.statuses.map(status => (
+                <div key={status} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`status-${status}`}
+                    checked={currentFilters.statuses?.includes(status) || false}
+                    onCheckedChange={(checked) => handleStatusChange(status, checked as boolean)}
+                  />
+                  <Label htmlFor={`status-${status}`} className="text-sm cursor-pointer flex-1">
+                    {status}
+                  </Label>
+                </div>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+
+        {/* Council Member Section */}
+        <div className="space-y-2">
+          <Collapsible open={isAuthorExpanded} onOpenChange={setIsAuthorExpanded}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-foreground transition-colors w-full">
+              <ChevronDown className={`h-4 w-4 transition-transform ${isAuthorExpanded ? 'rotate-180' : ''}`} />
+              👤 Council Member
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2 space-y-1 max-h-60 overflow-y-auto">
+              {availableFilters.authors.map(author => (
+                <div key={author} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`author-${author}`}
+                    checked={currentFilters.author === author}
+                    onCheckedChange={(checked) => onFilterChange({
+                      ...currentFilters,
+                      author: checked ? author : null
+                    })}
+                  />
+                  <Label htmlFor={`author-${author}`} className="text-sm cursor-pointer flex-1">
+                    {author}
+                  </Label>
+                </div>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+
+        {/* District Section */}
+        <div className="space-y-2">
+          <Collapsible open={isDistrictExpanded} onOpenChange={setIsDistrictExpanded}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-foreground transition-colors w-full">
+              <ChevronDown className={`h-4 w-4 transition-transform ${isDistrictExpanded ? 'rotate-180' : ''}`} />
+              🗺️ District
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2 space-y-1">
+              {availableFilters.districts.map(district => (
+                <div key={district} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`district-${district}`}
+                    checked={currentFilters.district === district}
+                    onCheckedChange={(checked) => onFilterChange({
+                      ...currentFilters,
+                      district: checked ? district : null
+                    })}
+                  />
+                  <Label htmlFor={`district-${district}`} className="text-sm cursor-pointer flex-1">
+                    District {district}
+                  </Label>
+                </div>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+
+        {/* City Section */}
+        <div className="space-y-2">
+          <Collapsible open={isCityExpanded} onOpenChange={setIsCityExpanded}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-foreground transition-colors w-full">
+              <ChevronDown className={`h-4 w-4 transition-transform ${isCityExpanded ? 'rotate-180' : ''}`} />
+              🏙️ City
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2 space-y-1">
+              {availableFilters.cities.map(city => (
+                <div key={city} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`city-${city}`}
+                    checked={currentFilters.city === city}
+                    onCheckedChange={(checked) => onFilterChange({
+                      ...currentFilters,
+                      city: checked ? city : null
+                    })}
+                  />
+                  <Label htmlFor={`city-${city}`} className="text-sm cursor-pointer flex-1">
+                    {city}
+                  </Label>
+                </div>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+
+        {/* Date Range Section */}
+        <div className="space-y-2">
+          <h4 className="font-medium text-sm">📅 Date Range</h4>
+          
+          {/* Date Pickers */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">From</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {currentFilters.dateRange.start ? format(currentFilters.dateRange.start, 'MMM d, yyyy') : 'Select date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={currentFilters.dateRange.start || undefined}
+                    onSelect={(date) => handleDateRangeChange('start', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">To</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {currentFilters.dateRange.end ? format(currentFilters.dateRange.end, 'MMM d, yyyy') : 'Select date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={currentFilters.dateRange.end || undefined}
+                    onSelect={(date) => handleDateRangeChange('end', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          {/* Quick Filters */}
+          <div className="flex flex-wrap gap-1">
+            <Button 
+              variant={activeDatePreset === 'last-30' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setQuickDateRange(30, 'last-30')}
+            >
+              Last 30 Days
+            </Button>
+            <Button 
+              variant={activeDatePreset === 'last-90' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setQuickDateRange(90, 'last-90')}
+            >
+              Last 90 Days
+            </Button>
+            <Button 
+              variant={activeDatePreset === 'last-year' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setQuickDateRange(365, 'last-year')}
+            >
+              Last Year
+            </Button>
+            <Button 
+              variant={activeDatePreset === 'all-time' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setQuickDateRange(null, 'all-time')}
+            >
+              All Time
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

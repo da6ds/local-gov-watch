@@ -1,5 +1,5 @@
 import { Layout } from "@/components/Layout";
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +9,7 @@ import { sortMeetings } from "@/lib/meetingSorting";
 import { filterMeetings, getAvailableMeetingFilters } from "@/lib/meetingFiltering";
 import { useTrackedTermsFilter } from "@/hooks/useTrackedTermsFilter";
 import { filterMeetingsByTrackedTerms } from "@/lib/trackedTermsFiltering";
-import { Calendar, MapPin, ExternalLink, Filter, TestTube2 } from "lucide-react";
+import { Calendar, MapPin, ExternalLink, Filter, TestTube2, Search } from "lucide-react";
 import { format } from "date-fns";
 import { useFilteredMeetings } from "@/hooks/useFilteredQueries";
 import { useLocationFilter } from "@/contexts/LocationFilterContext";
@@ -17,7 +17,11 @@ import { CityBadge } from "@/components/CityBadge";
 import { MeetingTypeBadge } from "@/components/MeetingTypeBadge";
 import { MeetingStatusBadge } from "@/components/meeting/MeetingStatusBadge";
 import { ExternalLink as LinkIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
 export default function BrowseMeetings() {
+  const [searchTerm, setSearchTerm] = useState("");
   const {
     selectedLocationSlugs
   } = useLocationFilter();
@@ -30,6 +34,20 @@ export default function BrowseMeetings() {
     hasActiveFilters: hasTrackedTermsFilter,
     activeTerms
   } = useTrackedTermsFilter();
+
+  // Debounced search
+  const debouncedSearch = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (value: string) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          setSearchTerm(value);
+        }, 300);
+      };
+    })(),
+    []
+  );
 
   // Fetch meetings using filtered query - get ALL meetings (no date filter)
   const {
@@ -64,12 +82,23 @@ export default function BrowseMeetings() {
     };
   }, [meetings]);
 
-  // Apply filters and sorting
+  // Apply search, filters and sorting
   const processedMeetings = useMemo(() => {
     if (!meetings) return [];
 
-    // First apply standard filters
-    let filtered = filterMeetings(meetings, filters);
+    // First apply search filter
+    let filtered = meetings;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = meetings.filter(m => 
+        m.title?.toLowerCase().includes(term) ||
+        m.body_name?.toLowerCase().includes(term) ||
+        m.location?.toLowerCase().includes(term)
+      );
+    }
+
+    // Then apply standard filters
+    filtered = filterMeetings(filtered, filters);
 
     // Then apply tracked terms filter
     if (hasTrackedTermsFilter) {
@@ -79,7 +108,7 @@ export default function BrowseMeetings() {
     // Then sort
     const sorted = sortMeetings(filtered, filters.sortBy);
     return sorted;
-  }, [meetings, filters, activeKeywords, hasTrackedTermsFilter]);
+  }, [meetings, filters, activeKeywords, hasTrackedTermsFilter, searchTerm]);
   const MeetingCard = ({
     meeting
   }: {
@@ -140,8 +169,29 @@ export default function BrowseMeetings() {
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Browse Meetings</h1>
 
-        {/* Test Data Indicator */}
-        {hasTestData}
+        {/* Search and Sort */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search meetings..."
+              onChange={(e) => debouncedSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={filters.sortBy} onValueChange={(value) => setFilters({ ...filters, sortBy: value as any })}>
+            <SelectTrigger className="w-full sm:w-[220px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date_desc">Date (Newest First)</SelectItem>
+              <SelectItem value="date_asc">Date (Oldest First)</SelectItem>
+              <SelectItem value="title_asc">Alphabetical (A-Z)</SelectItem>
+              <SelectItem value="title_desc">Alphabetical (Z-A)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Tracked Terms Indicator */}
         {hasTrackedTermsFilter && <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
@@ -156,7 +206,14 @@ export default function BrowseMeetings() {
             </div>
           </div>}
 
-        <MeetingFilters currentFilters={filters} onFilterChange={setFilters} availableFilters={availableFilters} />
+        {/* Filters Section */}
+        <CollapsibleSection 
+          storageKey="meetings-filters" 
+          title="Filters"
+          defaultExpanded={true}
+        >
+          <MeetingFilters currentFilters={filters} onFilterChange={setFilters} availableFilters={availableFilters} />
+        </CollapsibleSection>
 
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm text-muted-foreground">

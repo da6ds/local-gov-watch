@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ChevronDown, X, Filter, Calendar as CalendarIcon } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, X, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -57,7 +57,6 @@ export const MeetingFilters = ({
   onFilterChange,
   availableFilters
 }: MeetingFiltersProps) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAdvisoryExpanded, setIsAdvisoryExpanded] = useState(false);
   const [activeDatePreset, setActiveDatePreset] = useState<string | null>(null);
 
@@ -72,17 +71,14 @@ export const MeetingFilters = ({
     currentFilters.dateRange.end ? 'dateEnd' : null,
   ].filter(val => val !== null).length;
 
-  // Two-way sync: Legislative toggle <-> Checkboxes
   const handleLegislativeToggle = (checked: boolean) => {
     if (checked) {
-      // Enable legislative mode: check both legislative types, uncheck all advisory
       onFilterChange({
         ...currentFilters,
         legislativeOnly: true,
         meetingTypes: ['city_council', 'board_of_supervisors']
       });
     } else {
-      // Disable legislative mode (keep current selections)
       onFilterChange({
         ...currentFilters,
         legislativeOnly: false
@@ -101,7 +97,6 @@ export const MeetingFilters = ({
       newTypes = newTypes.filter(t => t !== type);
     }
 
-    // Check if we should auto-enable legislative mode
     const hasCouncil = newTypes.includes('city_council');
     const hasSupervisors = newTypes.includes('board_of_supervisors');
     const hasAdvisory = newTypes.some(t => ['committee', 'commission', 'authority'].includes(t));
@@ -136,14 +131,13 @@ export const MeetingFilters = ({
 
   const setQuickDateRange = (days: number | null, preset: string) => {
     if (days === null) {
-      // All time
       onFilterChange({
         ...currentFilters,
         dateRange: { start: null, end: null }
       });
     } else {
       const end = new Date();
-      end.setDate(end.getDate() + 90); // 90 days in future
+      end.setDate(end.getDate() + 90);
       const start = new Date();
       start.setDate(start.getDate() - days);
       onFilterChange({
@@ -176,7 +170,6 @@ export const MeetingFilters = ({
     setActiveDatePreset(null);
   };
 
-  // Get active filter descriptions
   const getActiveFilterLabels = () => {
     const labels: string[] = [];
     
@@ -224,7 +217,7 @@ export const MeetingFilters = ({
   const activeLabels = getActiveFilterLabels();
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Active Filters Display */}
       {activeFilterCount > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 p-3">
@@ -245,243 +238,216 @@ export const MeetingFilters = ({
           </Button>
         </div>
       )}
-      
-      <div className="bg-card border rounded-lg">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <h3 className="font-semibold">Filters</h3>
-          {activeFilterCount > 0 && (
-            <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs font-semibold">
-              {activeFilterCount}
-            </span>
-          )}
-        </div>
-        <ChevronDown 
-          className={`h-5 w-5 text-muted-foreground transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
-        />
-      </div>
 
-      {/* Collapsible Content */}
-      {!isCollapsed && (
-        <div className="px-4 pb-4 space-y-3 border-t pt-4">
-          {/* Meeting Types Section */}
-          <div className="space-y-2">
-            <h4 className="font-medium text-sm">Meeting Type</h4>
-            
-            {/* Legislative Bodies Toggle */}
-            <div className="flex items-center space-x-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+      {/* Meeting Types Section */}
+      <div className="space-y-2">
+        <h4 className="font-medium text-sm">Meeting Type</h4>
+        
+        {/* Legislative Bodies Toggle */}
+        <div className="flex items-center space-x-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+          <Checkbox 
+            id="legislative-toggle"
+            checked={currentFilters.legislativeOnly}
+            onCheckedChange={handleLegislativeToggle}
+          />
+          <Label htmlFor="legislative-toggle" className="text-sm font-medium cursor-pointer flex-1">
+            ⚖️ Legislative Bodies (Where Laws Are Passed)
+          </Label>
+        </div>
+
+        {/* Legislative Body Types */}
+        <div className="pl-4 space-y-1">
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="city-council"
+              checked={currentFilters.meetingTypes.includes('city_council')}
+              onCheckedChange={(checked) => handleMeetingTypeChange('city_council', checked as boolean)}
+            />
+            <Label htmlFor="city-council" className="text-sm cursor-pointer flex-1">
+              City Councils ({availableFilters.typeCounts.city_council || 0})
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="board-supervisors"
+              checked={currentFilters.meetingTypes.includes('board_of_supervisors')}
+              onCheckedChange={(checked) => handleMeetingTypeChange('board_of_supervisors', checked as boolean)}
+            />
+            <Label htmlFor="board-supervisors" className="text-sm cursor-pointer flex-1">
+              Board of Supervisors ({availableFilters.typeCounts.board_of_supervisors || 0})
+            </Label>
+          </div>
+        </div>
+
+        {/* Advisory Bodies - Collapsible */}
+        <Collapsible open={isAdvisoryExpanded} onOpenChange={setIsAdvisoryExpanded}>
+          <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-foreground transition-colors w-full">
+            <ChevronDown className={`h-4 w-4 transition-transform ${isAdvisoryExpanded ? 'rotate-180' : ''}`} />
+            All Other Meeting Types (Advisory Bodies)
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pl-4 pt-2 space-y-1">
+            <div className="flex items-center space-x-2">
               <Checkbox 
-                id="legislative-toggle"
-                checked={currentFilters.legislativeOnly}
-                onCheckedChange={handleLegislativeToggle}
+                id="committees"
+                checked={currentFilters.meetingTypes.includes('committee')}
+                onCheckedChange={(checked) => handleMeetingTypeChange('committee', checked as boolean)}
               />
-              <Label htmlFor="legislative-toggle" className="text-sm font-medium cursor-pointer flex-1">
-                ⚖️ Legislative Bodies (Where Laws Are Passed)
+              <Label htmlFor="committees" className="text-sm cursor-pointer flex-1">
+                Committees ({availableFilters.typeCounts.committee || 0})
               </Label>
             </div>
-
-            {/* Legislative Body Types */}
-            <div className="pl-4 space-y-1">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="city-council"
-                  checked={currentFilters.meetingTypes.includes('city_council')}
-                  onCheckedChange={(checked) => handleMeetingTypeChange('city_council', checked as boolean)}
-                />
-                <Label htmlFor="city-council" className="text-sm cursor-pointer flex-1">
-                  City Councils ({availableFilters.typeCounts.city_council || 0})
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="board-supervisors"
-                  checked={currentFilters.meetingTypes.includes('board_of_supervisors')}
-                  onCheckedChange={(checked) => handleMeetingTypeChange('board_of_supervisors', checked as boolean)}
-                />
-                <Label htmlFor="board-supervisors" className="text-sm cursor-pointer flex-1">
-                  Board of Supervisors ({availableFilters.typeCounts.board_of_supervisors || 0})
-                </Label>
-              </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="commissions"
+                checked={currentFilters.meetingTypes.includes('commission')}
+                onCheckedChange={(checked) => handleMeetingTypeChange('commission', checked as boolean)}
+              />
+              <Label htmlFor="commissions" className="text-sm cursor-pointer flex-1">
+                Commissions ({availableFilters.typeCounts.commission || 0})
+              </Label>
             </div>
-
-            {/* Advisory Bodies - Collapsible */}
-            <Collapsible open={isAdvisoryExpanded} onOpenChange={setIsAdvisoryExpanded}>
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-foreground transition-colors w-full">
-                <ChevronDown className={`h-4 w-4 transition-transform ${isAdvisoryExpanded ? 'rotate-180' : ''}`} />
-                All Other Meeting Types (Advisory Bodies)
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pl-4 pt-2 space-y-1">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="committees"
-                    checked={currentFilters.meetingTypes.includes('committee')}
-                    onCheckedChange={(checked) => handleMeetingTypeChange('committee', checked as boolean)}
-                  />
-                  <Label htmlFor="committees" className="text-sm cursor-pointer flex-1">
-                    Committees ({availableFilters.typeCounts.committee || 0})
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="commissions"
-                    checked={currentFilters.meetingTypes.includes('commission')}
-                    onCheckedChange={(checked) => handleMeetingTypeChange('commission', checked as boolean)}
-                  />
-                  <Label htmlFor="commissions" className="text-sm cursor-pointer flex-1">
-                    Commissions ({availableFilters.typeCounts.commission || 0})
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="authorities"
-                    checked={currentFilters.meetingTypes.includes('authority')}
-                    onCheckedChange={(checked) => handleMeetingTypeChange('authority', checked as boolean)}
-                  />
-                  <Label htmlFor="authorities" className="text-sm cursor-pointer flex-1">
-                    Authorities ({availableFilters.typeCounts.authority || 0})
-                  </Label>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-
-          {/* Document Status Section */}
-          <div className="space-y-2">
-            <h4 className="font-medium text-sm">Document Status</h4>
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="agenda-available"
-                  checked={currentFilters.documentStatus.agendaAvailable}
-                  onCheckedChange={(checked) => handleDocumentStatusChange('agendaAvailable', checked as boolean)}
-                />
-                <Label htmlFor="agenda-available" className="text-sm cursor-pointer flex-1">
-                  📄 Agenda Available ({availableFilters.agendaCount})
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="minutes-available"
-                  checked={currentFilters.documentStatus.minutesAvailable}
-                  onCheckedChange={(checked) => handleDocumentStatusChange('minutesAvailable', checked as boolean)}
-                />
-                <Label htmlFor="minutes-available" className="text-sm cursor-pointer flex-1">
-                  📝 Minutes Available ({availableFilters.minutesCount})
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="live-now"
-                  checked={currentFilters.documentStatus.liveNow}
-                  onCheckedChange={(checked) => handleDocumentStatusChange('liveNow', checked as boolean)}
-                />
-                <Label htmlFor="live-now" className="text-sm cursor-pointer flex-1">
-                  🔴 Live Now ({availableFilters.liveCount})
-                </Label>
-              </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="authorities"
+                checked={currentFilters.meetingTypes.includes('authority')}
+                onCheckedChange={(checked) => handleMeetingTypeChange('authority', checked as boolean)}
+              />
+              <Label htmlFor="authorities" className="text-sm cursor-pointer flex-1">
+                Authorities ({availableFilters.typeCounts.authority || 0})
+              </Label>
             </div>
-          </div>
-
-          {/* Date Range Section */}
-          <div className="space-y-2">
-            <h4 className="font-medium text-sm">📅 Date Range</h4>
-            
-            {/* Date Pickers */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">From</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {currentFilters.dateRange.start ? format(currentFilters.dateRange.start, 'MMM d, yyyy') : 'Select date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={currentFilters.dateRange.start || undefined}
-                      onSelect={(date) => handleDateRangeChange('start', date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">To</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {currentFilters.dateRange.end ? format(currentFilters.dateRange.end, 'MMM d, yyyy') : 'Select date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={currentFilters.dateRange.end || undefined}
-                      onSelect={(date) => handleDateRangeChange('end', date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            {/* Quick Filters */}
-            <div className="flex flex-wrap gap-1">
-              <Button 
-                variant={activeDatePreset === 'last-7' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setQuickDateRange(7, 'last-7')}
-                className={activeDatePreset === 'last-7' ? 'bg-primary hover:bg-primary/90' : ''}
-              >
-                Last 7 Days
-              </Button>
-              <Button 
-                variant={activeDatePreset === 'last-30' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setQuickDateRange(30, 'last-30')}
-                className={activeDatePreset === 'last-30' ? 'bg-primary hover:bg-primary/90' : ''}
-              >
-                Last 30 Days
-              </Button>
-              <Button 
-                variant={activeDatePreset === 'last-90' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setQuickDateRange(90, 'last-90')}
-                className={activeDatePreset === 'last-90' ? 'bg-primary hover:bg-primary/90' : ''}
-              >
-                Last 90 Days
-              </Button>
-              <Button 
-                variant={activeDatePreset === 'all-time' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setQuickDateRange(null, 'all-time')}
-                className={activeDatePreset === 'all-time' ? 'bg-primary hover:bg-primary/90' : ''}
-              >
-                All Time
-              </Button>
-            </div>
-          </div>
-
-          {/* Clear Filters Button */}
-          {activeFilterCount > 0 && (
-            <Button 
-              variant="outline"
-              onClick={clearFilters}
-              className="w-full gap-2"
-            >
-              <X size={16} />
-              Clear All Filters
-            </Button>
-          )}
-        </div>
-      )}
+          </CollapsibleContent>
+        </Collapsible>
       </div>
+
+      {/* Document Status Section */}
+      <div className="space-y-2">
+        <h4 className="font-medium text-sm">Document Status</h4>
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="agenda-available"
+              checked={currentFilters.documentStatus.agendaAvailable}
+              onCheckedChange={(checked) => handleDocumentStatusChange('agendaAvailable', checked as boolean)}
+            />
+            <Label htmlFor="agenda-available" className="text-sm cursor-pointer flex-1">
+              📄 Agenda Available ({availableFilters.agendaCount})
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="minutes-available"
+              checked={currentFilters.documentStatus.minutesAvailable}
+              onCheckedChange={(checked) => handleDocumentStatusChange('minutesAvailable', checked as boolean)}
+            />
+            <Label htmlFor="minutes-available" className="text-sm cursor-pointer flex-1">
+              📝 Minutes Available ({availableFilters.minutesCount})
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="live-now"
+              checked={currentFilters.documentStatus.liveNow}
+              onCheckedChange={(checked) => handleDocumentStatusChange('liveNow', checked as boolean)}
+            />
+            <Label htmlFor="live-now" className="text-sm cursor-pointer flex-1">
+              🔴 Live Now ({availableFilters.liveCount})
+            </Label>
+          </div>
+        </div>
+      </div>
+
+      {/* Date Range Section */}
+      <div className="space-y-2">
+        <h4 className="font-medium text-sm">📅 Date Range</h4>
+        
+        {/* Date Pickers */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">From</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {currentFilters.dateRange.start ? format(currentFilters.dateRange.start, 'MMM d, yyyy') : 'Select date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={currentFilters.dateRange.start || undefined}
+                  onSelect={(date) => handleDateRangeChange('start', date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">To</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {currentFilters.dateRange.end ? format(currentFilters.dateRange.end, 'MMM d, yyyy') : 'Select date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={currentFilters.dateRange.end || undefined}
+                  onSelect={(date) => handleDateRangeChange('end', date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        {/* Quick Filters */}
+        <div className="flex flex-wrap gap-1">
+          <Button 
+            variant={activeDatePreset === 'last-7' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setQuickDateRange(7, 'last-7')}
+          >
+            Last 7 Days
+          </Button>
+          <Button 
+            variant={activeDatePreset === 'last-30' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setQuickDateRange(30, 'last-30')}
+          >
+            Last 30 Days
+          </Button>
+          <Button 
+            variant={activeDatePreset === 'last-90' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setQuickDateRange(90, 'last-90')}
+          >
+            Last 90 Days
+          </Button>
+          <Button 
+            variant={activeDatePreset === 'all-time' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setQuickDateRange(null, 'all-time')}
+          >
+            All Time
+          </Button>
+        </div>
+      </div>
+
+      {/* Clear Filters Button */}
+      {activeFilterCount > 0 && (
+        <Button 
+          variant="outline"
+          onClick={clearFilters}
+          className="w-full gap-2"
+        >
+          <X size={16} />
+          Clear All Filters
+        </Button>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { Layout } from "@/components/Layout";
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, User, MapPin, Filter } from "lucide-react";
@@ -7,7 +7,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TagChips } from "@/components/TagChips";
-import { StatusFilter } from "@/components/filters/StatusFilter";
 import { format } from "date-fns";
 import { LegislationFilters } from "@/components/LegislationFilters";
 import { useLegislationFilters } from "@/hooks/useLegislationFilters";
@@ -18,15 +17,29 @@ import { filterLegislationByTrackedTerms } from "@/lib/trackedTermsFiltering";
 import { DistrictInfo } from "@/components/DistrictInfo";
 import { useFilteredLegislation } from "@/hooks/useFilteredQueries";
 import { useLocationFilter } from "@/contexts/LocationFilterContext";
-import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
 
 export default function BrowseLegislation() {
+  const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const { selectedLocationSlugs } = useLocationFilter();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const statusParam = searchParams.get("status") || "all";
   const { filters, setFilters } = useLegislationFilters();
   const { activeKeywords, hasActiveFilters: hasTrackedTermsFilter, activeTerms } = useTrackedTermsFilter();
+
+  // Debounced search
+  const debouncedSearch = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (value: string) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          setSearchTerm(value);
+        }, 300);
+      };
+    })(),
+    []
+  );
 
   // Fetch legislation using filtered query
   const { data: legislation, isLoading } = useFilteredLegislation({
@@ -57,14 +70,8 @@ export default function BrowseLegislation() {
   const processedLegislation = useMemo(() => {
     if (!searchFilteredLegislation) return [];
     
-    // Combine status from URL params with filters
-    const combinedFilters = {
-      ...filters,
-      status: statusParam !== "all" ? statusParam : filters.status
-    };
-    
     // First filter by standard filters
-    let filtered = filterLegislation(searchFilteredLegislation, combinedFilters);
+    let filtered = filterLegislation(searchFilteredLegislation, filters);
     
     // Then apply tracked terms filter
     if (hasTrackedTermsFilter) {
@@ -75,46 +82,40 @@ export default function BrowseLegislation() {
     const sorted = sortLegislation(filtered, filters.sortBy);
     
     return sorted;
-  }, [searchFilteredLegislation, filters, statusParam, activeKeywords, hasTrackedTermsFilter]);
-
-  const handleStatusChange = (value: string) => {
-    if (value === "all") {
-      searchParams.delete("status");
-    } else {
-      searchParams.set("status", value);
-    }
-    setSearchParams(searchParams);
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-  };
+  }, [searchFilteredLegislation, filters, activeKeywords, hasTrackedTermsFilter]);
 
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Browse Legislation</h1>
-            </div>
-            <StatusFilter 
-              value={statusParam}
-              onChange={handleStatusChange}
-              count={processedLegislation?.length}
-            />
-          </div>
-          
-          <form onSubmit={handleSearch} className="relative max-w-md">
+        <h1 className="text-3xl font-bold">Browse Legislation</h1>
+
+        {/* Search and Sort */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search legislation..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+                debouncedSearch(e.target.value);
+              }}
               className="pl-10"
             />
-          </form>
+          </div>
+          <Select value={filters.sortBy} onValueChange={(value) => setFilters({ ...filters, sortBy: value as any })}>
+            <SelectTrigger className="w-full sm:w-[240px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="introduced_desc">Most Recently Introduced</SelectItem>
+              <SelectItem value="introduced_asc">Oldest First</SelectItem>
+              <SelectItem value="updated_desc">Last Updated</SelectItem>
+              <SelectItem value="title_asc">Title (A-Z)</SelectItem>
+              <SelectItem value="title_desc">Title (Z-A)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Tracked Terms Indicator */}
@@ -137,12 +138,18 @@ export default function BrowseLegislation() {
           </div>
         )}
 
-        {/* Filters Component */}
-        <LegislationFilters
-          currentFilters={filters}
-          onFilterChange={setFilters}
-          availableFilters={availableFilters}
-        />
+        {/* Filters Section */}
+        <CollapsibleSection 
+          storageKey="legislation-filters" 
+          title="Filters"
+          defaultExpanded={true}
+        >
+          <LegislationFilters
+            currentFilters={filters}
+            onFilterChange={setFilters}
+            availableFilters={availableFilters}
+          />
+        </CollapsibleSection>
 
         {/* Results Count */}
         <div className="text-sm text-muted-foreground">
@@ -173,7 +180,9 @@ export default function BrowseLegislation() {
                 author: null,
                 district: null,
                 city: null,
-                status: null
+                status: null,
+                statuses: [],
+                dateRange: { start: null, end: null }
               })}
               className="text-primary hover:underline"
             >
