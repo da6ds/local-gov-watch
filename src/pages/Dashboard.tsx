@@ -125,73 +125,71 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Upcoming Meetings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarDays className="h-5 w-5" />
-                Upcoming Meetings
-                {upcomingMeetings.length > 0 && <Badge variant="secondary">{upcomingMeetings.length}</Badge>}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {upcomingMeetings.length > 0 ? (
-                  <>
-                    {upcomingMeetings.slice(0, 5).map((meeting: any) => (
-                      <Link
-                        key={meeting.id}
-                        to={`/meetings/${meeting.id}`}
-                        className="block border-l-2 border-primary pl-3 hover:bg-accent rounded-r transition-colors"
-                      >
-                        {/* Location */}
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                          <MapPin className="h-3 w-3" />
-                          <span>{meeting.jurisdiction?.name || 'Unknown'}</span>
-                        </div>
-                        
-                        {/* Meeting title */}
-                        <div className="font-medium text-sm mb-1">
-                          {meeting.title || meeting.body_name}
-                        </div>
-                        
-                        {/* Date & Time */}
-                        {meeting.starts_at && (
-                          <div className="text-xs text-muted-foreground">
-                            {format(new Date(meeting.starts_at), 'MMM d, yyyy')} • {format(new Date(meeting.starts_at), 'h:mm a')}
-                          </div>
-                        )}
-                      </Link>
-                    ))}
-                    
-                    <Button variant="link" asChild className="w-full mt-4">
-                      <Link to="/browse/meetings">
-                        View All Meetings →
-                      </Link>
-                    </Button>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No meetings scheduled
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Meetings & Calendar Container */}
+        <div className="rounded-lg border bg-card shadow-sm p-6">
+          {/* Top bar with both section headings */}
+          <div className="flex items-center gap-8 mb-6 pb-4 border-b border-border">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              <span className="font-semibold text-base">Upcoming Meetings</span>
+              {upcomingMeetings.length > 0 && <Badge variant="secondary">{upcomingMeetings.length}</Badge>}
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              <span className="font-semibold text-base">Calendar</span>
+            </div>
+          </div>
 
-          {/* Calendar */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Calendar
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          {/* Content grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Upcoming Meetings Content */}
+            <div className="space-y-3">
+              {upcomingMeetings.length > 0 ? (
+                <>
+                  {upcomingMeetings.slice(0, 5).map((meeting: any) => (
+                    <Link
+                      key={meeting.id}
+                      to={`/meetings/${meeting.id}`}
+                      className="block border-l-2 border-primary pl-3 hover:bg-accent rounded-r transition-colors"
+                    >
+                      {/* Location */}
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{meeting.jurisdiction?.name || 'Unknown'}</span>
+                      </div>
+                      
+                      {/* Meeting title */}
+                      <div className="font-medium text-sm mb-1">
+                        {meeting.title || meeting.body_name}
+                      </div>
+                      
+                      {/* Date & Time */}
+                      {meeting.starts_at && (
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(meeting.starts_at), 'MMM d, yyyy')} • {format(new Date(meeting.starts_at), 'h:mm a')}
+                        </div>
+                      )}
+                    </Link>
+                  ))}
+                  
+                  <Button variant="link" asChild className="w-full mt-4">
+                    <Link to="/browse/meetings">
+                      View All Meetings →
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No meetings scheduled
+                </p>
+              )}
+            </div>
+
+            {/* Calendar Content */}
+            <div>
               <CalendarComponent variant="dashboard" />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Bottom Row - Full Width Recent Updates */}
