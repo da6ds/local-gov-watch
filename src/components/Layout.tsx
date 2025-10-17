@@ -6,7 +6,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { getGuestScope, setGuestScope } from "@/lib/guestSessionStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BrowseDropdown } from "@/components/nav/BrowseDropdown";
 import { MyWorkspaceDropdown } from "@/components/nav/MyWorkspaceDropdown";
 import { MobileBottomNav } from "@/components/nav/MobileBottomNav";
 import { TrackedTermsFilter } from "@/components/TrackedTermsFilter";
@@ -85,9 +84,34 @@ export function Layout({ children }: LayoutProps) {
             >
               <Link to="/dashboard">Dashboard</Link>
             </Button>
-            <div data-tour="browse">
-              <BrowseDropdown />
-            </div>
+            <Button
+              variant={location.pathname === "/browse/meetings" ? "secondary" : "ghost"}
+              size="sm"
+              asChild
+            >
+              <Link to="/browse/meetings">Meetings</Link>
+            </Button>
+            <Button
+              variant={location.pathname === "/browse/legislation" ? "secondary" : "ghost"}
+              size="sm"
+              asChild
+            >
+              <Link to="/browse/legislation">Legislation</Link>
+            </Button>
+            <Button
+              variant={location.pathname === "/calendar" ? "secondary" : "ghost"}
+              size="sm"
+              asChild
+            >
+              <Link to="/calendar">Calendar</Link>
+            </Button>
+            <Button
+              variant={location.pathname === "/browse/elections" ? "secondary" : "ghost"}
+              size="sm"
+              asChild
+            >
+              <Link to="/browse/elections">Elections</Link>
+            </Button>
             <Button
               variant={location.pathname === "/alerts" ? "secondary" : "ghost"}
               size="sm"
@@ -95,6 +119,13 @@ export function Layout({ children }: LayoutProps) {
               data-tour="alerts"
             >
               <Link to="/alerts">Alerts</Link>
+            </Button>
+            <Button
+              variant={location.pathname === "/browse/trends" ? "secondary" : "ghost"}
+              size="sm"
+              asChild
+            >
+              <Link to="/browse/trends">Trends</Link>
             </Button>
           </nav>
 
