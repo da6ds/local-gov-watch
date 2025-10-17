@@ -1,7 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { Calendar, Scale, MapPin, CalendarDays } from "lucide-react";
+import { Calendar, Scale, MapPin, CalendarDays, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -159,10 +159,8 @@ export default function Dashboard() {
           {/* Content grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Upcoming Meetings Column */}
-            <div>
-              
-              {/* Meetings list */}
-              <div className="space-y-3">
+            <div className="flex flex-col h-full">
+              <div className="flex-1 space-y-3">
                 {upcomingMeetings.length > 0 ? (
                   <>
                     {upcomingMeetings.slice(0, 5).map((meeting: any) => (
@@ -190,12 +188,6 @@ export default function Dashboard() {
                         )}
                       </Link>
                     ))}
-                    
-                    <Button variant="link" asChild className="w-full mt-4">
-                      <Link to="/browse/meetings">
-                        View All Meetings →
-                      </Link>
-                    </Button>
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-8">
@@ -203,12 +195,28 @@ export default function Dashboard() {
                   </p>
                 )}
               </div>
+              
+              <Link 
+                to="/browse/meetings"
+                className="text-primary hover:underline text-sm font-medium flex items-center gap-1 justify-center p-3 mt-auto"
+              >
+                View All Meetings
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
 
             {/* Calendar Column */}
-            <div>
-              {/* Calendar component */}
-              <CalendarComponent variant="dashboard" />
+            <div className="flex flex-col h-full">
+              <div className="flex-1">
+                <CalendarComponent variant="dashboard" />
+              </div>
+              <Link 
+                to="/calendar"
+                className="text-primary hover:underline text-sm font-medium flex items-center gap-1 justify-center p-3 mt-auto"
+              >
+                View Calendar
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
         </CollapsibleSection>

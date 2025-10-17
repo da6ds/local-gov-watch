@@ -172,33 +172,27 @@ export function CalendarGrid({
 
           const dayCell = (
             <div key={idx} role="gridcell">
-              <button
+              <div
                 data-testid="calendar-day"
                 data-has-events={hasEvents}
-                onClick={() => onDateSelect(day)}
-                onKeyDown={(e) => handleKeyDown(e, day)}
-                tabIndex={isSameDay(day, focusedDate || selectedDate || new Date()) ? 0 : -1}
-                aria-selected={isSelected}
                 aria-label={`${format(day, 'MMMM d, yyyy')}${hasEvents ? `, ${eventCount} event${eventCount > 1 ? 's' : ''}` : ''}`}
                 className={`
-                  touch-target aspect-square w-full flex flex-col items-center justify-center
+                  aspect-square w-full flex flex-col items-center justify-center
                   ${cellSizeClasses}
                   rounded-md transition-colors
                   ${!isCurrentMonth ? 'text-muted-foreground/40' : ''}
                   ${isSelected ? 'bg-primary text-primary-foreground font-bold' : ''}
-                  ${!isSelected && isTodayDate ? 'bg-accent font-semibold ring-2 ring-primary/20' : ''}
-                  ${!isSelected && hasEvents ? 'bg-primary/10 font-bold' : ''}
-                  ${!isSelected && !isTodayDate && !hasEvents ? 'hover:bg-accent' : ''}
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+                  ${!isSelected && isTodayDate ? 'font-semibold ring-2 ring-primary border-2 border-primary' : ''}
+                  ${!isSelected && hasEvents && !isTodayDate ? 'bg-primary/10 font-medium' : ''}
                 `}
               >
                 <span>{format(day, 'd')}</span>
                 {hasEvents && !isSelected && (
-                  <span className="text-[10px] text-primary font-normal">
-                    {eventCount > 3 ? '3+' : eventCount}
+                  <span className="text-[10px] text-muted-foreground">
+                    {eventCount} meeting{eventCount !== 1 ? 's' : ''}
                   </span>
                 )}
-              </button>
+              </div>
             </div>
           );
 
