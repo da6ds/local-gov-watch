@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useLocationFilter } from "@/contexts/LocationFilterContext";
 import { useFilteredDashboardData } from "@/hooks/useFilteredQueries";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
@@ -125,19 +126,17 @@ export default function Dashboard() {
         </div>
 
         {/* Top Row - Meetings & Calendar */}
-        <CollapsibleSection
-          storageKey="meetings-calendar"
-          title="Meetings & Calendar"
-          icon={<CalendarDays className="h-5 w-5 text-primary" />}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Upcoming Meetings */}
-            <div>
-              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <CalendarDays className="h-4 w-4" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Upcoming Meetings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5" />
                 Upcoming Meetings
                 {upcomingMeetings.length > 0 && <Badge variant="secondary">{upcomingMeetings.length}</Badge>}
-              </h3>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-3">
                 {upcomingMeetings.length > 0 ? (
                   <>
@@ -179,18 +178,22 @@ export default function Dashboard() {
                   </p>
                 )}
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Calendar */}
-            <div>
-              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
+          {/* Calendar */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
                 Calendar
-              </h3>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <CalendarComponent variant="dashboard" />
-            </div>
-          </div>
-        </CollapsibleSection>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Bottom Row - Full Width Recent Updates */}
         <CollapsibleSection
