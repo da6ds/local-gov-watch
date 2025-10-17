@@ -64,12 +64,10 @@ export function CollapsibleSection({
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
 
-    // If locked, update saved state
+    // If locked, unlock automatically when making a change
     if (isLocked) {
-      localStorage.setItem(`dashboard-${storageKey}`, JSON.stringify({
-        expanded: newExpanded,
-        locked: true
-      }));
+      setIsLocked(false);
+      localStorage.removeItem(`dashboard-${storageKey}`);
     }
   };
 

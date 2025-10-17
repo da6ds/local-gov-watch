@@ -3,10 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { OnboardingDialog } from "@/components/OnboardingDialog";
-import { WalkthroughProvider } from "@/components/WalkthroughProvider";
-import { useOnboarding } from "@/hooks/useOnboarding";
-import { useDemoMode } from "@/hooks/useDevMode";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { GlobalBanner } from "@/components/GlobalBanner";
@@ -38,27 +34,9 @@ import MyLists from "./pages/MyLists";
 const queryClient = new QueryClient();
 
 function AppContent() {
-  const { demoMode, setDemoMode } = useDemoMode();
-  const {
-    showOnboarding,
-    showWalkthrough,
-    setShowWalkthrough,
-    completeOnboarding,
-    skipOnboarding,
-  } = useOnboarding(demoMode);
-
   return (
     <>
-      <OnboardingDialog
-        open={showOnboarding}
-        onComplete={completeOnboarding}
-        onSkip={skipOnboarding}
-      />
-      <WalkthroughProvider
-        run={showWalkthrough}
-        onComplete={() => setShowWalkthrough(false)}
-      />
-      <GlobalBanner demoMode={demoMode} setDemoMode={setDemoMode} />
+      <GlobalBanner />
       
       <Routes>
         <Route path="/" element={<Index />} />

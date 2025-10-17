@@ -9,7 +9,7 @@ interface Jurisdiction {
   id: string;
   slug: string;
   name: string;
-  type: 'state' | 'county' | 'city';
+  type: 'state' | 'county' | 'city' | 'district';
   parent_jurisdiction_id?: string;
 }
 

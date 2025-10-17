@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { clearGuestSession } from "@/lib/guestSession";
 import { clearGuestScope, clearGuestTopics } from "@/lib/guestSessionStorage";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,12 +9,7 @@ import { useRef, useEffect } from "react";
 
 let bannerMounted = false;
 
-interface GlobalBannerProps {
-  demoMode: boolean;
-  setDemoMode: (value: boolean) => void;
-}
-
-export function GlobalBanner({ demoMode, setDemoMode }: GlobalBannerProps) {
+export function GlobalBanner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const mountedRef = useRef(false);
@@ -40,31 +35,21 @@ export function GlobalBanner({ demoMode, setDemoMode }: GlobalBannerProps) {
   }
 
   const handleReset = () => {
-    sessionStorage.removeItem('hasSeenOnboarding');
-    sessionStorage.removeItem('hasSeenWalkthrough');
+    sessionStorage.clear();
     clearGuestSession();
     clearGuestScope();
     clearGuestTopics();
     queryClient.clear();
-    setDemoMode(false);
-    toast.success("Demo reset");
+    toast.success("Reset complete");
     navigate("/");
+    setTimeout(() => window.location.reload(), 100);
   };
 
   return (
     <div className="w-full bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-b border-primary/20 py-1.5">
       <div className="container mx-auto flex items-center justify-center gap-3">
         <Button
-          variant={demoMode ? "default" : "outline"}
-          size="sm"
-          onClick={() => setDemoMode(!demoMode)}
-          className="h-7 text-xs gap-1.5"
-        >
-          <Sparkles className="h-3 w-3" />
-          {demoMode ? "Demo: ON" : "Demo: OFF"}
-        </Button>
-        <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={handleReset}
           className="h-7 text-xs gap-1.5"
