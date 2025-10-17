@@ -135,20 +135,22 @@ export default function Dashboard() {
                 <div className="flex items-center flex-1 gap-6">
                   <div className="flex-1 flex items-center justify-center gap-2">
                     <CalendarDays className="h-5 w-5" />
-                    <span className="font-semibold text-base">Upcoming Meetings</span>
+                    <span className="text-lg font-semibold">Upcoming Meetings</span>
                     {upcomingMeetings.length > 0 && <Badge variant="secondary">{upcomingMeetings.length}</Badge>}
                   </div>
                   <div className="flex-1 flex items-center justify-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    <span className="font-semibold text-base">Calendar</span>
+                    <span className="text-lg font-semibold">Calendar</span>
                   </div>
                 </div>
               );
             } else {
               return (
                 <div className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5" />
-                  <span className="font-semibold text-base">Upcoming Meetings {upcomingMeetings.length > 0 && upcomingMeetings.length} & Calendar</span>
+                  <CalendarDays className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-semibold">Upcoming Meetings</h2>
+                  {upcomingMeetings.length > 0 && <Badge variant="secondary">{upcomingMeetings.length}</Badge>}
+                  <h2 className="text-lg font-semibold">& Calendar</h2>
                 </div>
               );
             }
