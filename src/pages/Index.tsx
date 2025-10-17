@@ -9,7 +9,7 @@ export default function Index() {
 
   const handleTryDemo = async () => {
     await startGuestSession();
-    navigate('/dashboard');
+    navigate("/dashboard");
   };
 
   return (
@@ -17,21 +17,15 @@ export default function Index() {
       <div className="flex flex-col items-center justify-center text-center px-4 py-8 md:py-12">
         <div className="space-y-4 max-w-2xl mx-auto">
           <div className="space-y-3">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Local Government at a Glance
-            </h1>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Local Government at a Glance</h1>
             <p className="text-base md:text-lg text-muted-foreground">
-              Stay updated on legislation near you—or anywhere—and get news delivered weekly.
+              Get involved and stay updated on your local government
             </p>
           </div>
 
           {/* Primary CTA */}
-          <Button 
-            size="lg" 
-            className="text-base px-6 py-5 h-auto"
-            onClick={handleTryDemo}
-          >
-            Try Demo
+          <Button size="lg" className="text-base px-6 py-5 h-auto" onClick={handleTryDemo}>
+            Get Started
           </Button>
         </div>
       </div>
