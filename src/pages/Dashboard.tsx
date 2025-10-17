@@ -128,19 +128,36 @@ export default function Dashboard() {
         {/* Meetings & Calendar Container */}
         <CollapsibleSection
           storageKey="meetings-calendar"
-          title=""
           defaultExpanded={true}
+          renderHeader={(isExpanded) => {
+            if (isExpanded) {
+              return (
+                <div className="flex items-center flex-1 gap-6">
+                  <div className="flex-1 flex items-center justify-center gap-2">
+                    <CalendarDays className="h-5 w-5" />
+                    <span className="font-semibold text-base">Upcoming Meetings</span>
+                    {upcomingMeetings.length > 0 && <Badge variant="secondary">{upcomingMeetings.length}</Badge>}
+                  </div>
+                  <div className="flex-1 flex items-center justify-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    <span className="font-semibold text-base">Calendar</span>
+                  </div>
+                </div>
+              );
+            } else {
+              return (
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5" />
+                  <span className="font-semibold text-base">Upcoming Meetings {upcomingMeetings.length > 0 && upcomingMeetings.length} & Calendar</span>
+                </div>
+              );
+            }
+          }}
         >
-          {/* Content grid with centered headers in each column */}
+          {/* Content grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Upcoming Meetings Column */}
             <div>
-              {/* Header centered over column */}
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <CalendarDays className="h-5 w-5" />
-                <span className="font-semibold text-base">Upcoming Meetings</span>
-                {upcomingMeetings.length > 0 && <Badge variant="secondary">{upcomingMeetings.length}</Badge>}
-              </div>
               
               {/* Meetings list */}
               <div className="space-y-3">
@@ -188,12 +205,6 @@ export default function Dashboard() {
 
             {/* Calendar Column */}
             <div>
-              {/* Header centered over column */}
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Calendar className="h-5 w-5" />
-                <span className="font-semibold text-base">Calendar</span>
-              </div>
-              
               {/* Calendar component */}
               <CalendarComponent variant="dashboard" />
             </div>

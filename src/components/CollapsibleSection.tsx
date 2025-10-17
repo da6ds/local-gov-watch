@@ -6,12 +6,13 @@ import { cn } from "@/lib/utils";
 
 interface CollapsibleSectionProps {
   storageKey: string;
-  title: ReactNode;
+  title?: ReactNode;
   icon?: ReactNode;
   badge?: ReactNode;
   children: ReactNode;
   defaultExpanded?: boolean;
   className?: string;
+  renderHeader?: (isExpanded: boolean) => ReactNode;
 }
 
 export function CollapsibleSection({
@@ -21,7 +22,8 @@ export function CollapsibleSection({
   badge,
   children,
   defaultExpanded = true,
-  className
+  className,
+  renderHeader
 }: CollapsibleSectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isLocked, setIsLocked] = useState(false);
@@ -74,43 +76,81 @@ export function CollapsibleSection({
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {icon}
-            <h2 className="text-lg font-semibold">{title}</h2>
-            {badge}
-          </div>
+        <div className="flex items-center justify-between w-full">
+          {renderHeader ? (
+            <>
+              {renderHeader(isExpanded)}
+              <div className="flex items-center gap-1">
+                {/* Lock button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleLockToggle}
+                  className="h-8 w-8"
+                  title={isLocked ? "Unlock (resets to default on reload)" : "Lock (remembers state)"}
+                >
+                  {isLocked ? (
+                    <Lock className="h-4 w-4 text-yellow-500" />
+                  ) : (
+                    <LockOpen className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
 
-          <div className="flex items-center gap-1">
-            {/* Lock button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLockToggle}
-              className="h-8 w-8"
-              title={isLocked ? "Unlock (resets to default on reload)" : "Lock (remembers state)"}
-            >
-              {isLocked ? (
-                <Lock className="h-4 w-4 text-yellow-500" />
-              ) : (
-                <LockOpen className="h-4 w-4 text-muted-foreground" />
-              )}
-            </Button>
+                {/* Collapse/Expand button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleToggleExpand}
+                  className="h-8 w-8"
+                >
+                  {isExpanded ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                {icon}
+                <h2 className="text-lg font-semibold">{title}</h2>
+                {badge}
+              </div>
 
-            {/* Collapse/Expand button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleToggleExpand}
-              className="h-8 w-8"
-            >
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+              <div className="flex items-center gap-1">
+                {/* Lock button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleLockToggle}
+                  className="h-8 w-8"
+                  title={isLocked ? "Unlock (resets to default on reload)" : "Lock (remembers state)"}
+                >
+                  {isLocked ? (
+                    <Lock className="h-4 w-4 text-yellow-500" />
+                  ) : (
+                    <LockOpen className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+
+                {/* Collapse/Expand button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleToggleExpand}
+                  className="h-8 w-8"
+                >
+                  {isExpanded ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </CardHeader>
 
