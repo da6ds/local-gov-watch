@@ -1,7 +1,7 @@
-project_id = "dizlzsmsfdtfubopnolf"
+project_id = "dznqgfttchinijhgbxfe"
 
 [auth]
-auto_confirm_email = true
+enable_signup = true
 
 [functions.analyze-topics]
 verify_jwt = true
