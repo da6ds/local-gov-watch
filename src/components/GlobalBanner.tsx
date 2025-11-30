@@ -6,6 +6,7 @@ import { clearGuestScope, clearGuestTopics } from "@/lib/guestSessionStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRef, useEffect } from "react";
+import { RefreshDataButton } from "./RefreshDataButton";
 
 let bannerMounted = false;
 
@@ -48,6 +49,11 @@ export function GlobalBanner() {
   return (
     <div className="w-full bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-b border-primary/20 py-1.5">
       <div className="container mx-auto flex items-center justify-center gap-3">
+        <RefreshDataButton
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs gap-1.5"
+        />
         <Button
           variant="outline"
           size="sm"

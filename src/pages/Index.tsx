@@ -2,14 +2,30 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function Index() {
   const { startGuestSession } = useAuth();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleTryDemo = async () => {
-    await startGuestSession();
-    navigate("/dashboard");
+    setIsLoading(true);
+    try {
+      console.log("Starting guest session...");
+      await startGuestSession();
+      console.log("Guest session started successfully");
+      toast.success("Welcome! Loading your dashboard...");
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error starting guest session:", error);
+      toast.error("Failed to start demo. Trying again...");
+      // Navigate anyway for graceful degradation
+      setTimeout(() => navigate("/dashboard"), 500);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -24,8 +40,13 @@ export default function Index() {
           </div>
 
           {/* Primary CTA */}
-          <Button size="lg" className="text-base px-6 py-5 h-auto" onClick={handleTryDemo}>
-            Get Started
+          <Button
+            size="lg"
+            className="text-base px-6 py-5 h-auto"
+            onClick={handleTryDemo}
+            disabled={isLoading}
+          >
+            {isLoading ? "Loading..." : "Get Started"}
           </Button>
         </div>
       </div>
